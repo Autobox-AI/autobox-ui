@@ -1,0 +1,49 @@
+/* styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add this to make sure the body has a full dark background */
+body {
+  @apply bg-gray-900 text-white min-h-screen;
+}
+
+/* Add this to your globals.css */
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-left-color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* styles/globals.css */
+
+/* Add this for the loading spinner animation */
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
