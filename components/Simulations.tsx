@@ -84,7 +84,7 @@ const Simulations = ({ selectedProject }) => {
 
   // Navigate to simulation logs page
   const goToSimulationLogs = (simulationId) => {
-    router.push(`/simulations/${simulationId}`);
+    router.push(`/projects/${selectedProject}/simulations/${simulationId}`);
   };
 
   // Add a new simulation with progress tracking

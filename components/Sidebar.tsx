@@ -1,7 +1,19 @@
 // components/Sidebar.tsx
 
+import { useRouter } from "next/navigation"; // Import the useRouter hook
+
 const Sidebar = ({ selectedProject, onSelectProject }) => {
-  const projects = ["Project A", "Project B", "Project C"];
+  const router = useRouter(); // Initialize router for navigation
+  const projects = [
+    { id: "1", name: "Project A" },
+    { id: "2", name: "Project B" },
+    { id: "3", name: "Project C" },
+  ];
+
+  const handleSelectProject = (project) => {
+    onSelectProject(project.name); // Update selected project state
+    router.push(`/projects/${project.id}/simulations`); // Navigate to project simulations page
+  };
 
   return (
     <div className="w-64 bg-gray-900 text-white h-full p-4 flex flex-col">
@@ -19,14 +31,14 @@ const Sidebar = ({ selectedProject, onSelectProject }) => {
           {projects.map((project, index) => (
             <li
               key={index}
-              onClick={() => onSelectProject(project)}
+              onClick={() => handleSelectProject(project)} // Call the handler for navigation
               className={`p-2 cursor-pointer rounded ${
-                selectedProject === project
+                selectedProject === project.name
                   ? "bg-blue-600 font-bold"
                   : "hover:bg-gray-700"
               }`}
             >
-              {project}
+              {project.name}
             </li>
           ))}
         </ul>
