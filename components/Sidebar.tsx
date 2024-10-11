@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation"; // Import the useRouter hook
 const Sidebar = ({ selectedProject, onSelectProject }) => {
   const router = useRouter(); // Initialize router for navigation
   const projects = [
-    { id: "1", name: "Project A" },
-    { id: "2", name: "Project B" },
-    { id: "3", name: "Project C" },
+    { id: "1", name: "Project 1" },
+    { id: "2", name: "Project 2" },
+    { id: "3", name: "Project 3" },
   ];
 
   const handleSelectProject = (project) => {
-    onSelectProject(project.name); // Update selected project state
-    router.push(`/projects/${project.id}/simulations`); // Navigate to project simulations page
+    onSelectProject(project.id); // Update selected project state
+    router.push(`/projects/${project.id}`); // Navigate to project simulations page
   };
 
   return (

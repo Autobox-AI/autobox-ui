@@ -6,7 +6,7 @@ const SimulationDetails = ({ params }) => {
   const { pid: projectId, sid: simulationId } = params; // Extract projectId and simulationId
   const router = useRouter();
 
-  // Sample simulation data for demonstration purposes
+  // Sample simulations data
   const simulationsData = {
     "1": [
       {
@@ -14,7 +14,6 @@ const SimulationDetails = ({ params }) => {
         name: "Simulation A",
         startedAt: "2023-10-01",
         finishedAt: "2023-10-02",
-        progress: 100,
         status: "success",
       },
     ],
@@ -24,7 +23,6 @@ const SimulationDetails = ({ params }) => {
         name: "Simulation B",
         startedAt: "2023-09-29",
         finishedAt: "2023-09-30",
-        progress: 100,
         status: "success",
       },
     ],
@@ -34,18 +32,7 @@ const SimulationDetails = ({ params }) => {
         name: "Simulation C",
         startedAt: "2023-09-25",
         finishedAt: "2023-09-26",
-        progress: 100,
         status: "failed",
-      },
-    ],
-    "4": [
-      {
-        id: "4",
-        name: "Simulation D",
-        startedAt: "2023-10-08",
-        finishedAt: "",
-        progress: 70, // Simulation still in progress
-        status: "in-progress",
       },
     ],
   };
@@ -56,7 +43,6 @@ const SimulationDetails = ({ params }) => {
   );
 
   if (!simulation) {
-    // Render only the "Simulation not found" message if no simulation is found
     return (
       <div className="text-white p-6">
         <h1 className="text-2xl font-bold mb-4">Simulation not found</h1>
@@ -70,36 +56,16 @@ const SimulationDetails = ({ params }) => {
     );
   }
 
-  // Render the simulation details only if found
   return (
     <div className="text-white p-6">
       <h1 className="text-2xl font-bold mb-4">{simulation.name}</h1>
+      <p>Started at: {simulation.startedAt}</p>
+      <p>Finished at: {simulation.finishedAt}</p>
+      <p>
+        Status: {simulation.status === "success" ? "✅ Success" : "❌ Failed"}
+      </p>
 
-      {/* Show progress if the simulation is still in progress */}
-      {simulation.progress < 100 ? (
-        <>
-          <p>Started at: {simulation.startedAt}</p>
-          <p>Progress: {simulation.progress}%</p>
-          <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-blue-500 h-2.5 rounded-full"
-              style={{ width: `${simulation.progress}%` }}
-            ></div>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Show finished details if simulation is complete */}
-          <p>Started at: {simulation.startedAt}</p>
-          <p>Finished at: {simulation.finishedAt}</p>
-          <p>
-            Status:{" "}
-            {simulation.status === "success" ? "✅ Success" : "❌ Failed"}
-          </p>
-        </>
-      )}
-
-      {/* Back button to go back to the list */}
+      {/* Button to go back */}
       <button
         onClick={() => router.push(`/projects/${projectId}/simulations`)}
         className="bg-blue-500 text-white p-2 mt-4 rounded"

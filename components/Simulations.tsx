@@ -8,7 +8,7 @@ const Simulations = ({ selectedProject }) => {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
   const [simulationsData, setSimulationsData] = useState({
-    "Project A": [
+    "1": [
       {
         id: "1",
         name: "Simulation A",
@@ -18,7 +18,7 @@ const Simulations = ({ selectedProject }) => {
         status: "success",
       },
     ],
-    "Project B": [
+    "2": [
       {
         id: "2",
         name: "Simulation B",
@@ -28,7 +28,7 @@ const Simulations = ({ selectedProject }) => {
         status: "success",
       },
     ],
-    "Project C": [
+    "3": [
       {
         id: "3",
         name: "Simulation C",
@@ -40,7 +40,14 @@ const Simulations = ({ selectedProject }) => {
     ],
   });
 
-  // Function to simulate progress over time
+  // Ensure selectedProject is defined before accessing it
+  if (!selectedProject || !simulationsData[selectedProject]) {
+    return (
+      <div className="text-white">No simulations found for this project.</div>
+    );
+  }
+
+  // Function to update the progress of a simulation
   const updateProgress = (simulationId) => {
     const intervalId = setInterval(() => {
       setSimulationsData((prevData) => {
@@ -68,7 +75,7 @@ const Simulations = ({ selectedProject }) => {
               ...sim,
               progress: 100,
               finishedAt: new Date().toISOString().split("T")[0], // Set the finished timestamp
-              status: Math.random() < 0.5 ? "success" : "failed", // Adjust the randomness for a fair distribution
+              status: Math.random() < 0.5 ? "success" : "failed", // Randomize status for now
             };
           }
           return sim;
@@ -80,11 +87,6 @@ const Simulations = ({ selectedProject }) => {
         };
       });
     }, 10000); // 10 seconds to complete simulation
-  };
-
-  // Navigate to simulation logs page
-  const goToSimulationLogs = (simulationId) => {
-    router.push(`/projects/${selectedProject}/simulations/${simulationId}`);
   };
 
   // Add a new simulation with progress tracking
@@ -101,7 +103,7 @@ const Simulations = ({ selectedProject }) => {
   return (
     <div className="text-white flex-1 p-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">{selectedProject}</h1>
+        {/* <h1 className="text-2xl font-bold">{selectedProject}</h1> */}
         <button
           className="bg-blue-500 text-white p-2 rounded"
           onClick={() => setShowModal(true)}
@@ -115,7 +117,11 @@ const Simulations = ({ selectedProject }) => {
           <div
             key={simulation.id}
             className="p-4 bg-gray-800 rounded cursor-pointer"
-            onClick={() => goToSimulationLogs(simulation.id)} // Navigate on click
+            onClick={() =>
+              router.push(
+                `/projects/${selectedProject}/simulations/${simulation.id}`
+              )
+            }
           >
             <h2 className="text-xl font-semibold mb-2">{simulation.name}</h2>
             <p>Started: {simulation.startedAt}</p>

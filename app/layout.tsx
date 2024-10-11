@@ -1,9 +1,7 @@
-// app/layout.tsx
-"use client"; // Add this line at the top
+"use client";
 
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
-import Simulations from "../components/Simulations";
 import "../styles/globals.css";
 
 export default function RootLayout({
@@ -11,7 +9,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [selectedProject, setSelectedProject] = useState("Project A"); // Default selected project
+  const [selectedProject, setSelectedProject] = useState("Project 1"); // Default selected project
 
   const handleSelectProject = (project: string) => {
     setSelectedProject(project);
@@ -26,7 +24,7 @@ export default function RootLayout({
             onSelectProject={handleSelectProject}
           />
           <div className="flex-1 p-8 bg-gray-900">
-            <Simulations selectedProject={selectedProject} />
+            {/* Remove the conditional rendering of Simulations here */}
             {children}
           </div>
         </div>
