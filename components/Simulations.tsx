@@ -47,6 +47,12 @@ const Simulations = ({ selectedProject }) => {
     );
   }
 
+  const getNextSimulationId = () => {
+    const simulations = simulationsData[selectedProject];
+    const lastSimulation = simulations[simulations.length - 1]; // Get the last simulation
+    return lastSimulation ? String(Number(lastSimulation.id) + 1) : "1"; // Increment the ID
+  };
+
   // Function to update the progress of a simulation
   const updateProgress = (simulationId) => {
     const intervalId = setInterval(() => {
@@ -91,13 +97,21 @@ const Simulations = ({ selectedProject }) => {
 
   // Add a new simulation with progress tracking
   const addSimulation = (newSimulation) => {
+    const nextSimulationId = getNextSimulationId();
+
+    const newSim = {
+      ...newSimulation,
+      id: nextSimulationId, // Set the new incremental ID
+    };
+
+    // Add the new simulation to the project
     setSimulationsData((prevData) => ({
       ...prevData,
-      [selectedProject]: [...prevData[selectedProject], newSimulation],
+      [selectedProject]: [...prevData[selectedProject], newSim],
     }));
 
     // Start the progress simulation for the new simulation
-    updateProgress(newSimulation.id);
+    updateProgress(newSim.id);
   };
 
   return (
