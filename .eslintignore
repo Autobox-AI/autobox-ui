@@ -1,0 +1,9 @@
+# Ignore these
+node_modules
+flow-typed
+vendor
+dist
+flow-typed
+generated
+coverage
+.*

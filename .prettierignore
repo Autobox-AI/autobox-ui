@@ -1,0 +1,8 @@
+node_modules
+package.json
+**/vendor/**
+**/*.ejs
+**/generated/**
+**/__generated__/**
+**/dist/**
+*.entitlements

@@ -1,19 +1,36 @@
 // components/Sidebar.tsx
 
-import { useRouter } from "next/navigation"; // Import the useRouter hook
+import { Project } from '@/schemas'
+import { usePathname, useRouter } from 'next/navigation' // Import the useRouter hook
+import { useEffect } from 'react'
+import { useProjectData } from './ProjectContext'
 
-const Sidebar = ({ selectedProject, onSelectProject }) => {
-  const router = useRouter(); // Initialize router for navigation
-  const projects = [
-    { id: "1", name: "Project 1" },
-    { id: "2", name: "Project 2" },
-    { id: "3", name: "Project 3" },
-  ];
+const Sidebar = ({
+  selectedProject,
+  onSelectProject,
+}: {
+  selectedProject: string
+  onSelectProject: (project: string) => void
+}) => {
+  const router = useRouter()
+  const pathname = usePathname() // Get the current route pathname (e.g., /projects/3)
 
-  const handleSelectProject = (project) => {
-    onSelectProject(project.id); // Update selected project state
-    router.push(`/projects/${project.id}`); // Navigate to project simulations page
-  };
+  const { projects, loading, error } = useProjectData()
+
+  useEffect(() => {
+    const projectIdFromUrl = pathname.split('/')[2] // Extract the project ID from URL
+    if (projectIdFromUrl) {
+      onSelectProject(projectIdFromUrl)
+    }
+  }, [pathname, onSelectProject])
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+
+  const handleSelectProject = (project: Project) => {
+    onSelectProject(project.id)
+    router.push(`/projects/${project.id}`)
+  }
 
   return (
     <div className="w-64 bg-gray-900 text-white h-full p-4 flex flex-col">
@@ -28,23 +45,25 @@ const Sidebar = ({ selectedProject, onSelectProject }) => {
       <div>
         <h2 className="text-lg font-semibold mb-4">Projects</h2>
         <ul className="space-y-4">
-          {projects.map((project, index) => (
-            <li
-              key={index}
-              onClick={() => handleSelectProject(project)} // Call the handler for navigation
-              className={`p-2 cursor-pointer rounded ${
-                selectedProject === project.name
-                  ? "bg-blue-600 font-bold"
-                  : "hover:bg-gray-700"
-              }`}
-            >
-              {project.name}
-            </li>
-          ))}
+          {projects && projects.length > 0 ? (
+            projects.map((project) => (
+              <li
+                key={project.id}
+                onClick={() => handleSelectProject(project)} // Call the handler for navigation
+                className={`p-2 cursor-pointer rounded ${
+                  selectedProject === project.id ? 'bg-blue-600 font-bold' : 'hover:bg-gray-700'
+                }`}
+              >
+                {project.name}
+              </li>
+            ))
+          ) : (
+            <p>Loading...</p>
+          )}
         </ul>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default Sidebar

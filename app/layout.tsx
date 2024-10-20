@@ -1,5 +1,6 @@
 "use client";
 
+import { ProjectProvider } from "@/components/ProjectContext";
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import "../styles/globals.css";
@@ -18,16 +19,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-gray-900 text-white min-h-screen">
-        <div className="flex h-screen">
-          <Sidebar
-            selectedProject={selectedProject}
-            onSelectProject={handleSelectProject}
-          />
-          <div className="flex-1 p-8 bg-gray-900">
-            {/* Remove the conditional rendering of Simulations here */}
-            {children}
+        <ProjectProvider>
+          {" "}
+          {/* Provide the context to all child components */}
+          <div className="flex h-screen">
+            <Sidebar
+              selectedProject={selectedProject}
+              onSelectProject={handleSelectProject}
+            />
+            <div className="flex-1 p-8 bg-gray-900">
+              {/* Remove the conditional rendering of Simulations here */}
+              {children}
+            </div>
           </div>
-        </div>
+        </ProjectProvider>
       </body>
     </html>
   );

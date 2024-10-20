@@ -1,94 +1,144 @@
-import { useState } from "react";
+import { Simulation } from '@/schemas'
+import { useState } from 'react'
 
-const NewSimulationModal = ({ onClose, addSimulation }) => {
-  const [configFile, setConfigFile] = useState(null);
-  const [formData, setFormData] = useState({
-    simulationName: "",
+type NewSimulationModalProps = {
+  onClose: () => void
+  addSimulation: (newSimulation: Simulation) => void
+}
+
+const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps) => {
+  const [configFile, setConfigFile] = useState<File | null>(null)
+  const [formData, setFormData] = useState<{
+    simulationName: string
+    maxSteps: number
+    timeout: number
+    task: string
+    orchestratorName: string
+    instruction: string
+    agents: { name: string; role: string }[]
+  }>({
+    simulationName: '',
     maxSteps: 150,
     timeout: 600,
-    task: "",
-    orchestratorName: "",
-    instruction: "",
+    task: '',
+    orchestratorName: '',
+    instruction: '',
     agents: [],
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [newSimulationConfig, setNewSimulationConfig] = useState(null)
 
-  // Handle file upload and pre-fill inputs
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    setConfigFile(file);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e?.target?.files ? e.target.files[0] : null
+    if (file) {
+      setConfigFile(file)
+    }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
+    const reader = new FileReader()
+    reader.onload = (event: ProgressEvent<FileReader>) => {
       try {
-        const configData = JSON.parse(event.target.result);
+        const result = event.target?.result
 
-        // Pre-fill the form inputs with the parsed config data, including agents
-        setFormData({
-          simulationName: configData.simulation?.name || "",
-          maxSteps: configData.simulation?.max_steps || 150,
-          timeout: configData.simulation?.timeout || 600,
-          task: configData.simulation?.task || "",
-          orchestratorName: configData.orchestrator?.name || "",
-          instruction: configData.orchestrator?.instruction || "",
-          agents: configData.agents || [], // Pre-fill agents if available
-        });
+        if (typeof result === 'string') {
+          const configData = JSON.parse(result)
+          setNewSimulationConfig(configData)
+          // Pre-fill the form inputs with the parsed config data, including agents
+          setFormData({
+            simulationName: configData.simulation?.name || '',
+            maxSteps: configData.simulation?.max_steps || 150,
+            timeout: configData.simulation?.timeout || 600,
+            task: configData.simulation?.task || '',
+            orchestratorName: configData.orchestrator?.name || '',
+            instruction: configData.orchestrator?.instruction || '',
+            agents: configData.agents || [], // Pre-fill agents if available
+          })
+        } else {
+          alert('Invalid file format')
+        }
       } catch (error) {
-        alert("Invalid JSON file format");
+        alert('Invalid JSON file format')
       }
-    };
-    reader.readAsText(file);
-  };
+    }
+    if (file) {
+      reader.readAsText(file)
+    }
+  }
 
   // Handle form input changes
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
 
   // Handle agent input changes
-  const handleAgentChange = (index, field, value) => {
-    const newAgents = [...formData.agents];
-    newAgents[index][field] = value;
-    setFormData({ ...formData, agents: newAgents });
-  };
+  const handleAgentChange = (
+    index: number,
+    field: keyof (typeof formData.agents)[0],
+    value: string
+  ) => {
+    const newAgents = [...formData.agents]
+    newAgents[index][field] = value
+    setFormData({ ...formData, agents: newAgents })
+  }
 
   // Add new agent
   const addAgent = () => {
     setFormData({
       ...formData,
-      agents: [...formData.agents, { name: "", role: "" }],
-    });
-  };
+      agents: [...formData.agents, { name: '', role: '' }],
+    })
+  }
 
   // Remove agent
-  const removeAgent = (index) => {
-    const newAgents = formData.agents.filter((_, i) => i !== index);
-    setFormData({ ...formData, agents: newAgents });
-  };
+  const removeAgent = (index: number) => {
+    const newAgents = formData.agents.filter((_, i) => i !== index)
+    setFormData({ ...formData, agents: newAgents })
+  }
 
   // Handle running the simulation
-  const handleRunSimulation = () => {
-    setIsLoading(true);
+  const handleRunSimulation = async () => {
+    setIsLoading(true)
 
     // Mock the simulation process
-    const newSimulation = {
+    const newSimulation2 = {
       id: Math.random().toString(36).substr(2, 9), // Generate random ID
-      name: formData.simulationName || "New Simulation",
-      startedAt: new Date().toISOString().split("T")[0],
-      finishedAt: "",
+      name: formData.simulationName || 'New Simulation',
+      startedAt: new Date().toISOString().split('T')[0],
+      finishedAt: '',
       progress: 0, // Start with 0% progress
-      status: "loading", // Initial status is 'loading'
-    };
+      status: 'loading', // Initial status is 'loading'
+    }
 
-    // Call addSimulation to update the main screen with the new simulation
-    addSimulation(newSimulation);
+    try {
+      const response = await fetch(`http://localhost:8000/simulations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newSimulationConfig),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to create simulation')
+      }
+
+      const newSimulation = await response.json()
+
+      // Call addSimulation to update the main screen with the new simulation
+      addSimulation(newSimulation)
+
+      setIsLoading(false)
+      onClose() // Close the modal and return to the main screen
+    } catch (err) {
+      setIsLoading(false)
+      console.error(err)
+      alert('Failed to create simulation')
+    }
 
     // Close modal after triggering the simulation
     setTimeout(() => {
-      setIsLoading(false);
-      onClose(); // Close the modal and return to the main screen
-    }, 500);
-  };
+      setIsLoading(false)
+      onClose() // Close the modal and return to the main screen
+    }, 500)
+  }
 
   return (
     <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
@@ -104,11 +154,7 @@ const NewSimulationModal = ({ onClose, addSimulation }) => {
           <>
             <div className="mb-4">
               <label className="block mb-2">Upload Config File</label>
-              <input
-                type="file"
-                onChange={handleFileUpload}
-                className="w-full p-2"
-              />
+              <input type="file" onChange={handleFileUpload} className="w-full p-2" />
             </div>
 
             <hr className="my-4" />
@@ -207,9 +253,7 @@ const NewSimulationModal = ({ onClose, addSimulation }) => {
                   <input
                     type="text"
                     value={agent.name}
-                    onChange={(e) =>
-                      handleAgentChange(index, "name", e.target.value)
-                    }
+                    onChange={(e) => handleAgentChange(index, 'name', e.target.value)}
                     className="w-full p-2 bg-gray-800"
                   />
                 </div>
@@ -218,9 +262,7 @@ const NewSimulationModal = ({ onClose, addSimulation }) => {
                   <label className="block mb-2">Agent Role</label>
                   <textarea
                     value={agent.role}
-                    onChange={(e) =>
-                      handleAgentChange(index, "role", e.target.value)
-                    }
+                    onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
                     className="w-full p-2 bg-gray-800"
                   />
                 </div>
@@ -231,10 +273,7 @@ const NewSimulationModal = ({ onClose, addSimulation }) => {
               <button onClick={onClose} className="bg-red-500 p-2 rounded">
                 Cancel
               </button>
-              <button
-                onClick={handleRunSimulation}
-                className="bg-blue-500 p-2 rounded"
-              >
+              <button onClick={handleRunSimulation} className="bg-blue-500 p-2 rounded">
                 Run Simulation
               </button>
             </div>
@@ -242,7 +281,7 @@ const NewSimulationModal = ({ onClose, addSimulation }) => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default NewSimulationModal;
+export default NewSimulationModal
