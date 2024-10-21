@@ -1,18 +1,13 @@
 'use client'
 
 import { useProjectData } from '@/components/ProjectContext'
-import { useRouter } from 'next/navigation' // For navigation
+import { useRouter } from 'next/navigation'
 
+// TODO: Implement the ProjectsPage component
 const ProjectsPage = () => {
   const router = useRouter()
-  const projects2 = [
-    { id: '1', name: 'Project 1' },
-    { id: '2', name: 'Project 2' },
-    { id: '3', name: 'Project 3' },
-  ]
-  const { projectsById, projects, loading, error } = useProjectData()
+  const { projects } = useProjectData()
 
-  // Navigate to a specific project when clicked
   const goToProject = (projectId: string) => {
     router.push(`/projects/${projectId}`)
   }
@@ -28,9 +23,7 @@ const ProjectsPage = () => {
               key={project.id}
               className="p-4 bg-gray-800 rounded cursor-pointer"
               onClick={() => goToProject(project.id)} // Navigate on click
-            >
-              <h2 className="text-xl font-semibold mb-2">{project.name}</h2>
-            </div>
+            ></div>
           ))
         ) : (
           <p>Loading...</p>

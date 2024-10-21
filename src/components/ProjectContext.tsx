@@ -1,5 +1,5 @@
 import { Project } from '@/schemas'
-import { ProjectContext as ProjectContextType } from '@/schemas/project'
+import { ProjectContextType } from '@/schemas/project'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 export interface ProjectContextTypex {
@@ -7,6 +7,7 @@ export interface ProjectContextTypex {
   projectsById: Record<string, Project>
   loading: boolean
   error: string | null
+  setProjectsById: React.Dispatch<React.SetStateAction<Record<string, Project>>>
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
@@ -49,7 +50,7 @@ export const ProjectProvider = ({ children }: { children: React.ReactNode }) => 
   }, [])
 
   return (
-    <ProjectContext.Provider value={{ projects, projectsById, loading, error }}>
+    <ProjectContext.Provider value={{ projects, projectsById, setProjectsById, loading, error }}>
       {children}
     </ProjectContext.Provider>
   )

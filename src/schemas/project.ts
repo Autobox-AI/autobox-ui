@@ -20,3 +20,7 @@ export const ProjectContextSchema = z.object({
 export type Project = z.infer<typeof ProjectSchema>
 
 export type ProjectContext = z.infer<typeof ProjectContextSchema>
+
+export interface ProjectContextType extends ProjectContext {
+  setProjectsById: React.Dispatch<React.SetStateAction<Record<string, Project>>>
+}

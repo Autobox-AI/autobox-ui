@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "baseUrl": ".",
+    "baseUrl": "src",
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -9,7 +9,13 @@
     "sourceMap": true,
     "strict": true,
     "target": "ES2020",
-    "lib": ["es2020", "esnext.asynciterable", "dom", "dom.iterable", "esnext"],
+    "lib": [
+      "es2020",
+      "esnext.asynciterable",
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "jsx": "preserve",
     "isolatedModules": true,
     "incremental": true,
@@ -23,9 +29,23 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
-    }
+      "@/*": [
+        "*"
+      ]
+    },
+    "skipLibCheck": true,
+    "noEmit": true
   },
-  "include": ["generated", "src", "typings", "./**/*.ts", "**/*.tsx", "next-env.d.ts", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "generated",
+    "src",
+    "typings",
+    "./**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

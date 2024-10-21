@@ -1,7 +1,5 @@
-// components/Sidebar.tsx
-
 import { Project } from '@/schemas'
-import { usePathname, useRouter } from 'next/navigation' // Import the useRouter hook
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useProjectData } from './ProjectContext'
 
@@ -13,12 +11,12 @@ const Sidebar = ({
   onSelectProject: (project: string) => void
 }) => {
   const router = useRouter()
-  const pathname = usePathname() // Get the current route pathname (e.g., /projects/3)
+  const pathname = usePathname()
 
   const { projects, loading, error } = useProjectData()
 
   useEffect(() => {
-    const projectIdFromUrl = pathname.split('/')[2] // Extract the project ID from URL
+    const projectIdFromUrl = pathname.split('/')[2]
     if (projectIdFromUrl) {
       onSelectProject(projectIdFromUrl)
     }
@@ -49,7 +47,7 @@ const Sidebar = ({
             projects.map((project) => (
               <li
                 key={project.id}
-                onClick={() => handleSelectProject(project)} // Call the handler for navigation
+                onClick={() => handleSelectProject(project)}
                 className={`p-2 cursor-pointer rounded ${
                   selectedProject === project.id ? 'bg-blue-600 font-bold' : 'hover:bg-gray-700'
                 }`}
