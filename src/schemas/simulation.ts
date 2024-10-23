@@ -29,6 +29,8 @@ export const SimulationSchema = z.object({
   agents: z.array(Agent),
   orchestrator: Agent,
   evaluator: Agent,
+  internal_dashboard_url: z.string().nullable(),
+  public_dashboard_url: z.string().nullable(),
 });
 
 export type Simulation = z.infer<typeof SimulationSchema>;

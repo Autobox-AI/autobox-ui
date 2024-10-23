@@ -101,19 +101,23 @@ const Simulations = ({ selectedProject }: { selectedProject: string }) => {
             onClick={() => router.push(`/projects/${selectedProject}/simulations/${simulation.id}`)}
           >
             <h2 className="text-xl font-semibold mb-2">{simulation.name}</h2>
-            <p>Started: {formatDateTime(simulation.started_at)}</p>
+            <p>
+              <strong>Started:</strong> {formatDateTime(simulation.started_at)}
+            </p>
             {simulation.finished_at && (
               <>
-                <p>Finished: {formatDateTime(simulation.finished_at)}</p>
+                <p>
+                  <strong>Finished:</strong> {formatDateTime(simulation.finished_at)}
+                </p>
               </>
             )}
             <p>
-              Status:
+              <strong>Status:</strong>
               {simulation.status === 'in progress' && <span> 🔄</span>}
-              {simulation.status === 'completed' && <span>✅</span>}
-              {simulation.status === 'failed' && <span style={{ color: 'red' }}>❌ Failed</span>}
+              {simulation.status === 'completed' && <span> ✅</span>}
+              {simulation.status === 'failed' && <span style={{ color: 'red' }}> ❌ Failed</span>}
               {simulation.status === 'aborted' && (
-                <span style={{ color: 'orange' }}>⚠️ Aborted</span>
+                <span style={{ color: 'orange' }}> ⚠️ Aborted</span>
               )}
             </p>
 
