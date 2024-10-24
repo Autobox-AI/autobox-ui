@@ -1,5 +1,5 @@
 import { Simulation } from '@/schemas'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type NewSimulationModalProps = {
   onClose: () => void
@@ -27,6 +27,21 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
   })
   const [isLoading, setIsLoading] = useState(false)
   const [newSimulationConfig, setNewSimulationConfig] = useState(null)
+  const [isFormValid, setIsFormValid] = useState(false)
+
+  useEffect(() => {
+    const formValid =
+      !!formData.simulationName &&
+      !!formData.maxSteps &&
+      !!formData.timeout &&
+      !!formData.task &&
+      !!formData.orchestratorName &&
+      !!formData.instruction &&
+      formData.agents.length >= 2 &&
+      formData.agents.every((agent) => agent.name && agent.role)
+
+    setIsFormValid(formValid)
+  }, [formData])
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e?.target?.files ? e.target.files[0] : null
@@ -44,10 +59,10 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
           setNewSimulationConfig(configData)
           // Pre-fill the form inputs with the parsed config data, including agents
           setFormData({
-            simulationName: configData.simulation?.name || '',
-            maxSteps: configData.simulation?.max_steps || 150,
-            timeout: configData.simulation?.timeout || 600,
-            task: configData.simulation?.task || '',
+            simulationName: configData.name || '',
+            maxSteps: configData.max_steps || 150,
+            timeout: configData.timeout || 600,
+            task: configData.task || '',
             orchestratorName: configData.orchestrator?.name || '',
             instruction: configData.orchestrator?.instruction || '',
             agents: configData.agents || [], // Pre-fill agents if available
@@ -142,138 +157,158 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
 
   return (
     <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
-      <div className="bg-gray-900 p-6 rounded-lg text-white w-1/2 h-[600px] max-h-[600px] overflow-y-auto">
+      <div className="bg-gray-900 p-6 rounded-lg text-white w-1/2 h-[600px] max-h-[600px] flex flex-col relative">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-white text-2xl focus:outline-none"
+        >
+          &times;
+        </button>
+
         <h2 className="text-2xl mb-4">Create New Simulation</h2>
 
         {isLoading ? (
-          <div className="text-center">
+          <div className="text-center flex-grow">
             <p>Running simulation...</p>
             <div className="spinner mt-4"></div>
           </div>
         ) : (
           <>
-            <div className="mb-4">
-              <label className="block mb-2">Upload Config File</label>
-              <input type="file" onChange={handleFileUpload} className="w-full p-2" />
-            </div>
-
-            <hr className="my-4" />
-
-            <h3 className="text-xl mb-4">Or fill out the form:</h3>
-
-            <div className="mb-4">
-              <label className="block mb-2">Simulation Name</label>
-              <input
-                type="text"
-                name="simulationName"
-                value={formData.simulationName}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-800"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2">Max Steps</label>
-              <input
-                type="number"
-                name="maxSteps"
-                value={formData.maxSteps}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-800"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2">Timeout (seconds)</label>
-              <input
-                type="number"
-                name="timeout"
-                value={formData.timeout}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-800"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2">Task</label>
-              <textarea
-                name="task"
-                value={formData.task}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-800"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2">Orchestrator Name</label>
-              <input
-                type="text"
-                name="orchestratorName"
-                value={formData.orchestratorName}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-800"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2">Orchestrator Instruction</label>
-              <textarea
-                name="instruction"
-                value={formData.instruction}
-                onChange={handleChange}
-                className="w-full p-2 bg-gray-800"
-              />
-            </div>
-
-            {/* Agents Section */}
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl">Add Agents</h3>
-              <button
-                onClick={addAgent}
-                className="bg-blue-500 p-2 rounded-full text-xl w-10 h-10 flex items-center justify-center"
-              >
-                +
-              </button>
-            </div>
-
-            {formData.agents.map((agent, index) => (
-              <div key={index} className="mb-4 border-b border-gray-700 pb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-lg">Agent {index + 1}</h4>
-                  <button
-                    onClick={() => removeAgent(index)}
-                    className="bg-red-500 p-1 rounded text-xs"
-                  >
-                    Remove Agent
-                  </button>
-                </div>
-
-                <div className="mb-2">
-                  <label className="block mb-2">Agent Name</label>
-                  <input
-                    type="text"
-                    value={agent.name}
-                    onChange={(e) => handleAgentChange(index, 'name', e.target.value)}
-                    className="w-full p-2 bg-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2">Agent Role</label>
-                  <textarea
-                    value={agent.role}
-                    onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
-                    className="w-full p-2 bg-gray-800"
-                  />
-                </div>
+            {/* Scrollable content container */}
+            <div className="flex-grow overflow-y-auto">
+              <div className="mb-4">
+                <label className="block mb-2">Upload Config File</label>
+                <input type="file" onChange={handleFileUpload} className="w-full p-2" />
               </div>
-            ))}
 
-            <div className="flex justify-between">
+              <hr className="my-4" />
+
+              <h3 className="text-xl mb-4">Or fill out the form:</h3>
+
+              <div className="mb-4">
+                <label className="block mb-2">Simulation Name</label>
+                <input
+                  type="text"
+                  name="simulationName"
+                  value={formData.simulationName}
+                  onChange={handleChange}
+                  className="w-full p-2 bg-gray-800"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-2">Max Steps</label>
+                <input
+                  type="number"
+                  name="maxSteps"
+                  value={formData.maxSteps}
+                  onChange={handleChange}
+                  className="w-full p-2 bg-gray-800"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-2">Timeout (seconds)</label>
+                <input
+                  type="number"
+                  name="timeout"
+                  value={formData.timeout}
+                  onChange={handleChange}
+                  className="w-full p-2 bg-gray-800"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-2">Task</label>
+                <textarea
+                  name="task"
+                  value={formData.task}
+                  onChange={handleChange}
+                  className="w-full p-2 bg-gray-800"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-2">Orchestrator Name</label>
+                <input
+                  type="text"
+                  name="orchestratorName"
+                  value={formData.orchestratorName}
+                  onChange={handleChange}
+                  className="w-full p-2 bg-gray-800"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-2">Orchestrator Instruction</label>
+                <textarea
+                  name="instruction"
+                  value={formData.instruction}
+                  onChange={handleChange}
+                  className="w-full p-2 bg-gray-800"
+                />
+              </div>
+
+              {/* Agents Section */}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl">Add Agents</h3>
+                <button
+                  onClick={addAgent}
+                  className="bg-blue-500 p-2 rounded-full text-xl w-10 h-10 flex items-center justify-center"
+                >
+                  +
+                </button>
+              </div>
+
+              {formData.agents.map((agent, index) => (
+                <div key={index} className="mb-4 border-b border-gray-700 pb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-lg">Agent {index + 1}</h4>
+                    <button
+                      onClick={() => removeAgent(index)}
+                      className="bg-red-500 p-1 rounded text-xs"
+                    >
+                      Remove Agent
+                    </button>
+                  </div>
+
+                  <div className="mb-2">
+                    <label className="block mb-2">Agent Name</label>
+                    <input
+                      type="text"
+                      value={agent.name}
+                      onChange={(e) => handleAgentChange(index, 'name', e.target.value)}
+                      className="w-full p-2 bg-gray-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2">Agent Role</label>
+                    <textarea
+                      value={agent.role}
+                      onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
+                      className="w-full p-2 bg-gray-800"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Sticky buttons */}
+            <div className="flex justify-between mt-4 sticky bottom-0 bg-gray-900 p-4">
               <button onClick={onClose} className="bg-red-500 p-2 rounded">
                 Cancel
               </button>
-              <button onClick={handleRunSimulation} className="bg-blue-500 p-2 rounded">
+              <button
+                onClick={handleRunSimulation}
+                className={`p-2 rounded ${
+                  isFormValid
+                    ? 'bg-blue-500 hover:bg-blue-600 cursor-pointer'
+                    : 'bg-gray-500 cursor-not-allowed'
+                }`}
+                disabled={!isFormValid}
+              >
                 Run Simulation
               </button>
             </div>
