@@ -1,29 +1,45 @@
 'use client'
 
 import { ProjectProvider } from '@/components/ProjectContext'
-import { useState } from 'react'
+import { Inter } from 'next/font/google'
 import Sidebar from '../components/Sidebar'
 import '../styles/globals.css'
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const [selectedProject, setSelectedProject] = useState('Project 1') // Default selected project
+import { cn } from '@/lib/utils'
+import { Organization } from '@/schemas/organization'
 
-  const handleSelectProject = (project: string) => {
-    setSelectedProject(project)
+const inter = Inter({ subsets: ['latin'] })
+
+async function fetchOrganizations(): Promise<Organization[]> {
+  const response = await fetch('http://localhost:8000/organizations', {
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch organizations')
   }
 
+  const { organizations } = await response.json()
+  return organizations
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const organizations = await fetchOrganizations()
+
   return (
-    <html lang="en">
-      <body className="bg-gray-900 text-white min-h-screen">
+    <html lang="en" suppressHydrationWarning className="dark">
+      <body
+        className={cn(
+          'min-h-screen bg-background text-foreground font-sans antialiased',
+          inter.className
+        )}
+      >
         <ProjectProvider>
           {' '}
           {/* Provide the context to all child components */}
           <div className="flex h-screen">
-            <Sidebar selectedProject={selectedProject} onSelectProject={handleSelectProject} />
-            <div className="flex-1 p-8 bg-gray-900">
-              {/* Remove the conditional rendering of Simulations here */}
-              {children}
-            </div>
+            <Sidebar organizations={organizations} />
+            <div className="flex-1 p-8 bg-background">{children}</div>
           </div>
         </ProjectProvider>
       </body>

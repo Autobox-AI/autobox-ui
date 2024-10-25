@@ -1,13 +1,23 @@
 
 import { z } from 'zod';
-import { SimulationSchema } from './simulation';
+import { UuidSchema } from './common/uuid';
+import { SimulationStatus } from './simulation';
 
+
+export const ProjectSimulationSchema = z.object({
+  id: UuidSchema,
+  name: z.string(),
+  status: SimulationStatus,
+  progress: z.number(),
+});
+
+export type ProjectSimulation = z.infer<typeof ProjectSimulationSchema>;
 
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  simulations: z.array(SimulationSchema).nullish(),
+  simulations: z.array(ProjectSimulationSchema).nullish(),
 });
 
 export const ProjectContextSchema = z.object({

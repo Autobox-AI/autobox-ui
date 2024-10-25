@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import { Simulation } from '@/schemas'
 import { useEffect, useState } from 'react'
 
@@ -157,11 +158,11 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
 
   return (
     <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
-      <div className="bg-gray-900 p-6 rounded-lg text-white w-1/2 h-[600px] max-h-[600px] flex flex-col relative">
+      <div className="bg-card p-6 rounded-lg text-card-foreground w-1/2 h-[600px] max-h-[600px] flex flex-col relative">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-white text-2xl focus:outline-none"
+          className="absolute top-4 right-4 text-foreground text-2xl focus:outline-none"
         >
           &times;
         </button>
@@ -253,24 +254,28 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
               {/* Agents Section */}
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl">Add Agents</h3>
-                <button
+                {/* <button
                   onClick={addAgent}
                   className="bg-blue-500 p-2 rounded-full text-xl w-10 h-10 flex items-center justify-center"
                 >
                   +
-                </button>
+                </button> */}
+                <Button
+                  onClick={addAgent}
+                  variant="default"
+                  className="mt-1 rounded-full justify-center items-center flex"
+                >
+                  +
+                </Button>
               </div>
 
               {formData.agents.map((agent, index) => (
-                <div key={index} className="mb-4 border-b border-gray-700 pb-4">
+                <div key={index} className="mb-4 border-b border-border pb-4">
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-lg">Agent {index + 1}</h4>
-                    <button
-                      onClick={() => removeAgent(index)}
-                      className="bg-red-500 p-1 rounded text-xs"
-                    >
+                    <Button onClick={() => removeAgent(index)} variant="default" className="mt-4">
                       Remove Agent
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="mb-2">
@@ -296,21 +301,20 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
             </div>
 
             {/* Sticky buttons */}
-            <div className="flex justify-between mt-4 sticky bottom-0 bg-gray-900 p-4">
-              <button onClick={onClose} className="bg-red-500 p-2 rounded">
+            <div className="flex justify-between mt-4 sticky bottom-0 bg-background p-4">
+              <Button onClick={onClose} variant="default" className="mt-4">
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleRunSimulation}
-                className={`p-2 rounded ${
-                  isFormValid
-                    ? 'bg-blue-500 hover:bg-blue-600 cursor-pointer'
-                    : 'bg-gray-500 cursor-not-allowed'
+                variant="default"
+                // disabled={!isFormValid}
+                className={`mt-4 ${
+                  isFormValid ? 'cursor-pointer' : 'bg-gray-500 cursor-not-allowed'
                 }`}
-                disabled={!isFormValid}
               >
                 Run Simulation
-              </button>
+              </Button>
             </div>
           </>
         )}

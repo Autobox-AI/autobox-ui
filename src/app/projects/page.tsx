@@ -1,36 +1,27 @@
 'use client'
 
-import { useProjectData } from '@/components/ProjectContext'
-import { useRouter } from 'next/navigation'
+import Projects from '@/components/Projects'
+import { Project } from '@/schemas'
 
-// TODO: Implement the ProjectsPage component
-const ProjectsPage = () => {
-  const router = useRouter()
-  const { projects } = useProjectData()
-
-  const goToProject = (projectId: string) => {
-    router.push(`/projects/${projectId}`)
-  }
-
-  return (
-    <div className="text-white p-6">
-      <h1 className="text-2xl font-bold mb-4">Projects</h1>
-
-      <div className="grid grid-cols-3 gap-4">
-        {projects && projects.length > 0 ? (
-          projects.map((project) => (
-            <div
-              key={project.id}
-              className="p-4 bg-gray-800 rounded cursor-pointer"
-              onClick={() => goToProject(project.id)} // Navigate on click
-            ></div>
-          ))
-        ) : (
-          <p>Loading...</p>
-        )}
-      </div>
-    </div>
-  )
+interface ApiResponse {
+  projects: Project[]
 }
 
-export default ProjectsPage
+async function fetchProjects(): Promise<Project[]> {
+  const response = await fetch('http://localhost:8000/projects', {
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch projects')
+  }
+
+  const { projects } = await response.json()
+  return projects
+}
+
+export default async function ProjectsPage() {
+  const projects = await fetchProjects()
+  if (!projects.length) return <div>No projects found.</div>
+  return <Projects projects={projects} />
+}

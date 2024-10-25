@@ -1,67 +1,104 @@
-import { Project } from '@/schemas'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { useProjectData } from './ProjectContext'
+'use client' // Since you're using client-side features
 
-const Sidebar = ({
-  selectedProject,
-  onSelectProject,
-}: {
-  selectedProject: string
-  onSelectProject: (project: string) => void
-}) => {
+import { Project } from '@/schemas'
+import { Organization } from '@/schemas/organization'
+import Image from 'next/image'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+
+interface ApiResponse {
+  organizations: Organization[]
+}
+
+export default function Sidebar({ organizations }: { organizations: Organization[] }) {
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null)
+  const [selectedProject, setSelectedProject] = useState<string | null>(null)
+
   const router = useRouter()
   const pathname = usePathname()
 
-  const { projects, loading, error } = useProjectData()
+  const projectIdFromRoute = pathname.split('/')[2]
 
   useEffect(() => {
-    const projectIdFromUrl = pathname.split('/')[2]
-    if (projectIdFromUrl) {
-      onSelectProject(projectIdFromUrl)
+    if (!projectIdFromRoute) {
+      setSelectedProject(null)
     }
-  }, [pathname, onSelectProject])
+  }, [projectIdFromRoute])
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error}</div>
+  useEffect(() => {
+    if (organizations.length > 0) {
+      setSelectedOrganization(organizations[0])
+    }
+  }, [organizations])
 
-  const handleSelectProject = (project: Project) => {
-    onSelectProject(project.id)
-    router.push(`/projects/${project.id}`)
+  const handleSelectOrganization = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedOrg = organizations.find((org) => org.id === event.target.value)
+    setSelectedOrganization(selectedOrg || null) // Set the selected organization
   }
 
+  const handleSelectProject = (project: Project) => {
+    setSelectedProject(project.id)
+    router.push(`/projects/${project.id}/simulations`)
+  }
+
+  const goHome = () => {
+    router.push('/')
+  }
+
+  if (!selectedOrganization) return <div>Loading...</div>
+
+  const projects = selectedOrganization.projects || []
+
   return (
-    <div className="w-64 bg-gray-900 text-white h-full p-4 flex flex-col">
-      <div className="mb-8">
-        <select className="w-full bg-gray-800 text-white p-2 rounded">
-          <option>Org 1</option>
-          <option>Org 2</option>
-          <option>Org 3</option>
+    <div className="w-64 bg-background text-foreground h-screen p-4 flex flex-col justify-between border-r border-muted shadow-md border-gray-700">
+      {/* Organization Selector */}
+      <div className="mb-8 flex items-center gap-2">
+        <button onClick={goHome} className="hover:bg-muted p-2 rounded-lg">
+          <Image
+            src="/assets/white-box.png"
+            alt="Home"
+            width={24}
+            height={24}
+            className="rounded-lg"
+          />
+        </button>
+
+        <select
+          className="w-full bg-card text-foreground p-2 rounded border border-border focus:border-blue-500 focus:outline-none text-sm"
+          value={selectedOrganization.id}
+          onChange={handleSelectOrganization}
+        >
+          {organizations.map((org) => (
+            <option key={org.id} value={org.id}>
+              {org.name}
+            </option>
+          ))}
         </select>
       </div>
 
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Projects</h2>
+      {/* Projects List */}
+      <div className="flex-1">
+        <h2 className="text-lg font-semibold mb-4 text-foreground text-sm">Projects</h2>
         <ul className="space-y-4">
-          {projects && projects.length > 0 ? (
+          {projects.length > 0 ? (
             projects.map((project) => (
               <li
                 key={project.id}
                 onClick={() => handleSelectProject(project)}
-                className={`p-2 cursor-pointer rounded ${
-                  selectedProject === project.id ? 'bg-blue-600 font-bold' : 'hover:bg-gray-700'
+                className={`p-2 cursor-pointer rounded text-sm ${
+                  selectedProject === project.id
+                    ? 'bg-primary-light text-primary-foreground font-bold'
+                    : 'hover:bg-muted'
                 }`}
               >
                 {project.name}
               </li>
             ))
           ) : (
-            <p>Loading...</p>
+            <p className="text-sm">No projects available</p>
           )}
         </ul>
       </div>
     </div>
   )
 }
-
-export default Sidebar

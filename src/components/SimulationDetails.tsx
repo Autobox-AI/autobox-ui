@@ -5,6 +5,7 @@ import { formatDateTime } from '@/utils'
 import { Simulation } from '@/schemas'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import InstructAgentModal from './InstructAgentModal'
 
 type SimulationDetailsProps = {
   simulation: {
@@ -19,9 +20,11 @@ type SimulationDetailsProps = {
 
 const SimulationDetails = ({
   projectId,
+  projectName,
   simulation,
 }: {
   projectId: string
+  projectName: string
   simulation: Simulation | undefined
 }) => {
   const router = useRouter()
@@ -31,13 +34,70 @@ const SimulationDetails = ({
   const [isTracesExpanded, setIsTracesExpanded] = useState(true)
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(true)
   const traceContainerRef = useRef<HTMLDivElement>(null)
+  const [isAborting, setIsAborting] = useState(false)
+  const [isInstructing, setIsInstructing] = useState(false)
+  const [isInstructAgentModalOpen, setIsInstructAgentModalOpen] = useState(false)
+
+  const handleAbortClick = async () => {
+    setIsAborting(true)
+    try {
+      const response = await fetch(`http://localhost:8000/simulations/${simulation?.id}/abort`, {
+        method: 'POST',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to abort the simulation')
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsAborting(false)
+    }
+  }
+
+  const handleInstructAgentClick = () => {
+    setIsInstructAgentModalOpen(true)
+  }
+
+  const handleInstructAgentModalClose = () => {
+    setIsInstructAgentModalOpen(false)
+  }
+
+  const handleInstructAgentModalSubmit = async (agentId, message) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/simulations/${simulation?.id}/agents/${agentId}/instruction`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            instruction: message,
+          }),
+        }
+      )
+      if (!response.ok) {
+        throw new Error('Failed to send instruction')
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const handleBackClick = () => {
     router.push(`/projects/${projectId}/simulations`)
   }
 
+  const handleBackToProject = () => {
+    router.push(`/projects/${projectId}`)
+  }
+
+  const handleBackToSimulations = () => {
+    router.push(`/projects/${projectId}/simulations`)
+  }
+
   useEffect(() => {
-    if (!simulation) return
+    if (!simulation || simulation.status !== 'in progress') return
 
     setIsLoadingTraces(true)
 
@@ -46,20 +106,20 @@ const SimulationDetails = ({
     )
 
     eventSource.onmessage = (event) => {
-      // event.data is a string of a JSON array. Parse and take the first element and appended to the traces array
-      //   const data = JSON.parse(event.data) as string[]
-      const data = JSON.parse(event.data)
-
-      // Extract the traces and progress from the data
-      const { traces, progress, status } = data
-      simulation.progress = progress
-      simulation.status = status
-
-      setTraces((prevTraces) => [...prevTraces, ...traces])
+      try {
+        const data = JSON.parse(event.data)
+        const { traces, progress, status } = data
+        // TODO: use state
+        simulation.progress = progress
+        simulation.status = status
+        setTraces((prevTraces) => [...prevTraces, ...traces])
+      } catch (error) {
+        console.error('Error parsing traces', error)
+      }
     }
 
-    eventSource.onerror = () => {
-      console.error(`Error receiving traces for simulation ${simulation.id}`)
+    eventSource.onerror = (error) => {
+      console.error(`Error receiving traces for simulation ${simulation.id}:`, error)
       eventSource.close()
       setIsLoadingTraces(false)
     }
@@ -87,20 +147,38 @@ const SimulationDetails = ({
 
   if (!simulation) {
     return (
-      <div className="text-white p-6">
+      <div className="text-foreground p-6">
         <h1 className="text-2xl font-bold mb-4">Simulation not found</h1>
       </div>
     )
   }
 
   return (
-    <div className="text-white p-6">
-      <button
+    <div className="text-foreground p-6 pt-0">
+      {/* <button
         onClick={handleBackClick}
-        className="bg-blue-500 text-white px-3 py-1 text-sm rounded mb-6"
+        className="bg-transparent border border-gray-600 text-gray-300 hover:text-white px-3 py-1 text-sm rounded mb-6 transition-colors duration-200"
       >
         ← Back to Simulations
-      </button>
+      </button> */}
+      <div className="text-sm text-gray-400 mb-6 mt-2">
+        <span
+          className="cursor-pointer hover:underline text-gray-300"
+          onClick={() => router.push('/')}
+        >
+          Home
+        </span>
+        {' -> '}
+        <span
+          className="cursor-pointer hover:underline text-gray-300"
+          onClick={handleBackToProject}
+        >
+          {projectName}
+        </span>
+        {' -> '}
+        <span className="text-gray-100">{simulation.name}</span>
+      </div>
+
       <h1 className="text-2xl font-bold mb-4">Simulation: {simulation.name}</h1>
 
       {/* Link to Dashboards */}
@@ -113,6 +191,30 @@ const SimulationDetails = ({
         >
           Go to Dashboard
         </a>
+      </div>
+
+      <div className="mb-8">
+        {/* Abort Button */}
+        <button
+          onClick={handleAbortClick}
+          disabled={isAborting}
+          className={`bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm rounded mr-2 transition-opacity duration-200 ${
+            isAborting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          }`}
+        >
+          {isAborting ? 'Aborting...' : 'Abort'}
+        </button>
+
+        {/* Instruct Button */}
+        <button
+          onClick={handleInstructAgentClick}
+          disabled={isInstructing}
+          className={`bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-sm rounded transition-opacity duration-200 ${
+            isInstructing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          }`}
+        >
+          {isInstructing ? 'Sending Instruction...' : 'Instruct'}
+        </button>
       </div>
 
       {/* Simulation details */}
@@ -131,7 +233,7 @@ const SimulationDetails = ({
           </span>
           {simulation.status === 'in progress' && (
             <span className="ml-2 flex items-center">
-              <div className="loader inline-block mr-2 h-4 w-4"></div>
+              <span className="loader inline-block mr-2 h-4 w-4"></span>
               <span>running...</span>
             </span>
           )}
@@ -164,7 +266,7 @@ const SimulationDetails = ({
       {/* Collapsible traces container */}
       <div
         onClick={() => setIsTracesExpanded(!isTracesExpanded)} // Toggle expand/collapse
-        className="bg-gray-800 text-white px-4 py-2 rounded-lg cursor-pointer mb-4 flex justify-between items-center"
+        className="bg-gray-800 text-foreground px-4 py-2 rounded-lg cursor-pointer mb-4 flex justify-between items-center"
       >
         <span className="font-bold">Traces</span>
         <span>{isTracesExpanded ? '▲' : '▼'}</span>
@@ -174,7 +276,7 @@ const SimulationDetails = ({
       {isTracesExpanded && (
         <div
           ref={traceContainerRef}
-          className="bg-black p-4 rounded-lg text-green-400 font-mono overflow-y-auto
+          className="bg-slate-3 p-4 rounded-lg text-green-400 font-mono overflow-y-auto
                    h-64 sm:h-80 md:h-96 lg:h-[32rem] xl:h-[40rem]"
         >
           {isLoadingTraces && <p>Loading traces...</p>}
@@ -192,7 +294,7 @@ const SimulationDetails = ({
 
       <div
         onClick={() => setIsDashboardExpanded(!isDashboardExpanded)}
-        className="bg-gray-800 text-white px-4 py-2 rounded-lg cursor-pointer mb-4 flex justify-between items-center"
+        className="bg-gray-800 text-foreground px-4 py-2 rounded-lg cursor-pointer mb-4 flex justify-between items-center"
       >
         <span className="font-bold">Metrics</span>
         <span>{isDashboardExpanded ? '▲' : '▼'}</span>
@@ -208,6 +310,14 @@ const SimulationDetails = ({
           ></iframe>
         </div>
       )}
+
+      {/* Modal for sending instruction */}
+      <InstructAgentModal
+        isOpen={isInstructAgentModalOpen}
+        onClose={handleInstructAgentModalClose}
+        onSubmit={handleInstructAgentModalSubmit}
+        agents={simulation.agents}
+      />
     </div>
   )
 }

@@ -14,9 +14,12 @@ export default function SimulationPage({ params }: SimulationDetailsParams) {
   const { pid: projectId, sid: simulationId } = params
   const { projectsById, projects, loading, error } = useProjectData()
 
-  const simulation = projectsById[projectId]?.simulations?.find((sim) => sim.id === simulationId)
+  const project = projectsById[projectId]
+  const simulation = project?.simulations?.find((sim) => sim.id === simulationId)
 
-  return <SimulationDetails simulation={simulation} projectId={projectId} />
+  return (
+    <SimulationDetails simulation={simulation} projectId={projectId} projectName={project?.name} />
+  )
 }
 
 // const SimulationDetails = ({ params }: SimulationDetailsParams) => {
