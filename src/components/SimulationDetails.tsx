@@ -97,6 +97,23 @@ const SimulationDetails = ({
   }
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/simulations/${simulation?.id}/traces`)
+        if (!response.ok) {
+          throw new Error('Error fetching data')
+        }
+        const result = await response.json()
+        setTraces(result)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  useEffect(() => {
     if (!simulation || simulation.status !== 'in progress') return
 
     setIsLoadingTraces(true)
@@ -276,7 +293,7 @@ const SimulationDetails = ({
       {isTracesExpanded && (
         <div
           ref={traceContainerRef}
-          className="bg-slate-3 p-4 rounded-lg text-green-400 font-mono overflow-y-auto
+          className="bg-slate-900 p-4 rounded-lg text-green-400 font-mono overflow-y-auto
                    h-64 sm:h-80 md:h-96 lg:h-[32rem] xl:h-[40rem]"
         >
           {isLoadingTraces && <p>Loading traces...</p>}

@@ -74,7 +74,7 @@ const Simulations = ({ project }: { project: Project }) => {
         {localSimulations?.map((simulation) => (
           <Card
             key={simulation.id}
-            className="p-4 bg-slate-800 rounded cursor-pointer"
+            className="p-4 bg-slate-900 rounded cursor-pointer border border-gray-700 text-card-foreground shadow"
             onClick={() =>
               router.push(
                 `/projects/${project.id}/simulations/${simulation.id}?projectName=${project.name}`
@@ -82,8 +82,8 @@ const Simulations = ({ project }: { project: Project }) => {
             }
           >
             <CardHeader>
-              <CardTitle className="text-xl mb-2">{simulation.name}</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl text-white">{simulation.name}</CardTitle>
+              <CardDescription className="text-m text-white">
                 <strong>Started:</strong> {formatDateTime(simulation.started_at)}
                 {simulation.finished_at && (
                   <>
@@ -103,13 +103,15 @@ const Simulations = ({ project }: { project: Project }) => {
             </CardHeader>
 
             {/* Show progress if the simulation is still running */}
-            {simulation.progress < 100 && (
+            {(simulation.progress < 100 || simulation.status === 'aborted') && (
               <>
                 <p className="mt-4">Progress: {simulation.progress}%</p>
                 {/* Progress Bar */}
                 <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
                   <div
-                    className="bg-blue-500 h-2.5 rounded-full"
+                    className={`h-2.5 rounded-full ${
+                      simulation.status === 'aborted' ? 'bg-orange-500' : 'bg-blue-500'
+                    }`}
                     style={{ width: `${simulation.progress}%` }}
                   ></div>
                 </div>
