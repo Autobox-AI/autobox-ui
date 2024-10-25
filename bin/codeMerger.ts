@@ -7,6 +7,9 @@ const patterns = [
     'app/page.tsx',
     'app/layout.tsx',
     'styles/globals.css',
+    'components.json',
+    "tsconfig.json",
+    "tailwind.config.ts",
 ];
 
 const excludePatterns = [

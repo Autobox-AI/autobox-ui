@@ -1,11 +1,5 @@
-'use client'
-
 import Projects from '@/components/Projects'
 import { Project } from '@/schemas'
-
-interface ApiResponse {
-  projects: Project[]
-}
 
 async function fetchProjects(): Promise<Project[]> {
   const response = await fetch('http://localhost:8000/projects', {

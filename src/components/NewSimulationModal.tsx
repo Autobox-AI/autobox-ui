@@ -157,8 +157,8 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
-      <div className="bg-card p-6 rounded-lg text-card-foreground w-1/2 h-[600px] max-h-[600px] flex flex-col relative">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+      <div className="bg-card bg-gray-800 p-6 rounded-lg text-card-foreground w-1/2 h-[600px] max-h-[600px] flex flex-col relative">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -179,121 +179,123 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
             {/* Scrollable content container */}
             <div className="flex-grow overflow-y-auto">
               <div className="mb-4">
-                <label className="block mb-2">Upload Config File</label>
-                <input type="file" onChange={handleFileUpload} className="w-full p-2" />
+                <label className="block mb-2 text-slate-200">Upload Config File</label>
+                <input
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="w-full p-1 border border-slate-500 rounded bg-slate-700 text-white file:cursor-pointer file:bg-slate-600 file:border-none file:px-2 file:py-1 file:rounded file:text-white hover:file:bg-slate-500 text-sm"
+                />
               </div>
 
               <hr className="my-4" />
 
-              <h3 className="text-xl mb-4">Or fill out the form:</h3>
+              <h3 className="text-xl mb-4 text-slate-200">Or fill out the form:</h3>
 
               <div className="mb-4">
-                <label className="block mb-2">Simulation Name</label>
+                <label className="block mb-2 text-slate-200">Simulation Name</label>
                 <input
                   type="text"
                   name="simulationName"
                   value={formData.simulationName}
                   onChange={handleChange}
-                  className="w-full p-2 bg-gray-800"
+                  className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block mb-2">Max Steps</label>
+                <label className="block mb-2 text-slate-200">Max Steps</label>
                 <input
                   type="number"
                   name="maxSteps"
                   value={formData.maxSteps}
                   onChange={handleChange}
-                  className="w-full p-2 bg-gray-800"
+                  className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block mb-2">Timeout (seconds)</label>
+                <label className="block mb-2 text-slate-200">Timeout (seconds)</label>
                 <input
                   type="number"
                   name="timeout"
                   value={formData.timeout}
                   onChange={handleChange}
-                  className="w-full p-2 bg-gray-800"
+                  className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block mb-2">Task</label>
+                <label className="block mb-2 text-slate-200">Task</label>
                 <textarea
                   name="task"
                   value={formData.task}
                   onChange={handleChange}
-                  className="w-full p-2 bg-gray-800"
+                  className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block mb-2">Orchestrator Name</label>
+                <label className="block mb-2 text-slate-200">Orchestrator Name</label>
                 <input
                   type="text"
                   name="orchestratorName"
                   value={formData.orchestratorName}
                   onChange={handleChange}
-                  className="w-full p-2 bg-gray-800"
+                  className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block mb-2">Orchestrator Instruction</label>
+                <label className="block mb-2 text-slate-200">Orchestrator Instruction</label>
                 <textarea
                   name="instruction"
                   value={formData.instruction}
                   onChange={handleChange}
-                  className="w-full p-2 bg-gray-800"
+                  className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                 />
               </div>
 
               {/* Agents Section */}
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl">Add Agents</h3>
-                {/* <button
-                  onClick={addAgent}
-                  className="bg-blue-500 p-2 rounded-full text-xl w-10 h-10 flex items-center justify-center"
-                >
-                  +
-                </button> */}
+                <h3 className="text-xl text-slate-200">Add Agents</h3>
                 <Button
                   onClick={addAgent}
                   variant="default"
-                  className="mt-1 rounded-full justify-center items-center flex"
+                  className="mt-1 rounded-full justify-center items-center flex bg-slate-600 hover:bg-slate-500"
                 >
                   +
                 </Button>
               </div>
 
               {formData.agents.map((agent, index) => (
-                <div key={index} className="mb-4 border-b border-border pb-4">
+                <div key={index} className="mb-4 border-b border-slate-600 pb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-lg">Agent {index + 1}</h4>
-                    <Button onClick={() => removeAgent(index)} variant="default" className="mt-4">
+                    <h4 className="text-lg text-slate-200">Agent {index + 1}</h4>
+                    <Button
+                      onClick={() => removeAgent(index)}
+                      variant="default"
+                      className="mt-4 bg-slate-600 hover:bg-slate-500"
+                    >
                       Remove Agent
                     </Button>
                   </div>
 
                   <div className="mb-2">
-                    <label className="block mb-2">Agent Name</label>
+                    <label className="block mb-2 text-slate-200">Agent Name</label>
                     <input
                       type="text"
                       value={agent.name}
                       onChange={(e) => handleAgentChange(index, 'name', e.target.value)}
-                      className="w-full p-2 bg-gray-800"
+                      className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                     />
                   </div>
 
                   <div>
-                    <label className="block mb-2">Agent Role</label>
+                    <label className="block mb-2 text-slate-200">Agent Role</label>
                     <textarea
                       value={agent.role}
                       onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
-                      className="w-full p-2 bg-gray-800"
+                      className="w-full p-2 bg-gray-800 border border-slate-500 rounded text-slate-200"
                     />
                   </div>
                 </div>
@@ -301,16 +303,21 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
             </div>
 
             {/* Sticky buttons */}
-            <div className="flex justify-between mt-4 sticky bottom-0 bg-background p-4">
-              <Button onClick={onClose} variant="default" className="mt-4">
+            <div className="bg-gray-800 flex justify-between mt-4 sticky bottom-0 p-4">
+              <Button
+                onClick={onClose}
+                variant="default"
+                className="mt-4 bg-slate-600 hover:bg-slate-500"
+              >
                 Cancel
               </Button>
               <Button
                 onClick={handleRunSimulation}
                 variant="default"
-                // disabled={!isFormValid}
                 className={`mt-4 ${
-                  isFormValid ? 'cursor-pointer' : 'bg-gray-500 cursor-not-allowed'
+                  isFormValid
+                    ? 'bg-slate-600 hover:bg-slate-500'
+                    : 'bg-slate-500 cursor-not-allowed'
                 }`}
               >
                 Run Simulation

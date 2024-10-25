@@ -1,6 +1,3 @@
-'use client'
-
-import { ProjectProvider } from '@/components/ProjectContext'
 import { Inter } from 'next/font/google'
 import Sidebar from '../components/Sidebar'
 import '../styles/globals.css'
@@ -11,9 +8,7 @@ import { Organization } from '@/schemas/organization'
 const inter = Inter({ subsets: ['latin'] })
 
 async function fetchOrganizations(): Promise<Organization[]> {
-  const response = await fetch('http://localhost:8000/organizations', {
-    cache: 'no-store',
-  })
+  const response = await fetch('http://localhost:8000/organizations')
 
   if (!response.ok) {
     throw new Error('Failed to fetch organizations')
@@ -34,14 +29,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           inter.className
         )}
       >
-        <ProjectProvider>
-          {' '}
-          {/* Provide the context to all child components */}
-          <div className="flex h-screen">
-            <Sidebar organizations={organizations} />
-            <div className="flex-1 p-8 bg-background">{children}</div>
-          </div>
-        </ProjectProvider>
+        {' '}
+        {/* Provide the context to all child components */}
+        <div className="flex h-screen">
+          <Sidebar organizations={organizations} />
+          <div className="flex-1 p-8 bg-background">{children}</div>
+        </div>
       </body>
     </html>
   )

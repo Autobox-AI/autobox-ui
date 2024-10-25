@@ -1,19 +1,16 @@
-'use client'
-
 import Simulations from '@/components/Simulations'
-import { Simulation } from '@/schemas'
+import { Project } from '@/schemas'
 
-async function fetchSimulations(): Promise<Simulation[]> {
-  const response = await fetch('http://localhost:8000/simulations', {
+async function fetchProject(projectId: string): Promise<Project> {
+  const response = await fetch(`http://localhost:8000/projects/${projectId}`, {
     cache: 'no-store',
   })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch projects')
+    throw new Error('Failed to fetch project')
   }
 
-  const { projects } = await response.json()
-  return projects
+  return await response.json()
 }
 
 type ProjectSimulationsParams = {
@@ -24,14 +21,14 @@ type ProjectSimulationsParams = {
 
 export default async function ProjectSimulations({ params }: ProjectSimulationsParams) {
   const { pid: projectId } = params
-  const simulations = await fetchSimulations() // TODO: pass projectId after implementing the API
+  const project = await fetchProject(projectId)
 
   return (
     <div className="text-foreground p-6">
-      <h1 className="text-2xl font-bold mb-4">Simulations for Project {projectId}</h1>
+      {/* <h1 className="text-2xl font-bold mb-4">Simulations for Project {projectId}</h1> */}
 
       {/* Render the Simulations component */}
-      <Simulations selectedProject={projectId} />
+      <Simulations project={project} />
     </div>
   )
 }

@@ -9,6 +9,8 @@ export const ProjectSimulationSchema = z.object({
   name: z.string(),
   status: SimulationStatus,
   progress: z.number(),
+  started_at: z.string(),
+  finished_at: z.string().nullable(),
 });
 
 export type ProjectSimulation = z.infer<typeof ProjectSimulationSchema>;
@@ -17,7 +19,7 @@ export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  simulations: z.array(ProjectSimulationSchema).nullish(),
+  simulations: z.array(ProjectSimulationSchema).default([]),
 });
 
 export const ProjectContextSchema = z.object({

@@ -20,12 +20,14 @@ export default function Sidebar({ organizations }: { organizations: Organization
   const projectIdFromRoute = pathname.split('/')[2]
 
   useEffect(() => {
+    console.log('hook for projectIdFromRoute')
     if (!projectIdFromRoute) {
       setSelectedProject(null)
     }
   }, [projectIdFromRoute])
 
   useEffect(() => {
+    console.log('hook for organizations')
     if (organizations.length > 0) {
       setSelectedOrganization(organizations[0])
     }
