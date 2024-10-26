@@ -314,6 +314,28 @@ const SimulationDetails = ({
               <strong>Finished:</strong> {formatDateTime(simulation.finished_at)}
             </p>
           )}
+          {simulation.aborted_at && (
+            <>
+              <br />
+              <strong>Aborted:</strong> {formatDateTime(simulation.aborted_at)}
+            </>
+          )}
+          {/* Only show Elapsed time if either finished_at or aborted_at is present */}
+          {(simulation.finished_at || simulation.aborted_at) && (
+            <>
+              <br />
+              <strong>Elapsed time:</strong>
+              <span>
+                {` ${Math.round(
+                  ((simulation.finished_at
+                    ? new Date(simulation.finished_at).getTime()
+                    : new Date(simulation.aborted_at!).getTime()) -
+                    new Date(simulation.started_at).getTime()) /
+                    1000
+                )} seconds`}
+              </span>
+            </>
+          )}
           <p className="flex items-center">
             <span>
               <strong>Status:</strong>

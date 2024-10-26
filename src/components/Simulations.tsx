@@ -60,6 +60,7 @@ const Simulations = ({ project }: { project: Project }) => {
       progress: 0,
       started_at: newSimulation.started_at,
       finished_at: null,
+      aborted_at: null,
     }
     setLocalSimulations((prevSimulations) => [...prevSimulations, newProjectSimulation])
   }
