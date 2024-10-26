@@ -2,7 +2,9 @@ import SimulationDetails from '@/components/SimulationDetails'
 import { Simulation } from '@/schemas'
 
 async function fetchSimulation(projectId: string, simulationId: string): Promise<Simulation> {
-  const response = await fetch(`http://localhost:8000/simulations/${simulationId}`)
+  const response = await fetch(`http://localhost:8000/simulations/${simulationId}`, {
+    cache: 'no-store',
+  })
 
   if (!response.ok) {
     console.error('Failed to fetch simulation')

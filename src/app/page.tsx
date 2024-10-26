@@ -38,22 +38,22 @@ export default function Home() {
         <p className="text-lg text-muted-foreground">The playground for your mind</p>
       </div>
       {/* Message Input and Send Button */}
-      <div className="w-full max-w-2xl flex items-center space-x-2 mb-6">
-        {' '}
-        {/* Adjusted width and spacing */}
-        <input
-          type="text"
-          placeholder="Type your simulation idea..."
-          className="flex-grow p-3 rounded-l-full border border-gray-600 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-        />
-        <button className="p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200 flex items-center justify-center">
-          <ArrowRight className="w-5 h-5" />
-        </button>
+      <div className="w-full max-w-5xl mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Type your simulation idea..."
+            className="w-full h-14 p-4 pr-12 rounded-full border border-gray-600 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+          />
+          <button className="absolute top-1/2 right-3 transform -translate-y-1/2 p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-colors duration-200">
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
       <div className="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
         {sections.map((item, index) => (
           <Link href={item.link} key={index}>
-            <Card className="border-2 border-gray-700 hover:shadow-xl shadow-md transition-shadow duration-300 cursor-pointer flex flex-col">
+            <Card className="border-2 border-gray-700 hover:shadow-xl shadow-md transition-shadow duration-300 cursor-pointer flex flex-col p-3">
               <CardHeader className="p-2 text-center">
                 <CardTitle className="text-lg mb-2">{item.title}</CardTitle>
                 <CardDescription className="text-sm mb-2">{item.description}</CardDescription>

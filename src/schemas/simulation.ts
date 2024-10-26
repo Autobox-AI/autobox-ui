@@ -13,7 +13,7 @@ export const SIMULATION_STATUSES = {
 
 export const SimulationStatus = z.enum([SIMULATION_STATUSES.IN_PROGRESS, SIMULATION_STATUSES.COMPLETED, SIMULATION_STATUSES.FAILED, SIMULATION_STATUSES.ABORTED]);
 
-export const Agent = z.object({
+export const AgentSchema = z.object({
     id: z.number(),
     name: z.string(),
 });
@@ -26,11 +26,12 @@ export const SimulationSchema = z.object({
   finished_at: IsoDateStringSchema.nullable(),
   summary: z.string().nullable(),
   progress: z.number(),
-  agents: z.array(Agent),
-  orchestrator: Agent,
-  evaluator: Agent,
+  agents: z.array(AgentSchema),
+  orchestrator: AgentSchema,
+  evaluator: AgentSchema,
   internal_dashboard_url: z.string().nullable(),
   public_dashboard_url: z.string().nullable(),
 });
 
+export type Agent = z.infer<typeof AgentSchema>;
 export type Simulation = z.infer<typeof SimulationSchema>;

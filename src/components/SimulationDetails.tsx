@@ -5,7 +5,9 @@ import { formatDateTime } from '@/utils'
 import { Simulation } from '@/schemas'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import ConfirmAbortModal from './ConfirmAbortModal'
 import InstructAgentModal from './InstructAgentModal'
+import { Button } from './ui/button'
 
 type SimulationDetailsProps = {
   simulation: {
@@ -30,23 +32,27 @@ const SimulationDetails = ({
   const projectName = searchParams.get('projectName') ?? 'Unknown'
 
   const [traces, setTraces] = useState<string[]>([])
+  const [loadingState, setLoadingState] = useState({
+    isLoadingTraces: false,
+    isInstructing: false,
+    isAborting: false,
+  })
   const [localSimulation, setLocalSimulation] = useState(simulation)
-  const [isLoadingTraces, setIsLoadingTraces] = useState(false)
   const [isTracesExpanded, setIsTracesExpanded] = useState(true)
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(true)
   const traceContainerRef = useRef<HTMLDivElement>(null)
-  const [isAborting, setIsAborting] = useState(false)
-  const [isInstructing, setIsInstructing] = useState(false)
   const [isInstructAgentModalOpen, setIsInstructAgentModalOpen] = useState(false)
-  const eventSourceRef = useRef<EventSource | null>(null) // Store EventSource reference
+  const [isAbortModalOpen, setIsAbortModalOpen] = useState(false)
 
-  const handleAbortClick = async () => {
-    setIsAborting(true)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close()
-      console.log('EventSource closed manually on abort.')
-    }
+  const handleAbortClick = () => {
+    setIsAbortModalOpen(true)
+  }
+
+  const handleAbortConfirm = async () => {
+    setIsAbortModalOpen(false)
+    setLoadingState({ ...loadingState, isAborting: true })
 
     try {
       const response = await fetch(`http://localhost:8000/simulations/${simulation?.id}/abort`, {
@@ -58,7 +64,11 @@ const SimulationDetails = ({
     } catch (error) {
       console.error(error)
     } finally {
-      setIsAborting(false)
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        console.log('EventSource closed manually on abort.')
+      }
+      setLoadingState({ ...loadingState, isAborting: false })
     }
   }
 
@@ -71,7 +81,7 @@ const SimulationDetails = ({
   }
 
   const handleInstructAgentModalSubmit = async (agentId: string, message: string) => {
-    setIsInstructing(true)
+    setLoadingState({ ...loadingState, isInstructing: true })
     try {
       const response = await fetch(
         `http://localhost:8000/simulations/${simulation?.id}/agents/${agentId}/instruction`,
@@ -91,7 +101,7 @@ const SimulationDetails = ({
     } catch (error) {
       console.error(error)
     } finally {
-      setIsInstructing(false)
+      setLoadingState({ ...loadingState, isInstructing: false })
       setIsInstructAgentModalOpen(false)
     }
   }
@@ -100,8 +110,41 @@ const SimulationDetails = ({
     router.push(`/projects/${projectId}`)
   }
 
+  // hook for streaming simulation updates
   useEffect(() => {
-    if (!simulation || simulation?.status != 'in progress') return
+    if (localSimulation?.status !== 'in progress') {
+      return
+    }
+
+    const eventSource = new EventSource(
+      `http://localhost:8000/simulations/${localSimulation.id}?streaming=true`
+    )
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data) as Simulation
+      setLocalSimulation(data)
+      if (data.progress >= 100 || data.status !== 'in progress') {
+        eventSource.close()
+      }
+    }
+
+    eventSource.onerror = () => {
+      console.error(`Error with EventSource for simulation ${localSimulation.id}`)
+      eventSource.close()
+    }
+
+    // Cleanup function to close all EventSource instances when the component unmounts
+    return () => {
+      if (eventSource) {
+        eventSource.close()
+        console.log('EventSource closed during cleanup.')
+      }
+    }
+  }, [localSimulation, setLocalSimulation])
+
+  // Hook to fetch traces for the simulation
+  useEffect(() => {
+    if (simulation?.status === 'in progress') return
     const fetchTraces = async () => {
       try {
         const response = await fetch(`http://localhost:8000/simulations/${simulation?.id}/traces`)
@@ -119,10 +162,17 @@ const SimulationDetails = ({
     fetchTraces()
   }, [simulation])
 
+  // Hook to listen for streaming simulation traces
   useEffect(() => {
-    if (!simulation || simulation.status !== 'in progress') return
+    if (!simulation || simulation.status !== 'in progress') {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        console.log('EventSource closed as simulation is not in progress.')
+      }
+      return
+    }
 
-    setIsLoadingTraces(true)
+    setLoadingState({ ...loadingState, isLoadingTraces: true })
 
     const eventSource = new EventSource(
       `http://localhost:8000/simulations/${simulation.id}/traces?streaming=true`
@@ -141,28 +191,33 @@ const SimulationDetails = ({
           }
           return prevSimulation
         })
-
         setTraces(traces)
+        if (progress === 100 || status !== 'in progress') {
+          eventSource.close()
+        }
       } catch (error) {
         console.error('Error parsing traces', error)
+        eventSource.close()
       }
     }
 
     eventSource.onerror = (error) => {
       console.error(`Error receiving traces for simulation ${simulation.id}:`, error)
       eventSource.close()
-      setIsLoadingTraces(false)
+      setLoadingState({ ...loadingState, isLoadingTraces: false })
     }
 
     eventSource.onopen = () => {
-      setIsLoadingTraces(false)
+      setLoadingState({ ...loadingState, isLoadingTraces: false })
     }
 
     return () => {
-      eventSource.close()
-      console.log('EventSource closed during cleanup.')
+      if (eventSource) {
+        eventSource.close()
+        console.log('EventSource closed during cleanup.')
+      }
     }
-  }, [simulation?.id])
+  }, [simulation?.id, simulation?.status])
 
   useEffect(() => {
     if (traceContainerRef.current) {
@@ -226,73 +281,75 @@ const SimulationDetails = ({
 
       <div className="mb-8">
         {/* Abort Button */}
-        <button
+        <Button
           onClick={handleAbortClick}
-          disabled={isAborting}
-          className={`bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm rounded mr-2 transition-opacity duration-200 ${
-            isAborting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          disabled={loadingState.isAborting || localSimulation?.status !== 'in progress'}
+          className={`bg-transparent border border-gray-600 text-gray-300 hover:text-white hover:bg-red-700 text-white px-3 py-1 text-sm rounded mr-2 transition-opacity duration-200 aria-labels ${
+            loadingState.isAborting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
           }`}
         >
-          {isAborting ? 'Aborting...' : 'Abort'}
-        </button>
+          {loadingState.isAborting ? 'Aborting...' : 'Abort'}
+        </Button>
 
         {/* Instruct Button */}
-        <button
+        <Button
           onClick={handleInstructAgentClick}
-          disabled={isInstructing}
-          className={`bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-sm rounded transition-opacity duration-200 ${
-            isInstructing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          disabled={loadingState.isInstructing || localSimulation?.status !== 'in progress'}
+          className={`bg-transparent border border-gray-600 text-gray-300 hover:bg-blue-700 text-white px-3 py-1 text-sm rounded transition-opacity duration-200 aria-labels ${
+            loadingState.isInstructing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
           }`}
         >
-          {isInstructing ? 'Sending Instruction...' : 'Instruct'}
-        </button>
+          {loadingState.isInstructing ? 'Sending Instruction...' : 'Instruct'}
+        </Button>
       </div>
 
       {/* Simulation details */}
-      <div className="mb-4">
-        <p>
-          <strong>Started:</strong> {formatDateTime(simulation.started_at)}
-        </p>
-        {simulation.finished_at && (
+      {localSimulation && (
+        <div className="mb-4">
           <p>
-            <strong>Finished:</strong> {formatDateTime(simulation.finished_at)}
+            <strong>Started:</strong> {formatDateTime(localSimulation.started_at)}
           </p>
-        )}
-        <p className="flex items-center">
-          <span>
-            <strong>Status:</strong>
-          </span>
-          {simulation.status === 'in progress' && (
-            <span className="ml-2 flex items-center">
-              <span className="loader inline-block mr-2 h-4 w-4"></span>
-              <span>running...</span>
-            </span>
+          {simulation.finished_at && (
+            <p>
+              <strong>Finished:</strong> {formatDateTime(simulation.finished_at)}
+            </p>
           )}
-          {simulation.status === 'completed' && <span className="ml-2">✅</span>}
-          {simulation.status === 'failed' && (
-            <span className="ml-2" style={{ color: 'red' }}>
-              ❌ Failed
+          <p className="flex items-center">
+            <span>
+              <strong>Status:</strong>
             </span>
+            {localSimulation.status === 'in progress' && (
+              <span className="ml-2 flex items-center">
+                <span className="loader inline-block mr-2 h-4 w-4"></span>
+                <span>running...</span>
+              </span>
+            )}
+            {localSimulation.status === 'completed' && <span className="ml-2">✅</span>}
+            {localSimulation.status === 'failed' && (
+              <span className="ml-2" style={{ color: 'red' }}>
+                ❌ Failed
+              </span>
+            )}
+            {localSimulation.status === 'aborted' && (
+              <span className="ml-2" style={{ color: 'orange' }}>
+                ⚠️ Aborted
+              </span>
+            )}
+          </p>
+          {/* Show progress bar if progress is less than 100 */}
+          <p>
+            <strong>Progress:</strong> {localSimulation.progress}%
+          </p>
+          {localSimulation.progress < 100 && (
+            <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+              <div
+                className="bg-blue-500 h-2.5 rounded-full"
+                style={{ width: `${localSimulation.progress}%` }}
+              ></div>
+            </div>
           )}
-          {simulation.status === 'aborted' && (
-            <span className="ml-2" style={{ color: 'orange' }}>
-              ⚠️ Aborted
-            </span>
-          )}
-        </p>
-        {/* Show progress bar if progress is less than 100 */}
-        <p>
-          <strong>Progress:</strong> {simulation.progress}%
-        </p>
-        {simulation.progress < 100 && (
-          <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
-            <div
-              className="bg-blue-500 h-2.5 rounded-full"
-              style={{ width: `${simulation.progress}%` }}
-            ></div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Collapsible traces container */}
       <div
@@ -310,8 +367,8 @@ const SimulationDetails = ({
           className="bg-slate-900 p-4 rounded-lg text-green-400 font-mono overflow-y-auto
                    h-64 sm:h-80 md:h-96 lg:h-[32rem] xl:h-[40rem]"
         >
-          {isLoadingTraces && <p>Loading traces...</p>}
-          {traces.length === 0 && !isLoadingTraces ? (
+          {loadingState.isLoadingTraces && <p>Loading traces...</p>}
+          {traces.length === 0 && !loadingState.isLoadingTraces ? (
             <p>No traces available yet.</p>
           ) : (
             traces.map((trace, index) => (
@@ -342,12 +399,19 @@ const SimulationDetails = ({
         </div>
       )}
 
+      {/* Modal for abort confirmation */}
+      <ConfirmAbortModal
+        isOpen={isAbortModalOpen}
+        onClose={() => setIsAbortModalOpen(false)}
+        onConfirm={handleAbortConfirm}
+      />
+
       {/* Modal for sending instruction */}
       <InstructAgentModal
         isOpen={isInstructAgentModalOpen}
         onClose={handleInstructAgentModalClose}
         onSubmit={handleInstructAgentModalSubmit}
-        agents={simulation.agents}
+        agents={[...simulation.agents, simulation.orchestrator]}
       />
     </div>
   )
