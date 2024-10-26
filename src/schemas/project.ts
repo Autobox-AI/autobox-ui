@@ -11,6 +11,7 @@ export const ProjectSimulationSchema = z.object({
   progress: z.number(),
   started_at: z.string(),
   finished_at: z.string().nullable(),
+  aborted_at: z.string().nullable(),
 });
 
 export type ProjectSimulation = z.infer<typeof ProjectSimulationSchema>;

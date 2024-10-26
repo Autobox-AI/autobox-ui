@@ -24,6 +24,7 @@ export const SimulationSchema = z.object({
   status: SimulationStatus,
   started_at: IsoDateStringSchema,
   finished_at: IsoDateStringSchema.nullable(),
+  aborted_at: IsoDateStringSchema.nullable(),
   summary: z.string().nullable(),
   progress: z.number(),
   agents: z.array(AgentSchema),

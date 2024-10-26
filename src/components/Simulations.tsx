@@ -72,7 +72,12 @@ const Simulations = ({ project }: { project: Project }) => {
         <p className="text-lg text-muted-foreground mt-2">{project.description}</p>
       </div>
       <div className="flex justify-between items-center mb-8">
-        <Button onClick={() => setShowNewSimulationModal(true)} variant="default" className="mt-4">
+        <Button
+          // onClick={() => setShowNewSimulationModal(true)}
+          onClick={() => router.push(`/projects/${project.id}/new-simulation`)}
+          variant="default"
+          className="mt-4"
+        >
           New Simulation
         </Button>
       </div>
@@ -98,21 +103,30 @@ const Simulations = ({ project }: { project: Project }) => {
                     <strong>Finished:</strong> {formatDateTime(simulation.finished_at)}
                   </>
                 )}
-                <br />
-                <div>
-                  <strong>Elapsed time</strong>
-                  {simulation.finished_at && (
+                {simulation.aborted_at && (
+                  <>
+                    <br />
+                    <strong>Aborted:</strong> {formatDateTime(simulation.aborted_at)}
+                  </>
+                )}
+                {/* Only show Elapsed time if either finished_at or aborted_at is present */}
+                {(simulation.finished_at || simulation.aborted_at) && (
+                  <>
+                    <br />
+                    <strong>Elapsed time:</strong>
                     <span>
-                      :{' '}
-                      {Math.round(
-                        (new Date(simulation.finished_at).getTime() -
+                      {` ${Math.round(
+                        ((simulation.finished_at
+                          ? new Date(simulation.finished_at).getTime()
+                          : new Date(simulation.aborted_at!).getTime()) -
                           new Date(simulation.started_at).getTime()) /
                           1000
-                      )}{' '}
-                      seconds
+                      )} seconds`}
                     </span>
-                  )}
-                </div>
+                  </>
+                )}
+                {/* Status on a new line */}
+                <br />
                 <strong>Status:</strong>
                 {simulation.status === 'in progress' && <span> 🔄</span>}
                 {simulation.status === 'completed' && <span> ✅</span>}
