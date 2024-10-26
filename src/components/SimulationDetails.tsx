@@ -30,6 +30,7 @@ const SimulationDetails = ({
   const router = useRouter()
 
   const [traces, setTraces] = useState<string[]>([])
+  const [localSimulation, setLocalSimulation] = useState(simulation)
   const [isLoadingTraces, setIsLoadingTraces] = useState(false)
   const [isTracesExpanded, setIsTracesExpanded] = useState(true)
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(true)
@@ -97,6 +98,7 @@ const SimulationDetails = ({
   }
 
   useEffect(() => {
+    if (!simulation || simulation?.status === 'in progress') return
     const fetchData = async () => {
       try {
         const response = await fetch(`http://localhost:8000/simulations/${simulation?.id}/traces`)
@@ -108,6 +110,7 @@ const SimulationDetails = ({
       } catch (err) {
         console.error(err)
       }
+      return
     }
 
     fetchData()
@@ -126,9 +129,14 @@ const SimulationDetails = ({
       try {
         const data = JSON.parse(event.data)
         const { traces, progress, status } = data
-        // TODO: use state
-        simulation.progress = progress
-        simulation.status = status
+        setLocalSimulation((prevSimulation) => {
+          if (prevSimulation) {
+            prevSimulation.progress = progress
+            prevSimulation.status = status
+          }
+          return prevSimulation
+        })
+
         setTraces((prevTraces) => [...prevTraces, ...traces])
       } catch (error) {
         console.error('Error parsing traces', error)

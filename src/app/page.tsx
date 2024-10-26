@@ -39,8 +39,8 @@ export default function Home() {
       <div className="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
         {sections.map((item, index) => (
           <Link href={item.link} key={index}>
-            <Card className="w-full min-h-[350px] border-2 border-gray-700 hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col">
-              <CardHeader>
+            <Card className="border-2 border-gray-700 hover:shadow-xl shadow-md transition-shadow duration-300 cursor-pointer flex flex-col">
+              <CardHeader className="p-4">
                 <CardTitle className="text-xl mb-2">{item.title}</CardTitle>
                 <CardDescription className="mb-4">{item.description}</CardDescription>
               </CardHeader>
@@ -49,7 +49,7 @@ export default function Home() {
                   src={item.image} // Image path from the sections data
                   alt={item.title}
                   width={400} // Set to your desired width
-                  height={36} // Set to your desired height while maintaining aspect ratio
+                  height={300} // Set to your desired height while maintaining aspect ratio
                   style={{ objectFit: 'contain' }}
                   className="mx-auto"
                 />

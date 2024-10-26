@@ -30,10 +30,9 @@ const Simulations = ({ project }: { project: Project }) => {
 
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data) as Simulation
-        const updatedSimulations = localSimulations.map((sim) =>
-          sim.id === data.id ? { ...sim, ...data } : sim
+        setLocalSimulations((prevSimulations) =>
+          prevSimulations.map((sim) => (sim.id === data.id ? { ...sim, ...data } : sim))
         )
-        setLocalSimulations(updatedSimulations)
         if (data.progress === 100) {
           eventSource.close()
         }
@@ -51,7 +50,7 @@ const Simulations = ({ project }: { project: Project }) => {
     return () => {
       eventSources.forEach((es) => es.close())
     }
-  }, [project]) // Re-run the hook when selectedProject or projectsById changes
+  }, [localSimulations, setLocalSimulations]) // Re-run the hook when selectedProject or projectsById changes
 
   const addSimulation = (newSimulation: Simulation) => {
     setLocalSimulations((prevSimulations) => [...prevSimulations, newSimulation])
@@ -110,7 +109,7 @@ const Simulations = ({ project }: { project: Project }) => {
                 <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
                   <div
                     className={`h-2.5 rounded-full ${
-                      simulation.status === 'aborted' ? 'bg-orange-500' : 'bg-blue-500'
+                      simulation.status === 'aborted' ? 'bg-grey-100' : 'bg-blue-500'
                     }`}
                     style={{ width: `${simulation.progress}%` }}
                   ></div>
