@@ -315,15 +315,13 @@ const SimulationDetails = ({
             </p>
           )}
           {simulation.aborted_at && (
-            <>
-              <br />
+            <p>
               <strong>Aborted:</strong> {formatDateTime(simulation.aborted_at)}
-            </>
+            </p>
           )}
           {/* Only show Elapsed time if either finished_at or aborted_at is present */}
           {(simulation.finished_at || simulation.aborted_at) && (
-            <>
-              <br />
+            <p>
               <strong>Elapsed time:</strong>
               <span>
                 {` ${Math.round(
@@ -334,7 +332,7 @@ const SimulationDetails = ({
                     1000
                 )} seconds`}
               </span>
-            </>
+            </p>
           )}
           <p className="flex items-center">
             <span>
@@ -362,10 +360,12 @@ const SimulationDetails = ({
           <p>
             <strong>Progress:</strong> {localSimulation.progress}%
           </p>
-          {localSimulation.progress < 100 && (
+          {(localSimulation.progress < 100 || localSimulation.status === 'aborted') && (
             <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
               <div
-                className="bg-blue-500 h-2.5 rounded-full"
+                className={`h-2.5 rounded-full ${
+                  simulation.status === 'aborted' ? 'bg-orange-500' : 'bg-blue-500'
+                }`}
                 style={{ width: `${localSimulation.progress}%` }}
               ></div>
             </div>
