@@ -1,4 +1,5 @@
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -32,24 +33,37 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start bg-background p-6">
-      <div className="text-center mb-12">
+      <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-foreground mb-4">Autobox</h1>
         <p className="text-lg text-muted-foreground">The playground for your mind</p>
+      </div>
+      {/* Message Input and Send Button */}
+      <div className="w-full max-w-2xl flex items-center space-x-2 mb-6">
+        {' '}
+        {/* Adjusted width and spacing */}
+        <input
+          type="text"
+          placeholder="Type your simulation idea..."
+          className="flex-grow p-3 rounded-l-full border border-gray-600 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+        />
+        <button className="p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200 flex items-center justify-center">
+          <ArrowRight className="w-5 h-5" />
+        </button>
       </div>
       <div className="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
         {sections.map((item, index) => (
           <Link href={item.link} key={index}>
             <Card className="border-2 border-gray-700 hover:shadow-xl shadow-md transition-shadow duration-300 cursor-pointer flex flex-col">
-              <CardHeader className="p-4">
-                <CardTitle className="text-xl mb-2">{item.title}</CardTitle>
-                <CardDescription className="mb-4">{item.description}</CardDescription>
+              <CardHeader className="p-2 text-center">
+                <CardTitle className="text-lg mb-2">{item.title}</CardTitle>
+                <CardDescription className="text-sm mb-2">{item.description}</CardDescription>
               </CardHeader>
               <div className="relative w-full">
                 <Image
                   src={item.image} // Image path from the sections data
                   alt={item.title}
-                  width={400} // Set to your desired width
-                  height={300} // Set to your desired height while maintaining aspect ratio
+                  width={300} // Set to your desired width
+                  height={200} // Set to your desired height while maintaining aspect ratio
                   style={{ objectFit: 'contain' }}
                   className="mx-auto"
                 />

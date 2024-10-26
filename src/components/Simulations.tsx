@@ -10,13 +10,13 @@ import NewSimulationModal from './NewSimulationModal'
 
 const Simulations = ({ project }: { project: Project }) => {
   const router = useRouter()
-  const [localSimulations, setLocalSimulations] = useState(project.simulations)
+  const [localSimulations, setLocalSimulations] = useState<ProjectSimulation[]>(project.simulations)
   const [showNewSimulationModal, setShowNewSimulationModal] = useState(false)
 
   useEffect(() => {
     const eventSources: EventSource[] = []
 
-    const inProgressSimulations = project.simulations?.filter(
+    const inProgressSimulations = localSimulations?.filter(
       (simulation) => simulation.status === 'in progress'
     )
 
@@ -53,7 +53,15 @@ const Simulations = ({ project }: { project: Project }) => {
   }, [localSimulations, setLocalSimulations]) // Re-run the hook when selectedProject or projectsById changes
 
   const addSimulation = (newSimulation: Simulation) => {
-    setLocalSimulations((prevSimulations) => [...prevSimulations, newSimulation])
+    const newProjectSimulation: ProjectSimulation = {
+      id: newSimulation.id,
+      name: newSimulation.name,
+      status: 'in progress',
+      progress: 0,
+      started_at: newSimulation.started_at,
+      finished_at: null,
+    }
+    setLocalSimulations((prevSimulations) => [...prevSimulations, newProjectSimulation])
   }
 
   return (

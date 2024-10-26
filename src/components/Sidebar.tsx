@@ -20,14 +20,12 @@ export default function Sidebar({ organizations }: { organizations: Organization
   const projectIdFromRoute = pathname.split('/')[2]
 
   useEffect(() => {
-    console.log('hook for projectIdFromRoute')
     if (!projectIdFromRoute) {
       setSelectedProject(null)
     }
-  }, [projectIdFromRoute])
+  }, [])
 
   useEffect(() => {
-    console.log('hook for organizations')
     if (organizations.length > 0) {
       setSelectedOrganization(organizations[0])
     }
@@ -88,7 +86,7 @@ export default function Sidebar({ organizations }: { organizations: Organization
                 key={project.id}
                 onClick={() => handleSelectProject(project)}
                 className={`p-2 cursor-pointer rounded text-sm ${
-                  selectedProject === project.id
+                  projectIdFromRoute === project.id
                     ? 'bg-primary-light text-primary-foreground font-bold'
                     : 'hover:bg-muted'
                 }`}

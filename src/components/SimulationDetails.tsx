@@ -3,7 +3,7 @@
 import { formatDateTime } from '@/utils'
 
 import { Simulation } from '@/schemas'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import InstructAgentModal from './InstructAgentModal'
 
@@ -20,14 +20,14 @@ type SimulationDetailsProps = {
 
 const SimulationDetails = ({
   projectId,
-  projectName,
   simulation,
 }: {
   projectId: string
-  projectName: string
   simulation: Simulation | undefined
 }) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const projectName = searchParams.get('projectName') ?? 'Unknown'
 
   const [traces, setTraces] = useState<string[]>([])
   const [localSimulation, setLocalSimulation] = useState(simulation)
@@ -38,9 +38,16 @@ const SimulationDetails = ({
   const [isAborting, setIsAborting] = useState(false)
   const [isInstructing, setIsInstructing] = useState(false)
   const [isInstructAgentModalOpen, setIsInstructAgentModalOpen] = useState(false)
+  const eventSourceRef = useRef<EventSource | null>(null) // Store EventSource reference
 
   const handleAbortClick = async () => {
     setIsAborting(true)
+
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      console.log('EventSource closed manually on abort.')
+    }
+
     try {
       const response = await fetch(`http://localhost:8000/simulations/${simulation?.id}/abort`, {
         method: 'POST',
@@ -63,7 +70,8 @@ const SimulationDetails = ({
     setIsInstructAgentModalOpen(false)
   }
 
-  const handleInstructAgentModalSubmit = async (agentId, message) => {
+  const handleInstructAgentModalSubmit = async (agentId: string, message: string) => {
+    setIsInstructing(true)
     try {
       const response = await fetch(
         `http://localhost:8000/simulations/${simulation?.id}/agents/${agentId}/instruction`,
@@ -82,24 +90,19 @@ const SimulationDetails = ({
       }
     } catch (error) {
       console.error(error)
+    } finally {
+      setIsInstructing(false)
+      setIsInstructAgentModalOpen(false)
     }
-  }
-
-  const handleBackClick = () => {
-    router.push(`/projects/${projectId}/simulations`)
   }
 
   const handleBackToProject = () => {
     router.push(`/projects/${projectId}`)
   }
 
-  const handleBackToSimulations = () => {
-    router.push(`/projects/${projectId}/simulations`)
-  }
-
   useEffect(() => {
-    if (!simulation || simulation?.status === 'in progress') return
-    const fetchData = async () => {
+    if (!simulation || simulation?.status != 'in progress') return
+    const fetchTraces = async () => {
       try {
         const response = await fetch(`http://localhost:8000/simulations/${simulation?.id}/traces`)
         if (!response.ok) {
@@ -113,8 +116,8 @@ const SimulationDetails = ({
       return
     }
 
-    fetchData()
-  }, [])
+    fetchTraces()
+  }, [simulation])
 
   useEffect(() => {
     if (!simulation || simulation.status !== 'in progress') return
@@ -124,8 +127,10 @@ const SimulationDetails = ({
     const eventSource = new EventSource(
       `http://localhost:8000/simulations/${simulation.id}/traces?streaming=true`
     )
+    eventSourceRef.current = eventSource
 
     eventSource.onmessage = (event) => {
+      if (!simulation) return
       try {
         const data = JSON.parse(event.data)
         const { traces, progress, status } = data
@@ -137,7 +142,7 @@ const SimulationDetails = ({
           return prevSimulation
         })
 
-        setTraces((prevTraces) => [...prevTraces, ...traces])
+        setTraces(traces)
       } catch (error) {
         console.error('Error parsing traces', error)
       }
@@ -155,8 +160,9 @@ const SimulationDetails = ({
 
     return () => {
       eventSource.close()
+      console.log('EventSource closed during cleanup.')
     }
-  }, [simulation])
+  }, [simulation?.id])
 
   useEffect(() => {
     if (traceContainerRef.current) {
