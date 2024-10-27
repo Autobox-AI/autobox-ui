@@ -1,5 +1,6 @@
 'use client'
 import { MoodSlider } from '@/components/MoodSlider'
+import ToolsTable from '@/components/ToolsTable'
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -30,6 +31,7 @@ import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -64,7 +66,22 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
   const [moodValues, setMoodValues] = useState(moodSpectrums.map((mood) => mood.defaultValue))
   const [newMoodLeft, setNewMoodLeft] = useState('')
   const [newMoodRight, setNewMoodRight] = useState('')
-  const [isDialogOpen, setIsDialogOpen] = useState(false) // Dialog open state
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isGenerativeMetricsEnabled, setIsGenerativeMetricsEnabled] = useState(true)
+  const [isGenerativeAlertsEnabled, setIsGenerativeAlertsEnabled] = useState(true)
+  const [isHumanInTheLoopEnabled, setIsHumanInTheLoopEnabled] = useState(true)
+
+  const toggleHumanInTheLoop = () => {
+    setIsHumanInTheLoopEnabled(!isHumanInTheLoopEnabled)
+  }
+
+  const toggleGenerativeMetrics = () => {
+    setIsGenerativeMetricsEnabled(!isGenerativeMetricsEnabled)
+  }
+
+  const toggleGenerativeAlerts = () => {
+    setIsGenerativeAlertsEnabled(!isGenerativeAlertsEnabled)
+  }
 
   const handleMoodChange = (index: number, value: number) => {
     const newMoodValues = [...moodValues]
@@ -87,7 +104,18 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     router.push(`/projects/${params.pid}`)
   }
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    simulationName: string
+    maxSteps: number
+    timeout: number
+    task: string
+    orchestratorName: string
+    instruction: string
+    agents: { name: string; role: string; backstory: string; tools: string[] }[]
+    simulationType: string
+    scheduleDate: Date | null
+    mood: number[]
+  }>({
     simulationName: '',
     maxSteps: 150,
     timeout: 600,
@@ -104,14 +132,31 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleAgentChange = (index: number, field: 'name' | 'role', value: string) => {
+  const handleToolChange = (agentIndex: number, tool: string, selected: boolean) => {
+    const agents = [...formData.agents]
+    if (selected) {
+      agents[agentIndex].tools = [...agents[agentIndex].tools, tool]
+    } else {
+      agents[agentIndex].tools = agents[agentIndex].tools.filter((t) => t !== tool)
+    }
+    setFormData({ ...formData, agents })
+  }
+
+  const handleAgentChange = (
+    index: number,
+    field: 'name' | 'role' | 'backstory',
+    value: string
+  ) => {
     const agents = [...formData.agents]
     agents[index][field] = value
     setFormData({ ...formData, agents })
   }
 
   const addAgent = () =>
-    setFormData({ ...formData, agents: [...formData.agents, { name: '', role: '' }] })
+    setFormData({
+      ...formData,
+      agents: [...formData.agents, { name: '', role: '', backstory: '', tools: [] }],
+    })
 
   const removeAgent = (index: number) =>
     setFormData({ ...formData, agents: formData.agents.filter((_, i) => i !== index) })
@@ -193,7 +238,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
         </div>
 
         {/* General Settings */}
-        <h2 className="text-xl font-semibold mb-4">General Settings</h2>
+        <h2 className="text-2xl font-semibold mb-4">General Settings</h2>
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
@@ -253,7 +298,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
         <Separator className="my-8" />
 
         {/* Simulation Section */}
-        <h2 className="text-xl font-semibold mb-4">Simulation</h2>
+        <h2 className="text-2xl font-semibold mb-4">Simulation</h2>
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
@@ -269,8 +314,9 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
           />
         </div>
         <div className="mb-4">
-          <Label>Simulation Type</Label>
+          <Label>Type</Label>
           <RadioGroup
+            className="mt-2"
             defaultValue={formData.simulationType}
             onValueChange={(type) => setFormData({ ...formData, simulationType: type })}
           >
@@ -284,24 +330,62 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
             </div>
           </RadioGroup>
         </div>
+        <div className="flex items-center space-x-4 mb-4">
+          <Switch
+            id="hitl"
+            checked={isHumanInTheLoopEnabled}
+            onCheckedChange={toggleHumanInTheLoop}
+          />
+          <Label htmlFor="hitl">Enable Human-in-the-loop </Label>
+        </div>
 
         <Separator className="my-8" />
 
         {/* Observability */}
-        <h2 className="text-xl font-semibold mb-4">Observability</h2>
-        <div className="mb-4">
-          <Label>Predefined Metrics</Label>
-          {/* Placeholder for metrics logic */}
+        <h2 className="text-2xl font-semibold mb-4">Observability</h2>
+        {/* Predefined Metrics Section */}
+        <h2 className="text-xl font-semibold mb-4">Metrics</h2>
+        <div className="flex items-center space-x-4 mb-4">
+          <Switch
+            id="generative-metrics"
+            checked={isGenerativeMetricsEnabled}
+            onCheckedChange={toggleGenerativeMetrics}
+          />
+          <Label htmlFor="generative-metrics">Enable Generative Metrics</Label>
         </div>
-        <div className="mb-4">
-          <Label>Predefined Alerts</Label>
-          {/* Placeholder for alerts logic */}
+
+        {isGenerativeMetricsEnabled && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-500">
+              Generative Metrics are enabled. The system will automatically generate metrics based
+              on the simulation's settings.
+            </p>
+          </div>
+        )}
+
+        <h2 className="text-xl font-semibold mb-4">Alerts</h2>
+        <div className="flex items-center space-x-4 mb-4">
+          <Switch
+            id="generative-alerts"
+            checked={isGenerativeAlertsEnabled}
+            onCheckedChange={toggleGenerativeAlerts}
+          />
+          <Label htmlFor="generative-metrics">Enable Generative Alerts</Label>
         </div>
+
+        {isGenerativeAlertsEnabled && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-500">
+              Generative Alerts are enabled. The system will automatically generate alerts based on
+              the simulation's settings.
+            </p>
+          </div>
+        )}
 
         <Separator className="my-8" />
 
         {/* Orchestrator */}
-        <h2 className="text-xl font-semibold mb-4">Orchestrator</h2>
+        <h2 className="text-2xl font-semibold mb-4">Orchestrator</h2>
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
@@ -334,7 +418,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
         <Separator className="my-8" />
 
         {/* Agents */}
-        <h2 className="text-xl font-semibold mb-4">Agents</h2>
+        <h2 className="text-2xl font-semibold mb-4">Agents</h2>
         {formData.agents.length > 0 &&
           formData.agents.map((agent, index) => (
             <div key={index} className="mb-4">
@@ -357,6 +441,18 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                 placeholder="Agent Role"
                 value={agent.role}
                 onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
+              />
+              <Textarea
+                className="w-full mt-2"
+                placeholder="Agent Backstory"
+                value={agent.backstory}
+                onChange={(e) => handleAgentChange(index, 'backstory', e.target.value)}
+              />
+              {/* Tools Table for Each Agent */}
+              <h3 className="text-lg font-semibold mt-4 mb-2">Tools for {agent.name}</h3>
+              <ToolsTable
+                selectedTools={agent.tools}
+                onToolChange={(tool, selected) => handleToolChange(index, tool, selected)}
               />
               {/* <div className="flex items-center space-x-4 mt-4">
               <span>Sad</span>
