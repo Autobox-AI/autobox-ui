@@ -9,9 +9,10 @@ export const SIMULATION_STATUSES = {
     COMPLETED: "completed",
     FAILED: "failed",
     ABORTED: "aborted",
+    TIMEOUT: "timeout",
   } as const
 
-export const SimulationStatus = z.enum([SIMULATION_STATUSES.IN_PROGRESS, SIMULATION_STATUSES.COMPLETED, SIMULATION_STATUSES.FAILED, SIMULATION_STATUSES.ABORTED]);
+export const SimulationStatus = z.enum([SIMULATION_STATUSES.IN_PROGRESS, SIMULATION_STATUSES.COMPLETED, SIMULATION_STATUSES.FAILED, SIMULATION_STATUSES.ABORTED, SIMULATION_STATUSES.TIMEOUT]);
 
 export const AgentSchema = z.object({
     id: z.number(),

@@ -9,7 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@radix-ui/react-dropdown-menu'
-import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
+import {
+  CaretSortIcon,
+  CheckIcon,
+  CubeIcon,
+  ExclamationTriangleIcon,
+  GearIcon,
+  PlayIcon,
+  StopIcon,
+  TimerIcon,
+} from '@radix-ui/react-icons'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ConfirmAbortModal from './ConfirmAbortModal'
@@ -99,6 +108,11 @@ const SimulationDetails = ({
 
   const eventSourceRef = useRef<EventSource | null>(null)
 
+  const resetInstructModalState = () => {
+    setMessage('') // Clear the message
+    setSelectedAgent(null) // Reset selected agent
+  }
+
   const handleAbortClick = () => {
     setIsAbortModalOpen(true)
   }
@@ -158,6 +172,7 @@ const SimulationDetails = ({
       console.error(error)
     } finally {
       setLoadingState({ ...loadingState, isInstructing: false })
+      resetInstructModalState()
     }
   }
 
@@ -340,7 +355,9 @@ const SimulationDetails = ({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink onClick={handleBackToProject}>{projectName}</BreadcrumbLink>
+            <BreadcrumbLink onClick={handleBackToProject} className="cursor-pointer">
+              {projectName}
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -409,9 +426,21 @@ const SimulationDetails = ({
           {loadingState.isInstructing ? 'Sending Instruction...' : 'Instruct'}
         </Button> */}
 
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <Dialog
+          open={openDialog}
+          onOpenChange={(isOpen) => {
+            setOpenDialog(isOpen)
+            if (!isOpen) {
+              resetInstructModalState()
+            }
+          }}
+        >
           <DialogTrigger asChild>
-            <Button variant="outline" onClick={() => setOpenDialog(true)}>
+            <Button
+              variant="outline"
+              disabled={loadingState.isAborting || localSimulation?.status !== 'in progress'}
+              onClick={() => setOpenDialog(true)}
+            >
               Instruct
             </Button>
           </DialogTrigger>
@@ -512,27 +541,32 @@ const SimulationDetails = ({
       {localSimulation && (
         <div className="mb-4">
           <p>
+            <PlayIcon className="inline-block mr-2" />
             <strong>Started at:</strong> {formatDateTime(localSimulation.started_at)}
           </p>
           {simulation.finished_at && (
             <p>
+              <StopIcon className="inline-block mr-2" />
               <strong>Finished at:</strong> {formatDateTime(simulation.finished_at)}
             </p>
           )}
           {simulation.aborted_at && (
             <p>
+              <ExclamationTriangleIcon className="inline-block mr-2" />
               <strong>Aborted at:</strong> {formatDateTime(simulation.aborted_at)}
             </p>
           )}
           {/* Show real-time elapsed time while in progress */}
           {localSimulation.status === 'in progress' ? (
             <p>
+              <TimerIcon className="inline-block mr-2" />
               <strong>Elapsed time:</strong> {elapsedTime} seconds...
             </p>
           ) : (
             // Show static elapsed time if simulation has finished or been aborted
             (localSimulation.finished_at || localSimulation.aborted_at) && (
               <p>
+                <TimerIcon className="inline-block mr-2" />
                 <strong>Elapsed time:</strong>
                 {` ${Math.round(
                   ((localSimulation.finished_at
@@ -546,6 +580,7 @@ const SimulationDetails = ({
           )}
           <p className="flex items-center">
             <span>
+              <CubeIcon className="inline-block mr-2" />
               <strong>Status:</strong>
             </span>
             {localSimulation.status === 'in progress' && (
@@ -560,6 +595,7 @@ const SimulationDetails = ({
                 ❌ Failed
               </span>
             )}
+            {simulation.status === 'timeout' && <span style={{ color: 'gray' }}> ⏰ Timeout</span>}
             {localSimulation.status === 'aborted' && (
               <span className="ml-2" style={{ color: 'orange' }}>
                 ⚠️ Aborted
@@ -568,6 +604,7 @@ const SimulationDetails = ({
           </p>
           {/* Show progress bar if progress is less than 100 */}
           <p>
+            <GearIcon className="inline-block mr-2" />
             <strong>Progress:</strong> {localSimulation.progress}%
           </p>
           {(localSimulation.progress < 100 || localSimulation.status === 'aborted') && (
@@ -586,7 +623,7 @@ const SimulationDetails = ({
       {/* Collapsible traces container */}
       <div
         onClick={() => setIsTracesExpanded(!isTracesExpanded)} // Toggle expand/collapse
-        className="bg-gray-800 text-foreground px-4 py-2 rounded-lg cursor-pointer mb-4 flex justify-between items-center"
+        className="bg-gray-800 text-foreground px-4 py-2 rounded-lg cursor-pointer flex justify-between items-center"
       >
         <span className="font-bold">Traces</span>
         <span>{isTracesExpanded ? '▲' : '▼'}</span>
@@ -596,8 +633,8 @@ const SimulationDetails = ({
       {isTracesExpanded && (
         <div
           ref={traceContainerRef}
-          className="bg-slate-900 p-4 rounded-lg text-green-400 font-mono overflow-y-auto
-                   h-64 sm:h-80 md:h-96 lg:h-[32rem] xl:h-[40rem]"
+          className="bg-gray-900 p-4 mt-1 rounded-lg text-green-400 font-mono overflow-y-auto
+                   h-64 sm:h-80 md:h-96 lg:h-[32rem] xl:h-[40rem] border border-gray-700 shadow-lg"
         >
           {loadingState.isLoadingTraces && <p>Loading traces...</p>}
           {traces.length === 0 && !loadingState.isLoadingTraces ? (
@@ -614,14 +651,14 @@ const SimulationDetails = ({
 
       <div
         onClick={() => setIsDashboardExpanded(!isDashboardExpanded)}
-        className="bg-gray-800 text-foreground px-4 py-2 rounded-lg cursor-pointer mb-4 flex justify-between items-center"
+        className="bg-gray-800 text-foreground px-4 py-2 rounded-lg cursor-pointer flex justify-between items-center mt-3"
       >
         <span className="font-bold">Metrics</span>
         <span>{isDashboardExpanded ? '▲' : '▼'}</span>
       </div>
       {/* Embedding the URL */}
       {isDashboardExpanded && simulation.internal_dashboard_url && (
-        <div className="mt-6">
+        <div className="mt-1">
           <iframe
             src={simulation.internal_dashboard_url}
             width="100%"

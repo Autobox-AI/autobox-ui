@@ -312,7 +312,9 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink onClick={handleBackToProject}>{projectName}</BreadcrumbLink>
+            <BreadcrumbLink onClick={handleBackToProject} className="cursor-pointer">
+              {projectName}
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -647,7 +649,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
             {/* Display Metrics Confirmation */}
             <div className="space-y-4">
               {/* Additional simulation details */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-black rounded-lg text-white">
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg text-white">
                 <div className="col-span-2">
                   <h3 className="font-semibold text-lg">Simulation Details</h3>
                   <Separator className="my-2 border-gray-600" />

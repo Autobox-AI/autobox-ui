@@ -1,4 +1,5 @@
 import { Inter } from 'next/font/google'
+import Head from 'next/head'
 import '../styles/globals.css'
 
 import Sidebar from '@/components/Sidebar'
@@ -23,6 +24,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">
+      <Head>
+        <title>Autobox</title>
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
       <body
         className={cn(
           'min-h-screen bg-background text-foreground font-sans antialiased',

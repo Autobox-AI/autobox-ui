@@ -4,6 +4,13 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Project, Simulation } from '@/schemas'
 import { ProjectSimulation } from '@/schemas/project'
 import { formatDateTime } from '@/utils'
+import {
+  CubeIcon,
+  ExclamationTriangleIcon,
+  PlayIcon,
+  StopIcon,
+  TimerIcon,
+} from '@radix-ui/react-icons'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import NewSimulationModal from './NewSimulationModal'
@@ -118,11 +125,11 @@ const Simulations = ({ project }: { project: Project }) => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 md:grid-cols-4 lg:grid-cols-5">
         {localSimulations?.map((simulation) => (
           <Card
             key={simulation.id}
-            className="bg-transparent p-4 bg-gray-950 rounded cursor-pointer border border-gray-600 text-card-foreground shadow-lg"
+            className="bg-transparent p-4 bg-gray-950 rounded cursor-pointer border border-gray-600 text-card-foreground shadow-lg flex flex-col justify-between"
             onClick={() =>
               router.push(
                 `/projects/${project.id}/simulations/${simulation.id}?projectName=${project.name}`
@@ -132,16 +139,19 @@ const Simulations = ({ project }: { project: Project }) => {
             <CardHeader>
               <CardTitle className="text-xl text-white">{simulation.name}</CardTitle>
               <CardDescription className="text-m text-white leading-loose">
+                <PlayIcon className="inline-block mr-2" />
                 <strong>Started at:</strong> {formatDateTime(simulation.started_at)}
                 {simulation.finished_at && (
                   <>
                     <br />
+                    <StopIcon className="inline-block mr-2" />
                     <strong>Finished at:</strong> {formatDateTime(simulation.finished_at)}
                   </>
                 )}
                 {simulation.aborted_at && (
                   <>
                     <br />
+                    <ExclamationTriangleIcon className="inline-block mr-2" />
                     <strong>Aborted at:</strong> {formatDateTime(simulation.aborted_at)}
                   </>
                 )}
@@ -149,6 +159,7 @@ const Simulations = ({ project }: { project: Project }) => {
                 {simulation.finished_at || simulation.aborted_at ? (
                   <>
                     <br />
+                    <TimerIcon className="inline-block mr-2" />
                     <strong>Elapsed time:</strong>
                     <span>
                       {` ${Math.round(
@@ -164,37 +175,55 @@ const Simulations = ({ project }: { project: Project }) => {
                   // Show elapsed time in real-time while in progress
                   <>
                     <br />
+                    <TimerIcon className="inline-block mr-2" />
                     <strong>Elapsed time:</strong>
                     <span> {elapsedTime[simulation.id] || 0} seconds...</span>
                   </>
                 )}
                 {/* Status on a new line */}
                 <br />
-                <strong>Status:</strong>
-                {simulation.status === 'in progress' && <span> 🔄</span>}
-                {simulation.status === 'completed' && <span> ✅</span>}
-                {simulation.status === 'failed' && <span style={{ color: 'red' }}> ❌ Failed</span>}
-                {simulation.status === 'aborted' && (
-                  <span style={{ color: 'orange' }}> ⚠️ Aborted</span>
-                )}
+                <span>
+                  <CubeIcon className="inline-block mr-2" />
+                  <strong>Status:</strong>
+                  {simulation.status === 'in progress' && (
+                    <span className="ml-2 inline-flex items-center">
+                      <span className="loader inline-block mr-2 h-4 w-4"></span>
+                      <span>running...</span>
+                    </span>
+                  )}
+                  {simulation.status === 'completed' && <span> ✅</span>}
+                  {simulation.status === 'failed' && (
+                    <span style={{ color: 'red' }}> ❌ Failed</span>
+                  )}
+                  {simulation.status === 'timeout' && (
+                    <span style={{ color: 'gray' }}> ⏰ Timeout</span>
+                  )}
+                  {simulation.status === 'aborted' && (
+                    <span style={{ color: 'orange' }}> ⚠️ Aborted</span>
+                  )}
+                </span>
               </CardDescription>
             </CardHeader>
 
             {/* Show progress if the simulation is still running */}
-            {(simulation.progress < 100 || simulation.status === 'aborted') && (
-              <>
-                <p className="mt-4">Progress: {simulation.progress}%</p>
-                {/* Progress Bar */}
-                <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
-                  <div
-                    className={`h-2.5 rounded-full ${
-                      simulation.status === 'aborted' ? 'bg-orange-500' : 'bg-blue-500'
-                    }`}
-                    style={{ width: `${simulation.progress}%` }}
-                  ></div>
-                </div>
-              </>
-            )}
+            <>
+              <p className="mt-4">Progress: {simulation.progress}%</p>
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+                <div
+                  className={`h-2.5 rounded-full ${
+                    simulation.status === 'failed'
+                      ? 'bg-red-500'
+                      : simulation.status === 'timeout'
+                        ? 'bg-gray-500'
+                        : simulation.status === 'aborted'
+                          ? 'bg-gray-500'
+                          : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${simulation.progress}%` }}
+                ></div>
+              </div>
+            </>
           </Card>
         ))}
       </div>
