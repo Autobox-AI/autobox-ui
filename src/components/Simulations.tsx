@@ -87,7 +87,7 @@ const Simulations = ({ project }: { project: Project }) => {
         {localSimulations?.map((simulation) => (
           <Card
             key={simulation.id}
-            className="bg-transparent p-4 bg-gray-900 rounded cursor-pointer border border-gray-700 text-card-foreground shadow"
+            className="bg-transparent p-4 bg-gray-950 rounded cursor-pointer border border-gray-600 text-card-foreground shadow-lg"
             onClick={() =>
               router.push(
                 `/projects/${project.id}/simulations/${simulation.id}?projectName=${project.name}`

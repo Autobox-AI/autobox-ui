@@ -3,10 +3,25 @@
 import { formatDateTime } from '@/utils'
 
 import { Simulation } from '@/schemas'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@radix-ui/react-dropdown-menu'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ConfirmAbortModal from './ConfirmAbortModal'
 import InstructAgentModal from './InstructAgentModal'
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from './ui/breadcrumb'
 import { Button } from './ui/button'
 
 type SimulationDetailsProps = {
@@ -80,7 +95,7 @@ const SimulationDetails = ({
     setIsInstructAgentModalOpen(false)
   }
 
-  const handleInstructAgentModalSubmit = async (agentId: string, message: string) => {
+  const handleInstructAgentModalSubmit = async (agentId: number, message: string) => {
     setLoadingState({ ...loadingState, isInstructing: true })
     try {
       const response = await fetch(
@@ -241,29 +256,35 @@ const SimulationDetails = ({
 
   return (
     <div className="text-foreground p-6 pt-0">
-      {/* <button
-        onClick={handleBackClick}
-        className="bg-transparent border border-gray-600 text-gray-300 hover:text-white px-3 py-1 text-sm rounded mb-6 transition-colors duration-200"
-      >
-        ← Back to Simulations
-      </button> */}
-      <div className="text-sm text-gray-400 mb-6 mt-2">
-        <span
-          className="cursor-pointer hover:underline text-gray-300"
-          onClick={() => router.push('/')}
-        >
-          Home
-        </span>
-        {' -> '}
-        <span
-          className="cursor-pointer hover:underline text-gray-300"
-          onClick={handleBackToProject}
-        >
-          {projectName}
-        </span>
-        {' -> '}
-        <span className="text-gray-100">{simulation.name}</span>
-      </div>
+      <Breadcrumb className="mb-4">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1">
+                <BreadcrumbEllipsis className="h-4 w-4" />
+                <span className="sr-only">Toggle menu</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem>Documentation</DropdownMenuItem>
+                <DropdownMenuItem>Examples</DropdownMenuItem>
+                <DropdownMenuItem>Usage</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink onClick={handleBackToProject}>{projectName}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{simulation.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <h1 className="text-2xl font-bold mb-4">Simulation: {simulation.name}</h1>
 
