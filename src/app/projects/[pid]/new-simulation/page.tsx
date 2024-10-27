@@ -70,6 +70,20 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
   const [isGenerativeMetricsEnabled, setIsGenerativeMetricsEnabled] = useState(true)
   const [isGenerativeAlertsEnabled, setIsGenerativeAlertsEnabled] = useState(true)
   const [isHumanInTheLoopEnabled, setIsHumanInTheLoopEnabled] = useState(true)
+  const [expandedAgentsTools, setExpandedAgentsTools] = useState<boolean[]>([true])
+  const [expandedAgentsMood, setExpandedAgentsMood] = useState<boolean[]>([true])
+
+  const toggleExpandAgentsTools = (index: number) => {
+    const newExpandedAgentsTools = [...expandedAgentsTools]
+    newExpandedAgentsTools[index] = !newExpandedAgentsTools[index]
+    setExpandedAgentsTools(newExpandedAgentsTools)
+  }
+
+  const toggleExpandAgentsMood = (index: number) => {
+    const newExpandedAgentsMood = [...expandedAgentsMood]
+    newExpandedAgentsMood[index] = !newExpandedAgentsMood[index]
+    setExpandedAgentsMood(newExpandedAgentsMood)
+  }
 
   const toggleHumanInTheLoop = () => {
     setIsHumanInTheLoopEnabled(!isHumanInTheLoopEnabled)
@@ -161,6 +175,23 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
   const removeAgent = (index: number) =>
     setFormData({ ...formData, agents: formData.agents.filter((_, i) => i !== index) })
 
+  // const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0]
+  //   if (!file) return
+  //   setSelectedFile(file)
+
+  //   const reader = new FileReader()
+  //   reader.onload = (event) => {
+  //     try {
+  //       const jsonData = JSON.parse(event.target?.result as string)
+  //       setFormData(jsonData)
+  //     } catch (error) {
+  //       console.error('Error parsing JSON:', error)
+  //       alert('Invalid file format')
+  //     }
+  //   }
+  //   reader.readAsText(file)
+  // }
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -170,7 +201,31 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     reader.onload = (event) => {
       try {
         const jsonData = JSON.parse(event.target?.result as string)
-        setFormData(jsonData)
+
+        // Update the form data based on the JSON data
+        setFormData({
+          simulationName: jsonData.name || '',
+          maxSteps: jsonData.max_steps || 150,
+          timeout: jsonData.timeout || 600,
+          task: jsonData.task || '',
+          orchestratorName: jsonData.orchestrator?.name || '',
+          instruction: jsonData.orchestrator?.instruction || '',
+          agents:
+            jsonData.agents?.map((agent: any) => ({
+              name: agent.name || '',
+              role: agent.role || '',
+              backstory: agent.backstory || '',
+              tools: agent.tools || [], // Assuming 'tools' is part of the agent data in the JSON
+            })) || [],
+          simulationType: jsonData.type || 'default',
+          scheduleDate: jsonData.schedule ? new Date(jsonData.schedule) : null,
+          mood: [50], // Adjust mood handling as needed, since it's not in the JSON
+        })
+
+        // Set additional state variables
+        setIsHumanInTheLoopEnabled(jsonData.is_hitl_enabled || false)
+        setIsGenerativeMetricsEnabled(!!jsonData.metrics) // Assuming metrics presence enables generative metrics
+        // Adjust more states based on other JSON fields if necessary
       } catch (error) {
         console.error('Error parsing JSON:', error)
         alert('Invalid file format')
@@ -181,10 +236,39 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
 
   const handleSubmit = async () => {
     try {
+      const filteredData = {
+        name: formData.simulationName, // "name" field
+        max_steps: formData.maxSteps, // "max_steps" field
+        timeout: formData.timeout, // "timeout" field
+        task: formData.task, // "task" field
+        orchestrator: {
+          name: formData.orchestratorName, // "orchestrator.name" field
+          instruction: formData.instruction, // "orchestrator.instruction" field
+          mailbox: { max_size: 400 }, // Hardcoded mailbox value
+          llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model value
+        },
+        agents: formData.agents.map((agent) => ({
+          name: agent.name, // "agent.name" field
+          role: agent.role, // "agent.role" field
+          backstory: agent.backstory, // "agent.backstory" field
+          llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model value
+          mailbox: { max_size: 100 }, // Hardcoded mailbox value for each agent
+        })),
+        metrics_path: '/Users/martin.dagostino/workspace/margostino/autobox/metrics',
+        logging: {
+          log_path: '/Users/martin.dagostino/workspace/margostino/autobox/logs',
+          verbose: true, // Hardcoded verbose logging option
+        },
+        evaluator: {
+          name: 'EVALUATOR', // Hardcoded evaluator name
+          mailbox: { max_size: 400 }, // Hardcoded mailbox value for evaluator
+          llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model for evaluator
+        },
+      }
       const response = await fetch(`http://localhost:8000/simulations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(filteredData),
       })
       if (!response.ok) throw new Error('Failed to create simulation')
 
@@ -439,6 +523,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
               <Textarea
                 className="w-full mt-2"
                 placeholder="Agent Role"
+                rows={1}
                 value={agent.role}
                 onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
               />
@@ -446,14 +531,24 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                 className="w-full mt-2"
                 placeholder="Agent Backstory"
                 value={agent.backstory}
+                rows={4}
                 onChange={(e) => handleAgentChange(index, 'backstory', e.target.value)}
               />
               {/* Tools Table for Each Agent */}
-              <h3 className="text-lg font-semibold mt-4 mb-2">Tools for {agent.name}</h3>
-              <ToolsTable
-                selectedTools={agent.tools}
-                onToolChange={(tool, selected) => handleToolChange(index, tool, selected)}
-              />
+              {/* Expand/Collapse on "Tools for X" click */}
+              <div
+                className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
+                onClick={() => toggleExpandAgentsTools(index)}
+              >
+                Tools for {agent.name} {expandedAgentsTools[index] ? '▲' : '▼'}
+              </div>
+
+              {/* Conditionally show ToolsTable */}
+              {expandedAgentsTools[index] && (
+                <div className="mt-2">
+                  <ToolsTable />
+                </div>
+              )}
               {/* <div className="flex items-center space-x-4 mt-4">
               <span>Sad</span>
               <Slider
@@ -465,52 +560,59 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
               />
               <span>Happy</span>
             </div> */}
-              <div className="container mx-auto p-8">
-                <h2 className="text-xl font-semibold mb-4">Agent Moods</h2>
-                {moodSpectrums.map((mood, index) => (
-                  <MoodSlider
-                    key={index}
-                    labelLeft={mood.labelLeft}
-                    labelRight={mood.labelRight}
-                    defaultValue={moodValues[index]}
-                    onChange={(value: number) => handleMoodChange(index, value)}
-                  />
-                ))}
-                {/* Dialog for adding new mood */}
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setIsDialogOpen(true)}
-                      className="mt-4"
-                    >
-                      + Add New Mood
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Mood Spectrum</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex items-center space-x-4 mt-4">
-                      <Input
-                        placeholder="Left Mood Label"
-                        value={newMoodLeft}
-                        onChange={(e) => setNewMoodLeft(e.target.value)}
-                      />
-                      <Input
-                        placeholder="Right Mood Label"
-                        value={newMoodRight}
-                        onChange={(e) => setNewMoodRight(e.target.value)}
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleAddMood} variant="default">
-                        Add Mood
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+              <div
+                className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
+                onClick={() => toggleExpandAgentsMood(index)}
+              >
+                Mood for {agent.name} {expandedAgentsMood[index] ? '▲' : '▼'}
               </div>
+              {expandedAgentsMood[index] && (
+                <div className="container mx-auto p-8">
+                  {moodSpectrums.map((mood, index) => (
+                    <MoodSlider
+                      key={index}
+                      labelLeft={mood.labelLeft}
+                      labelRight={mood.labelRight}
+                      defaultValue={moodValues[index]}
+                      onChange={(value: number) => handleMoodChange(index, value)}
+                    />
+                  ))}
+                  {/* Dialog for adding new mood */}
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        onClick={() => setIsDialogOpen(true)}
+                        className="mt-5 ml-6"
+                      >
+                        + Add New Mood
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Mood Spectrum</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex items-center space-x-4 mt-4">
+                        <Input
+                          placeholder="Left Mood Label"
+                          value={newMoodLeft}
+                          onChange={(e) => setNewMoodLeft(e.target.value)}
+                        />
+                        <Input
+                          placeholder="Right Mood Label"
+                          value={newMoodRight}
+                          onChange={(e) => setNewMoodRight(e.target.value)}
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleAddMood} variant="default">
+                          Add Mood
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
             </div>
           ))}
         <Button onClick={addAgent} variant="secondary" className="mt-2">

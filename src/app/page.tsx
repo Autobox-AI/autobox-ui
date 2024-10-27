@@ -43,7 +43,8 @@ export default function Home() {
           <input
             type="text"
             placeholder="Type your simulation idea..."
-            className="w-full h-14 p-4 pr-12 rounded-full border border-gray-400 bg-black text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            className="w-full h-14 p-4 pr-12 rounded-full border border-gray-400 bg-black text-white caret-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+            autoFocus // Ensures the input is focused when the page loads, so the blinking cursor shows immediately
           />
           <button className="absolute top-1/2 right-3 transform -translate-y-1/2 p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-colors duration-200">
             <ArrowRight className="w-4 h-4" />

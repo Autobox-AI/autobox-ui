@@ -83,6 +83,8 @@ const SimulationDetails = ({
     isInstructing: false,
     isAborting: false,
   })
+
+  const [elapsedTime, setElapsedTime] = useState<number>(0)
   const [localSimulation, setLocalSimulation] = useState(simulation)
   const [isTracesExpanded, setIsTracesExpanded] = useState(true)
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(true)
@@ -162,6 +164,24 @@ const SimulationDetails = ({
   const handleBackToProject = () => {
     router.push(`/projects/${projectId}`)
   }
+
+  // Hook to calculate and update the elapsed time for in-progress simulations
+  useEffect(() => {
+    if (localSimulation?.status !== 'in progress') return
+
+    // Calculate the initial elapsed time
+    const startedAt = new Date(localSimulation.started_at).getTime()
+    const now = Date.now()
+    setElapsedTime(Math.floor((now - startedAt) / 1000))
+
+    // Start an interval to update the elapsed time every second
+    const interval = setInterval(() => {
+      setElapsedTime((prevElapsedTime) => prevElapsedTime + 1)
+    }, 1000)
+
+    // Clean up the interval when the component unmounts or the simulation ends
+    return () => clearInterval(interval)
+  }, [localSimulation?.started_at, localSimulation?.status])
 
   // hook for streaming simulation updates
   useEffect(() => {
@@ -492,32 +512,37 @@ const SimulationDetails = ({
       {localSimulation && (
         <div className="mb-4">
           <p>
-            <strong>Started:</strong> {formatDateTime(localSimulation.started_at)}
+            <strong>Started at:</strong> {formatDateTime(localSimulation.started_at)}
           </p>
           {simulation.finished_at && (
             <p>
-              <strong>Finished:</strong> {formatDateTime(simulation.finished_at)}
+              <strong>Finished at:</strong> {formatDateTime(simulation.finished_at)}
             </p>
           )}
           {simulation.aborted_at && (
             <p>
-              <strong>Aborted:</strong> {formatDateTime(simulation.aborted_at)}
+              <strong>Aborted at:</strong> {formatDateTime(simulation.aborted_at)}
             </p>
           )}
-          {/* Only show Elapsed time if either finished_at or aborted_at is present */}
-          {(simulation.finished_at || simulation.aborted_at) && (
+          {/* Show real-time elapsed time while in progress */}
+          {localSimulation.status === 'in progress' ? (
             <p>
-              <strong>Elapsed time:</strong>
-              <span>
+              <strong>Elapsed time:</strong> {elapsedTime} seconds...
+            </p>
+          ) : (
+            // Show static elapsed time if simulation has finished or been aborted
+            (localSimulation.finished_at || localSimulation.aborted_at) && (
+              <p>
+                <strong>Elapsed time:</strong>
                 {` ${Math.round(
-                  ((simulation.finished_at
-                    ? new Date(simulation.finished_at).getTime()
-                    : new Date(simulation.aborted_at!).getTime()) -
-                    new Date(simulation.started_at).getTime()) /
+                  ((localSimulation.finished_at
+                    ? new Date(localSimulation.finished_at).getTime()
+                    : new Date(localSimulation.aborted_at!).getTime()) -
+                    new Date(localSimulation.started_at).getTime()) /
                     1000
                 )} seconds`}
-              </span>
-            </p>
+              </p>
+            )
           )}
           <p className="flex items-center">
             <span>

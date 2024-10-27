@@ -11,6 +11,7 @@ import NewSimulationModal from './NewSimulationModal'
 const Simulations = ({ project }: { project: Project }) => {
   const router = useRouter()
   const [localSimulations, setLocalSimulations] = useState<ProjectSimulation[]>(project.simulations)
+  const [elapsedTime, setElapsedTime] = useState<{ [key: string]: number }>({})
   const [showNewSimulationModal, setShowNewSimulationModal] = useState(false)
 
   useEffect(() => {
@@ -51,6 +52,38 @@ const Simulations = ({ project }: { project: Project }) => {
       eventSources.forEach((es) => es.close())
     }
   }, [localSimulations, setLocalSimulations])
+
+  useEffect(() => {
+    const timers: { [key: string]: NodeJS.Timeout } = {}
+
+    localSimulations?.forEach((simulation) => {
+      if (simulation.status === 'in progress') {
+        // Calculate initial elapsed time from the start time
+        const startedAt = new Date(simulation.started_at).getTime()
+        const now = new Date().getTime()
+        setElapsedTime((prevElapsedTime) => ({
+          ...prevElapsedTime,
+          [simulation.id]: Math.floor((now - startedAt) / 1000),
+        }))
+
+        // Set up interval to update elapsed time every second
+        timers[simulation.id] = setInterval(() => {
+          setElapsedTime((prevElapsedTime) => ({
+            ...prevElapsedTime,
+            [simulation.id]: prevElapsedTime[simulation.id] + 1,
+          }))
+        }, 1000)
+      } else if (timers[simulation.id]) {
+        // Clear interval if the simulation is no longer in progress
+        clearInterval(timers[simulation.id])
+      }
+    })
+
+    // Cleanup intervals on component unmount
+    return () => {
+      Object.keys(timers).forEach((id) => clearInterval(timers[id]))
+    }
+  }, [localSimulations])
 
   const addSimulation = (newSimulation: Simulation) => {
     const newProjectSimulation: ProjectSimulation = {
@@ -99,21 +132,21 @@ const Simulations = ({ project }: { project: Project }) => {
             <CardHeader>
               <CardTitle className="text-xl text-white">{simulation.name}</CardTitle>
               <CardDescription className="text-m text-white leading-loose">
-                <strong>Started:</strong> {formatDateTime(simulation.started_at)}
+                <strong>Started at:</strong> {formatDateTime(simulation.started_at)}
                 {simulation.finished_at && (
                   <>
                     <br />
-                    <strong>Finished:</strong> {formatDateTime(simulation.finished_at)}
+                    <strong>Finished at:</strong> {formatDateTime(simulation.finished_at)}
                   </>
                 )}
                 {simulation.aborted_at && (
                   <>
                     <br />
-                    <strong>Aborted:</strong> {formatDateTime(simulation.aborted_at)}
+                    <strong>Aborted at:</strong> {formatDateTime(simulation.aborted_at)}
                   </>
                 )}
-                {/* Only show Elapsed time if either finished_at or aborted_at is present */}
-                {(simulation.finished_at || simulation.aborted_at) && (
+                {/* Only show Elapsed time if the simulation is finished or aborted */}
+                {simulation.finished_at || simulation.aborted_at ? (
                   <>
                     <br />
                     <strong>Elapsed time:</strong>
@@ -126,6 +159,13 @@ const Simulations = ({ project }: { project: Project }) => {
                           1000
                       )} seconds`}
                     </span>
+                  </>
+                ) : (
+                  // Show elapsed time in real-time while in progress
+                  <>
+                    <br />
+                    <strong>Elapsed time:</strong>
+                    <span> {elapsedTime[simulation.id] || 0} seconds...</span>
                   </>
                 )}
                 {/* Status on a new line */}
