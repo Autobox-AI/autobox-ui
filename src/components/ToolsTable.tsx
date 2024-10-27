@@ -40,35 +40,7 @@ import {
 } from '@tanstack/react-table'
 import { useState } from 'react'
 
-const tools = [
-  'Internet Browser',
-  'Google Maps',
-  'Vacation Database',
-  'Agenda',
-  'Google Drive',
-  'Weather',
-  'Wallet',
-  'Email Client',
-  'Translator',
-  'News Aggregator',
-  'Stock Market Data',
-  'Social Media Dashboard',
-  'Maps and Navigation',
-  'Task Manager',
-  'Recipe Finder',
-  'Music Streaming',
-  'Cloud Storage',
-  'Virtual Assistant',
-  'Calendar',
-  'Fitness Tracker',
-  'Shopping Assistant',
-  'Weather Alerts',
-  'AI-powered Search Engine',
-  'File Converter',
-  'Project Management',
-  'Database Query Tool',
-  'Knowledge Base',
-]
+const statusOrder = { green: 1, yellow: 2, red: 3 }
 
 const toolStatuses: { [key: string]: 'red' | 'yellow' | 'green' } = {
   'Internet Browser': 'green',
@@ -163,6 +135,171 @@ const toolObservations: { [key: string]: string } = {
   'Knowledge Base': 'Ready to use: All documentation is up to date and accessible.',
 }
 
+const tools = [
+  {
+    tool: 'Internet Browser',
+    description: toolDescriptions['Internet Browser'],
+    status: toolStatuses['Internet Browser'],
+    observation: toolObservations['Internet Browser'],
+  },
+  {
+    tool: 'Google Maps',
+    description: toolDescriptions['Google Maps'],
+    status: toolStatuses['Google Maps'],
+    observation: toolObservations['Google Maps'],
+  },
+  {
+    tool: 'Vacation Database',
+    description: toolDescriptions['Vacation Database'],
+    status: toolStatuses['Vacation Database'],
+    observation: toolObservations['Vacation Database'],
+  },
+  {
+    tool: 'Agenda',
+    description: toolDescriptions['Agenda'],
+    status: toolStatuses['Agenda'],
+    observation: toolObservations['Agenda'],
+  },
+  {
+    tool: 'Google Drive',
+    description: toolDescriptions['Google Drive'],
+    status: toolStatuses['Google Drive'],
+    observation: toolObservations['Google Drive'],
+  },
+  {
+    tool: 'Weather',
+    description: toolDescriptions['Weather'],
+    status: toolStatuses['Weather'],
+    observation: toolObservations['Weather'],
+  },
+  {
+    tool: 'Wallet',
+    description: toolDescriptions['Wallet'],
+    status: toolStatuses['Wallet'],
+    observation: toolObservations['Wallet'],
+  },
+  {
+    tool: 'Email Client',
+    description: toolDescriptions['Email Client'],
+    status: toolStatuses['Email Client'],
+    observation: toolObservations['Email Client'],
+  },
+  {
+    tool: 'Translator',
+    description: toolDescriptions['Translator'],
+    status: toolStatuses['Translator'],
+    observation: toolObservations['Translator'],
+  },
+  {
+    tool: 'News Aggregator',
+    description: toolDescriptions['News Aggregator'],
+    status: toolStatuses['News Aggregator'],
+    observation: toolObservations['News Aggregator'],
+  },
+  {
+    tool: 'Stock Market Data',
+    description: toolDescriptions['Stock Market Data'],
+    status: toolStatuses['Stock Market Data'],
+    observation: toolObservations['Stock Market Data'],
+  },
+  {
+    tool: 'Social Media Dashboard',
+    description: toolDescriptions['Social Media Dashboard'],
+    status: toolStatuses['Social Media Dashboard'],
+    observation: toolObservations['Social Media Dashboard'],
+  },
+  {
+    tool: 'Maps and Navigation',
+    description: toolDescriptions['Maps and Navigation'],
+    status: toolStatuses['Maps and Navigation'],
+    observation: toolObservations['Maps and Navigation'],
+  },
+  {
+    tool: 'Task Manager',
+    description: toolDescriptions['Task Manager'],
+    status: toolStatuses['Task Manager'],
+    observation: toolObservations['Task Manager'],
+  },
+  {
+    tool: 'Recipe Finder',
+    description: toolDescriptions['Recipe Finder'],
+    status: toolStatuses['Recipe Finder'],
+    observation: toolObservations['Recipe Finder'],
+  },
+  {
+    tool: 'Music Streaming',
+    description: toolDescriptions['Music Streaming'],
+    status: toolStatuses['Music Streaming'],
+    observation: toolObservations['Music Streaming'],
+  },
+  {
+    tool: 'Cloud Storage',
+    description: toolDescriptions['Cloud Storage'],
+    status: toolStatuses['Cloud Storage'],
+    observation: toolObservations['Cloud Storage'],
+  },
+  {
+    tool: 'Virtual Assistant',
+    description: toolDescriptions['Virtual Assistant'],
+    status: toolStatuses['Virtual Assistant'],
+    observation: toolObservations['Virtual Assistant'],
+  },
+  {
+    tool: 'Calendar',
+    description: toolDescriptions['Calendar'],
+    status: toolStatuses['Calendar'],
+    observation: toolObservations['Calendar'],
+  },
+  {
+    tool: 'Fitness Tracker',
+    description: toolDescriptions['Fitness Tracker'],
+    status: toolStatuses['Fitness Tracker'],
+    observation: toolObservations['Fitness Tracker'],
+  },
+  {
+    tool: 'Shopping Assistant',
+    description: toolDescriptions['Shopping Assistant'],
+    status: toolStatuses['Shopping Assistant'],
+    observation: toolObservations['Shopping Assistant'],
+  },
+  {
+    tool: 'Weather Alerts',
+    description: toolDescriptions['Weather Alerts'],
+    status: toolStatuses['Weather Alerts'],
+    observation: toolObservations['Weather Alerts'],
+  },
+  {
+    tool: 'AI-powered Search Engine',
+    description: toolDescriptions['AI-powered Search Engine'],
+    status: toolStatuses['AI-powered Search Engine'],
+    observation: toolObservations['AI-powered Search Engine'],
+  },
+  {
+    tool: 'File Converter',
+    description: toolDescriptions['File Converter'],
+    status: toolStatuses['File Converter'],
+    observation: toolObservations['File Converter'],
+  },
+  {
+    tool: 'Project Management',
+    description: toolDescriptions['Project Management'],
+    status: toolStatuses['Project Management'],
+    observation: toolObservations['Project Management'],
+  },
+  {
+    tool: 'Database Query Tool',
+    description: toolDescriptions['Database Query Tool'],
+    status: toolStatuses['Database Query Tool'],
+    observation: toolObservations['Database Query Tool'],
+  },
+  {
+    tool: 'Knowledge Base',
+    description: toolDescriptions['Knowledge Base'],
+    status: toolStatuses['Knowledge Base'],
+    observation: toolObservations['Knowledge Base'],
+  },
+]
+
 // Function to render the color circle based on status
 const renderStatusCircle = (status: 'red' | 'yellow' | 'green') => {
   const colorMap = {
@@ -170,29 +307,33 @@ const renderStatusCircle = (status: 'red' | 'yellow' | 'green') => {
     yellow: 'bg-yellow-500',
     green: 'bg-green-500',
   }
-
   return <span className={`inline-block w-4 h-4 rounded-full ${colorMap[status]}`} />
 }
 
 // Define table columns
-const columns: ColumnDef<string>[] = [
+const columns: ColumnDef<(typeof tools)[0]>[] = [
   {
     id: 'select',
     header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
+      <div className="px-2 w-8">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </div>
     ),
     cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
+      <div className="px-2 w-8">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      </div>
     ),
     enableSorting: false,
     enableHiding: false,
@@ -200,59 +341,87 @@ const columns: ColumnDef<string>[] = [
   {
     accessorKey: 'tool',
     header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-        Tool
-        <CaretSortIcon className="ml-2 h-4 w-4" />
-      </Button>
+      <div className="flex items-center space-x-2 px-2">
+        {' '}
+        {/* Adjusted to px-1 for less right spacing */}
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="p-0"
+        >
+          Tool
+          <CaretSortIcon className="h-4 w-4" />
+        </Button>
+      </div>
     ),
-    cell: ({ row }) => <div>{row.original}</div>,
-    enableSorting: true, // Enable sorting
+    cell: ({ row }) => <div className="text-left px-2">{row.original.tool}</div>, // Ensure text-left and reduce padding
+    enableSorting: true,
   },
   {
     accessorKey: 'description',
-    header: 'Description',
-    cell: ({ row }) => <div>{toolDescriptions[row.original as string]}</div>, // Fetch description from the object
+    header: () => <div className="text-left px-2">Description</div>, // Consistent alignment
+    cell: ({ row }) => <div className="text-left px-2">{row.original.description}</div>, // Consistent alignment
     enableSorting: false,
   },
   {
     accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => renderStatusCircle(toolStatuses[row.original as string]),
+    header: ({ column }) => (
+      <div className="flex items-center space-x-2 px-2">
+        {' '}
+        {/* Adjusted to px-1 for less right spacing */}
+        <Button
+          variant="ghost"
+          className="p-0"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Status
+          <CaretSortIcon className="h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-left px-2">{renderStatusCircle(row.original.status)}</div>
+    ), // Ensure text-left and reduce padding
+    enableSorting: true,
+    sortingFn: (rowA, rowB) =>
+      statusOrder[rowA.original.status] - statusOrder[rowB.original.status],
   },
   {
     accessorKey: 'observation',
-    header: 'Observation',
-    cell: ({ row }) => <div>{toolObservations[row.original as string]}</div>, // Fetch observation from the object
+    header: () => <div className="text-left px-2">Observation</div>, // Consistent alignment
+    cell: ({ row }) => <div className="text-left px-2">{row.original.observation}</div>, // Consistent alignment
     enableSorting: false,
   },
   {
     id: 'actions',
     enableHiding: false,
     cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <DotsHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => console.log('Update tool')}>
-            <Pencil1Icon className="mr-2 h-4 w-4" /> Update
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('Remove tool')}>
-            <TrashIcon className="mr-2 h-4 w-4" /> Remove
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('View usage')}>
-            <BarChartIcon className="mr-2 h-4 w-4" /> View Usage
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('View details')}>
-            <InfoCircledIcon className="mr-2 h-4 w-4" /> View Details
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="text-left px-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <DotsHorizontalIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => console.log('Update tool')}>
+              <Pencil1Icon className="mr-2 h-4 w-4" /> Update
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => console.log('Remove tool')}>
+              <TrashIcon className="mr-2 h-4 w-4" /> Remove
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => console.log('View usage')}>
+              <BarChartIcon className="mr-2 h-4 w-4" /> View Usage
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => console.log('View details')}>
+              <InfoCircledIcon className="mr-2 h-4 w-4" /> View Details
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     ),
   },
 ]
@@ -270,7 +439,7 @@ const ToolsTable = () => {
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(), // Apply sorted row model
+    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
