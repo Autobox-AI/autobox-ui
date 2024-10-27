@@ -1,7 +1,7 @@
 import { Inter } from 'next/font/google'
-import Sidebar from '../components/Sidebar'
 import '../styles/globals.css'
 
+import Sidebar from '@/components/Sidebar'
 import { cn } from '@/lib/utils'
 import { Organization } from '@/schemas/organization'
 
@@ -30,7 +30,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
       >
         {' '}
-        {/* Provide the context to all child components */}
         <div className="flex h-screen">
           <Sidebar organizations={organizations} />
           <div className="flex-1 p-8 bg-background">{children}</div>

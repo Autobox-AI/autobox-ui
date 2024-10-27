@@ -1,18 +1,30 @@
 'use client'
 
-import { formatDateTime } from '@/utils'
-
+import { cn } from '@/lib/utils'
 import { Simulation } from '@/schemas'
+import { formatDateTime } from '@/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@radix-ui/react-dropdown-menu'
+import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ConfirmAbortModal from './ConfirmAbortModal'
 import InstructAgentModal from './InstructAgentModal'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './ui/alert-dialog'
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -23,6 +35,25 @@ import {
   BreadcrumbSeparator,
 } from './ui/breadcrumb'
 import { Button } from './ui/button'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from './ui/command'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
+import { Textarea } from './ui/textarea'
 
 type SimulationDetailsProps = {
   simulation: {
@@ -58,12 +89,19 @@ const SimulationDetails = ({
   const traceContainerRef = useRef<HTMLDivElement>(null)
   const [isInstructAgentModalOpen, setIsInstructAgentModalOpen] = useState(false)
   const [isAbortModalOpen, setIsAbortModalOpen] = useState(false)
+  const [message, setMessage] = useState('')
+  const [openAgentSelector, setOpenAgentSelector] = useState(false)
+  const [agentId, setAgentId] = useState<string | null>(null)
+  const [selectedAgent, setSelectedAgent] = useState<number | null>(null)
 
   const eventSourceRef = useRef<EventSource | null>(null)
 
   const handleAbortClick = () => {
     setIsAbortModalOpen(true)
   }
+
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+    setMessage(e.target.value)
 
   const handleAbortConfirm = async () => {
     setIsAbortModalOpen(false)
@@ -302,7 +340,30 @@ const SimulationDetails = ({
 
       <div className="mb-8">
         {/* Abort Button */}
-        <Button
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              disabled={loadingState.isAborting || localSimulation?.status !== 'in progress'}
+              variant="outline"
+              className="mr-2"
+            >
+              Abort
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently abort this simulation.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleAbortConfirm}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {/* <Button
           onClick={handleAbortClick}
           disabled={loadingState.isAborting || localSimulation?.status !== 'in progress'}
           className={`bg-transparent border border-gray-600 text-gray-300 hover:text-white hover:bg-red-700 text-white px-3 py-1 text-sm rounded mr-2 transition-opacity duration-200 aria-labels ${
@@ -310,10 +371,10 @@ const SimulationDetails = ({
           }`}
         >
           {loadingState.isAborting ? 'Aborting...' : 'Abort'}
-        </Button>
+        </Button> */}
 
         {/* Instruct Button */}
-        <Button
+        {/* <Button
           onClick={handleInstructAgentClick}
           disabled={loadingState.isInstructing || localSimulation?.status !== 'in progress'}
           className={`bg-transparent border border-gray-600 text-gray-300 hover:bg-blue-700 text-white px-3 py-1 text-sm rounded transition-opacity duration-200 aria-labels ${
@@ -321,7 +382,102 @@ const SimulationDetails = ({
           }`}
         >
           {loadingState.isInstructing ? 'Sending Instruction...' : 'Instruct'}
-        </Button>
+        </Button> */}
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Instruct</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Instruct Agent</DialogTitle>
+              <DialogDescription>
+                Send a message to an agent participating in the simulation.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mb-4">
+              <Popover open={openAgentSelector} onOpenChange={setOpenAgentSelector}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openAgentSelector}
+                    className="w-[200px] justify-between"
+                  >
+                    {selectedAgent !== null
+                      ? localSimulation?.agents.find((agent) => agent.id === selectedAgent)?.name
+                      : 'Select agent...'}
+                    <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search agent..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>No agent found.</CommandEmpty>
+                      <CommandGroup>
+                        {localSimulation?.agents.map((agent) => (
+                          <CommandItem
+                            key={agent.id}
+                            onSelect={() => {
+                              setSelectedAgent(agent.id) // Store agent.id (number)
+                              setOpenAgentSelector(false)
+                            }}
+                          >
+                            {agent.name} {/* Display agent.name */}
+                            <CheckIcon
+                              className={cn(
+                                'ml-auto h-4 w-4',
+                                selectedAgent === agent.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="mb-4 mt-8">
+              <Textarea
+                value={message}
+                onChange={handleMessageChange}
+                className="bg-black w-full p-2 text-white rounded"
+                rows={6}
+                placeholder="Type your instruction here..."
+              />
+            </div>
+
+            {/* <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input id="name" value="Pedro Duarte" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="username" className="text-right">
+                  Username
+                </Label>
+                <Input id="username" value="@peduarte" className="col-span-3" />
+              </div>
+            </div> */}
+            <DialogFooter>
+              <Button
+                type="submit"
+                onClick={() => {
+                  if (selectedAgent !== null && message) {
+                    handleInstructAgentModalSubmit(selectedAgent, message)
+                  }
+                }}
+                disabled={selectedAgent === null || !message}
+              >
+                Send
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Simulation details */}

@@ -24,7 +24,7 @@ type InstructAgentModalProps = {
 }
 
 const InstructAgentModal = ({ isOpen, onClose, onSubmit, agents }: InstructAgentModalProps) => {
-  const [selectedAgent, setSelectedAgent] = useState<number | null>(null) // Store agent ID (number)
+  const [selectedAgent, setSelectedAgent] = useState<number | null>(null)
 
   const [message, setMessage] = useState('')
   const [openAgentSelector, setOpenAgentSelector] = React.useState(false)
