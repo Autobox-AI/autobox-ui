@@ -1,15 +1,92 @@
 'use client'
+import { MoodSlider } from '@/components/MoodSlider'
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
+import { CalendarIcon } from '@radix-ui/react-icons'
+import { format } from 'date-fns'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
+
+const initialMoodSpectrums = [
+  { labelLeft: 'Calm', labelRight: 'Anxious', defaultValue: 50 },
+  { labelLeft: 'Optimistic', labelRight: 'Pessimistic', defaultValue: 60 },
+  { labelLeft: 'Trusting', labelRight: 'Suspicious', defaultValue: 40 },
+  { labelLeft: 'Friendly', labelRight: 'Hostile', defaultValue: 70 },
+  { labelLeft: 'Energetic', labelRight: 'Tired', defaultValue: 55 },
+  { labelLeft: 'Curious', labelRight: 'Apathetic', defaultValue: 65 },
+  { labelLeft: 'Logical', labelRight: 'Emotional', defaultValue: 75 },
+  { labelLeft: 'Confident', labelRight: 'Insecure', defaultValue: 80 },
+  { labelLeft: 'Aggressive', labelRight: 'Peaceful', defaultValue: 45 },
+  { labelLeft: 'Organized', labelRight: 'Chaotic', defaultValue: 60 },
+  { labelLeft: 'Strategic', labelRight: 'Impulsive', defaultValue: 50 },
+  { labelLeft: 'Ambitious', labelRight: 'Content', defaultValue: 70 },
+  { labelLeft: 'Altruistic', labelRight: 'Selfish', defaultValue: 30 },
+]
 
 const NewSimulation = ({ params }: { params: { pid: string } }) => {
   const router = useRouter()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date>()
+  const searchParams = useSearchParams()
+  const projectName = searchParams.get('projectName') ?? 'Unknown'
+  const [moodSpectrums, setMoodSpectrums] = useState(initialMoodSpectrums)
+  const [moodValues, setMoodValues] = useState(moodSpectrums.map((mood) => mood.defaultValue))
+  const [newMoodLeft, setNewMoodLeft] = useState('')
+  const [newMoodRight, setNewMoodRight] = useState('')
+  const [isDialogOpen, setIsDialogOpen] = useState(false) // Dialog open state
+
+  const handleMoodChange = (index: number, value: number) => {
+    const newMoodValues = [...moodValues]
+    newMoodValues[index] = value
+    setMoodValues(newMoodValues)
+  }
+
+  const handleAddMood = () => {
+    if (newMoodLeft && newMoodRight) {
+      const newMood = { labelLeft: newMoodLeft, labelRight: newMoodRight, defaultValue: 50 }
+      setMoodSpectrums([...moodSpectrums, newMood])
+      setMoodValues([...moodValues, 50]) // Default value for new mood
+      setNewMoodLeft('')
+      setNewMoodRight('')
+      setIsDialogOpen(false)
+    }
+  }
+
+  const handleBackToProject = () => {
+    router.push(`/projects/${params.pid}`)
+  }
+
   const [formData, setFormData] = useState({
     simulationName: '',
     maxSteps: 150,
@@ -17,7 +94,10 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     task: '',
     orchestratorName: '',
     instruction: '',
-    agents: [{ name: '', role: '' }],
+    agents: [],
+    simulationType: 'default',
+    scheduleDate: null, // For the date picker
+    mood: [50],
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -64,6 +144,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
       if (!response.ok) throw new Error('Failed to create simulation')
 
       router.push(`/projects/${params.pid}/simulations`)
+      router.refresh()
     } catch (err) {
       console.error(err)
       alert('Failed to create simulation')
@@ -72,6 +153,36 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
 
   return (
     <TooltipProvider>
+      <Breadcrumb className="mb-4">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1">
+                <BreadcrumbEllipsis className="h-4 w-4" />
+                <span className="sr-only">Toggle menu</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem>Documentation</DropdownMenuItem>
+                <DropdownMenuItem>Examples</DropdownMenuItem>
+                <DropdownMenuItem>Usage</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink onClick={handleBackToProject}>{projectName}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>New Simulation</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <div className="container mx-auto p-8">
         <h1 className="text-3xl font-bold mb-6">Create New Simulation</h1>
 
@@ -81,23 +192,8 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
           <Input type="file" onChange={handleFileUpload} className="w-800 mt-2" />
         </div>
 
-        {/* Simulation Name */}
-        <div className="mb-4">
-          <Tooltip>
-            <TooltipTrigger>
-              <Label>Simulation Name</Label>
-            </TooltipTrigger>
-            <TooltipContent>Enter a unique name for your simulation.</TooltipContent>
-          </Tooltip>
-          <Input
-            className="w-1/2 mt-2" // Smaller width for the name
-            name="simulationName"
-            value={formData.simulationName}
-            onChange={handleInputChange}
-          />
-        </div>
-
-        {/* Max Steps */}
+        {/* General Settings */}
+        <h2 className="text-xl font-semibold mb-4">General Settings</h2>
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
@@ -107,14 +203,12 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
           </Tooltip>
           <Input
             type="number"
-            className="w-24 mt-2" // Smaller width for numbers
+            className="w-24 mt-2"
             name="maxSteps"
             value={formData.maxSteps}
             onChange={handleInputChange}
           />
         </div>
-
-        {/* Timeout */}
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
@@ -124,62 +218,127 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
           </Tooltip>
           <Input
             type="number"
-            className="w-24 mt-2" // Smaller width for numbers
+            className="w-24 mt-2"
             name="timeout"
             value={formData.timeout}
             onChange={handleInputChange}
           />
         </div>
+        <div className="mb-4 mt-3">
+          <Label className="mr-2">Schedule</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-[240px] justify-start text-left font-normal',
+                  !selectedDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
 
-        {/* Task */}
+        <Separator className="my-8" />
+
+        {/* Simulation Section */}
+        <h2 className="text-xl font-semibold mb-4">Simulation</h2>
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
-              <Label>Task</Label>
+              <Label>Simulation Name</Label>
             </TooltipTrigger>
-            <TooltipContent>Describe the task for this simulation.</TooltipContent>
+            <TooltipContent>Enter a unique name for your simulation.</TooltipContent>
           </Tooltip>
-          <Textarea name="task" value={formData.task} onChange={handleInputChange} />
+          <Input
+            className="w-1/2 mt-2"
+            name="simulationName"
+            value={formData.simulationName}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div className="mb-4">
+          <Label>Simulation Type</Label>
+          <RadioGroup
+            defaultValue={formData.simulationType}
+            onValueChange={(type) => setFormData({ ...formData, simulationType: type })}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="default" id="r1" />
+              <Label htmlFor="r1">Default</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="advanced" id="r2" />
+              <Label htmlFor="r2">Advanced</Label>
+            </div>
+          </RadioGroup>
         </div>
 
-        {/* Orchestrator Name */}
+        <Separator className="my-8" />
+
+        {/* Observability */}
+        <h2 className="text-xl font-semibold mb-4">Observability</h2>
+        <div className="mb-4">
+          <Label>Predefined Metrics</Label>
+          {/* Placeholder for metrics logic */}
+        </div>
+        <div className="mb-4">
+          <Label>Predefined Alerts</Label>
+          {/* Placeholder for alerts logic */}
+        </div>
+
+        <Separator className="my-8" />
+
+        {/* Orchestrator */}
+        <h2 className="text-xl font-semibold mb-4">Orchestrator</h2>
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
               <Label>Orchestrator Name</Label>
             </TooltipTrigger>
-            <TooltipContent>Enter the name of the orchestrator for this simulation.</TooltipContent>
+            <TooltipContent>Enter the name of the orchestrator.</TooltipContent>
           </Tooltip>
           <Input
-            className="w-1/2 mt-2" // Smaller width for the name
+            className="w-1/2 mt-2"
             name="orchestratorName"
             value={formData.orchestratorName}
             onChange={handleInputChange}
           />
         </div>
-
-        {/* Orchestrator Instruction */}
         <div className="mb-4">
           <Tooltip>
             <TooltipTrigger>
               <Label>Orchestrator Instruction</Label>
             </TooltipTrigger>
-            <TooltipContent>Describe the instructions for the orchestrator.</TooltipContent>
+            <TooltipContent>Enter instructions for the orchestrator.</TooltipContent>
           </Tooltip>
-          <Textarea name="instruction" value={formData.instruction} onChange={handleInputChange} />
+          <Textarea
+            className="mt-2 w-full"
+            name="instruction"
+            value={formData.instruction}
+            onChange={handleInputChange}
+          />
         </div>
 
+        <Separator className="my-8" />
+
         {/* Agents */}
-        <div className="mb-4">
-          <Tooltip>
-            <TooltipTrigger>
-              <Label>Agents</Label>
-            </TooltipTrigger>
-            <TooltipContent>Add or remove agents for the simulation.</TooltipContent>
-          </Tooltip>
-          {formData.agents.map((agent, index) => (
-            <div key={index} className="mb-2">
-              <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold mb-4">Agents</h2>
+        {formData.agents.length > 0 &&
+          formData.agents.map((agent, index) => (
+            <div key={index} className="mb-4">
+              <div className="flex justify-between items-center mb-2">
                 <Input
                   className="w-1/2 mt-2"
                   placeholder="Agent Name"
@@ -189,24 +348,88 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                 <Button variant="destructive" onClick={() => removeAgent(index)}>
                   Remove
                 </Button>
+                {/* <button onClick={() => removeAgent(index)} className="ml-2">
+                <TrashIcon className="h-5 w-5 text-red-500 hover:text-red-700" />
+              </button> */}
               </div>
               <Textarea
-                className="mt-2 w-full mt-2"
+                className="w-full mt-2"
                 placeholder="Agent Role"
                 value={agent.role}
                 onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
               />
+              {/* <div className="flex items-center space-x-4 mt-4">
+              <span>Sad</span>
+              <Slider
+                defaultValue={formData.mood}
+                max={100}
+                step={1}
+                onValueChange={(value) => setFormData({ ...formData, mood: value })}
+                className="w-[60%]"
+              />
+              <span>Happy</span>
+            </div> */}
+              <div className="container mx-auto p-8">
+                <h2 className="text-xl font-semibold mb-4">Agent Moods</h2>
+                {moodSpectrums.map((mood, index) => (
+                  <MoodSlider
+                    key={index}
+                    labelLeft={mood.labelLeft}
+                    labelRight={mood.labelRight}
+                    defaultValue={moodValues[index]}
+                    onChange={(value: number) => handleMoodChange(index, value)}
+                  />
+                ))}
+                {/* Dialog for adding new mood */}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setIsDialogOpen(true)}
+                      className="mt-4"
+                    >
+                      + Add New Mood
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Mood Spectrum</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex items-center space-x-4 mt-4">
+                      <Input
+                        placeholder="Left Mood Label"
+                        value={newMoodLeft}
+                        onChange={(e) => setNewMoodLeft(e.target.value)}
+                      />
+                      <Input
+                        placeholder="Right Mood Label"
+                        value={newMoodRight}
+                        onChange={(e) => setNewMoodRight(e.target.value)}
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleAddMood} variant="default">
+                        Add Mood
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           ))}
-          <Button onClick={addAgent} variant="secondary" className="mt-2">
-            + Add Agent
+        <Button onClick={addAgent} variant="secondary" className="mt-2">
+          + Add Agent
+        </Button>
+
+        {/* Buttons at the bottom */}
+        <div className="flex justify-end space-x-4 mt-8">
+          <Button onClick={handleBackToProject} variant="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} variant="default">
+            Run Simulation
           </Button>
         </div>
-
-        {/* Submit Button */}
-        <Button onClick={handleSubmit} className="mt-4" variant="default">
-          Run Simulation
-        </Button>
       </div>
     </TooltipProvider>
   )

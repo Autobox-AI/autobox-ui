@@ -75,7 +75,9 @@ const Simulations = ({ project }: { project: Project }) => {
       <div className="flex justify-between items-center mb-8">
         <Button
           // onClick={() => setShowNewSimulationModal(true)}
-          onClick={() => router.push(`/projects/${project.id}/new-simulation`)}
+          onClick={() =>
+            router.push(`/projects/${project.id}/new-simulation?projectName=${project.name}`)
+          }
           variant="default"
           className="mt-4"
         >

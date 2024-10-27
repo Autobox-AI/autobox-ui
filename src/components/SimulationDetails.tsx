@@ -93,6 +93,7 @@ const SimulationDetails = ({
   const [openAgentSelector, setOpenAgentSelector] = useState(false)
   const [agentId, setAgentId] = useState<string | null>(null)
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null)
+  const [openDialog, setOpenDialog] = useState(false)
 
   const eventSourceRef = useRef<EventSource | null>(null)
 
@@ -155,7 +156,6 @@ const SimulationDetails = ({
       console.error(error)
     } finally {
       setLoadingState({ ...loadingState, isInstructing: false })
-      setIsInstructAgentModalOpen(false)
     }
   }
 
@@ -292,6 +292,11 @@ const SimulationDetails = ({
     )
   }
 
+  const combinedParticipants = [
+    ...(localSimulation?.agents || []),
+    ...(localSimulation?.orchestrator ? [localSimulation.orchestrator] : []),
+  ]
+
   return (
     <div className="text-foreground p-6 pt-0">
       <Breadcrumb className="mb-4">
@@ -384,9 +389,11 @@ const SimulationDetails = ({
           {loadingState.isInstructing ? 'Sending Instruction...' : 'Instruct'}
         </Button> */}
 
-        <Dialog>
+        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
-            <Button variant="outline">Instruct</Button>
+            <Button variant="outline" onClick={() => setOpenDialog(true)}>
+              Instruct
+            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -405,7 +412,7 @@ const SimulationDetails = ({
                     className="w-[200px] justify-between"
                   >
                     {selectedAgent !== null
-                      ? localSimulation?.agents.find((agent) => agent.id === selectedAgent)?.name
+                      ? combinedParticipants.find((agent) => agent.id === selectedAgent)?.name
                       : 'Select agent...'}
                     <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
@@ -416,7 +423,7 @@ const SimulationDetails = ({
                     <CommandList>
                       <CommandEmpty>No agent found.</CommandEmpty>
                       <CommandGroup>
-                        {localSimulation?.agents.map((agent) => (
+                        {combinedParticipants.map((agent) => (
                           <CommandItem
                             key={agent.id}
                             onSelect={() => {
@@ -469,6 +476,7 @@ const SimulationDetails = ({
                 onClick={() => {
                   if (selectedAgent !== null && message) {
                     handleInstructAgentModalSubmit(selectedAgent, message)
+                    setOpenDialog(false)
                   }
                 }}
                 disabled={selectedAgent === null || !message}

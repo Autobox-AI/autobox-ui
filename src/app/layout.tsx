@@ -8,7 +8,7 @@ import { Organization } from '@/schemas/organization'
 const inter = Inter({ subsets: ['latin'] })
 
 async function fetchOrganizations(): Promise<Organization[]> {
-  const response = await fetch('http://localhost:8000/organizations')
+  const response = await fetch('http://localhost:8000/organizations', { cache: 'reload' })
 
   if (!response.ok) {
     throw new Error('Failed to fetch organizations')
