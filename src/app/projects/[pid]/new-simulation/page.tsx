@@ -72,6 +72,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
   const [isHumanInTheLoopEnabled, setIsHumanInTheLoopEnabled] = useState(true)
   const [expandedAgentsTools, setExpandedAgentsTools] = useState<boolean[]>([true])
   const [expandedAgentsMood, setExpandedAgentsMood] = useState<boolean[]>([true])
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
 
   const toggleExpandAgentsTools = (index: number) => {
     const newExpandedAgentsTools = [...expandedAgentsTools]
@@ -125,6 +126,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     task: string
     orchestratorName: string
     instruction: string
+    metrics: {}
     agents: { name: string; role: string; backstory: string; tools: string[] }[]
     simulationType: string
     scheduleDate: Date | null
@@ -136,6 +138,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     task: '',
     orchestratorName: '',
     instruction: '',
+    metrics: {},
     agents: [],
     simulationType: 'default',
     scheduleDate: null, // For the date picker
@@ -210,6 +213,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
           task: jsonData.task || '',
           orchestratorName: jsonData.orchestrator?.name || '',
           instruction: jsonData.orchestrator?.instruction || '',
+          metrics: jsonData.metrics || {},
           agents:
             jsonData.agents?.map((agent: any) => ({
               name: agent.name || '',
@@ -272,12 +276,17 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
       })
       if (!response.ok) throw new Error('Failed to create simulation')
 
+      setIsConfirmationOpen(false)
       router.push(`/projects/${params.pid}/simulations`)
       router.refresh()
     } catch (err) {
       console.error(err)
       alert('Failed to create simulation')
     }
+  }
+
+  const handleRunSimulation = () => {
+    setIsConfirmationOpen(true)
   }
 
   return (
@@ -624,10 +633,122 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
           <Button onClick={handleBackToProject} variant="secondary">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} variant="default">
+          <Button onClick={handleRunSimulation} variant="default">
             Run Simulation
           </Button>
         </div>
+        {/* Confirmation Dialog */}
+        <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Confirm Simulation Details</DialogTitle>
+            </DialogHeader>
+
+            {/* Display Metrics Confirmation */}
+            <div className="space-y-4">
+              {/* Additional simulation details */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-black rounded-lg text-white">
+                <div className="col-span-2">
+                  <h3 className="font-semibold text-lg">Simulation Details</h3>
+                  <Separator className="my-2 border-gray-600" />
+                </div>
+
+                <div>
+                  <Label className="font-semibold text-gray-400">Simulation Name:</Label>
+                  <p className="text-gray-200">{formData.simulationName}</p>
+                </div>
+
+                <div>
+                  <Label className="font-semibold text-gray-400">Max Steps:</Label>
+                  <p className="text-gray-200">{formData.maxSteps}</p>
+                </div>
+
+                <div>
+                  <Label className="font-semibold text-gray-400">Timeout:</Label>
+                  <p className="text-gray-200">{formData.timeout} seconds</p>
+                </div>
+
+                <div>
+                  <Label className="font-semibold text-gray-400">Task:</Label>
+                  <p className="text-gray-200">{formData.task}</p>
+                </div>
+
+                <div>
+                  <Label className="font-semibold text-gray-400">Orchestrator Name:</Label>
+                  <p className="text-gray-200">{formData.orchestratorName}</p>
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+              <h3 className="font-semibold text-lg">Metrics</h3>
+
+              {/* Make this section scrollable and collapsible */}
+              <div className="max-h-[50vh] overflow-y-auto space-y-4">
+                {formData.metrics ? (
+                  Object.keys(formData.metrics).map((metricKey, index) => (
+                    <div key={index} className="border border-gray-300 rounded-lg p-2">
+                      {/* Collapsible section for each metric */}
+                      <details>
+                        <summary className="cursor-pointer text-sm font-medium">
+                          {formData.metrics[metricKey].name}
+                        </summary>
+                        <div className="space-y-2 mt-2">
+                          <div>
+                            <Label>Metric Name</Label>
+                            <Input
+                              value={formData.metrics[metricKey].name}
+                              onChange={(e) =>
+                                handleMetricChange(metricKey, 'name', e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Description</Label>
+                            <Textarea
+                              value={formData.metrics[metricKey].description}
+                              onChange={(e) =>
+                                handleMetricChange(metricKey, 'description', e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Type</Label>
+                            <Input
+                              value={formData.metrics[metricKey].prometheus_type}
+                              onChange={(e) =>
+                                handleMetricChange(metricKey, 'prometheus_type', e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Unit</Label>
+                            <Input
+                              value={formData.metrics[metricKey].unit}
+                              onChange={(e) =>
+                                handleMetricChange(metricKey, 'unit', e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                      </details>
+                    </div>
+                  ))
+                ) : (
+                  <p>No metrics available</p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={() => setIsConfirmationOpen(false)} variant="secondary">
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} variant="default">
+                Confirm & Run
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   )
