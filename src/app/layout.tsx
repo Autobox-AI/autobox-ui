@@ -2,8 +2,8 @@ import { Inter } from 'next/font/google'
 import Head from 'next/head'
 import '../styles/globals.css'
 
-import { AppSidebar } from '@/components/app-sidebar'
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import AppSidebar from '@/components/Sidebar'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 import { Organization } from '@/schemas/organization'
 import { cookies } from 'next/headers'
@@ -42,9 +42,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="flex h-screen">
           <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar />
-            <div className="flex flex-col items-center mt-2">
-              <SidebarTrigger className="p-2 hover:bg-gray-600 text-white" />
-            </div>
             <main className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
               {children}
             </main>
