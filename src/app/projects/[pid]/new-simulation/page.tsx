@@ -56,6 +56,33 @@ const initialMoodSpectrums = [
   { labelLeft: 'Altruistic', labelRight: 'Selfish', defaultValue: 30 },
 ]
 
+// First, define interfaces for the metric structure
+interface Metric {
+  name: string
+  description: string
+  prometheus_type: string
+  unit: string
+}
+
+interface FormData {
+  simulationName: string
+  maxSteps: number
+  timeout: number
+  task: string
+  orchestratorName: string
+  instruction: string
+  metrics: Record<string, Metric> // This allows string indexing of Metric objects
+  agents: {
+    name: string
+    role: string
+    backstory: string
+    tools: string[]
+  }[]
+  simulationType: string
+  scheduleDate: Date | null
+  mood: number[]
+}
+
 const NewSimulation = ({ params }: { params: { pid: string } }) => {
   const router = useRouter()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -119,29 +146,17 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     router.push(`/projects/${params.pid}`)
   }
 
-  const [formData, setFormData] = useState<{
-    simulationName: string
-    maxSteps: number
-    timeout: number
-    task: string
-    orchestratorName: string
-    instruction: string
-    metrics: {}
-    agents: { name: string; role: string; backstory: string; tools: string[] }[]
-    simulationType: string
-    scheduleDate: Date | null
-    mood: number[]
-  }>({
+  const [formData, setFormData] = useState<FormData>({
     simulationName: '',
     maxSteps: 150,
     timeout: 600,
     task: '',
     orchestratorName: '',
     instruction: '',
-    metrics: {},
+    metrics: {}, // Now TypeScript knows this can be indexed with strings
     agents: [],
     simulationType: 'default',
-    scheduleDate: null, // For the date picker
+    scheduleDate: null,
     mood: [50],
   })
 
@@ -289,468 +304,487 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     setIsConfirmationOpen(true)
   }
 
+  const handleMetricChange = (metricKey: string, field: keyof Metric, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      metrics: {
+        ...prev.metrics,
+        [metricKey]: {
+          ...prev.metrics[metricKey],
+          [field]: value,
+        },
+      },
+    }))
+  }
+
   return (
     <TooltipProvider>
-      <Breadcrumb className="mb-4">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1">
-                <BreadcrumbEllipsis className="h-4 w-4" />
-                <span className="sr-only">Toggle menu</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem>Documentation</DropdownMenuItem>
-                <DropdownMenuItem>Examples</DropdownMenuItem>
-                <DropdownMenuItem>Usage</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink onClick={handleBackToProject} className="cursor-pointer">
-              {projectName}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>New Simulation</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">Create New Simulation</h1>
-
-        {/* File Upload */}
-        <div className="mb-4">
-          <Label>Upload Configuration File</Label>
-          <Input type="file" onChange={handleFileUpload} className="w-800 mt-2" />
+      <div className="min-h-screen flex flex-col">
+        <div className="p-4 border-b border-zinc-800">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/">Home</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center gap-1">
+                    <BreadcrumbEllipsis className="h-4 w-4" />
+                    <span className="sr-only">Toggle menu</span>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem>Documentation</DropdownMenuItem>
+                    <DropdownMenuItem>Examples</DropdownMenuItem>
+                    <DropdownMenuItem>Usage</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink onClick={handleBackToProject} className="cursor-pointer">
+                  {projectName}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>New Simulation</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
 
-        {/* General Settings */}
-        <h2 className="text-2xl font-semibold mb-4">General Settings</h2>
-        <div className="mb-4">
-          <Tooltip>
-            <TooltipTrigger>
-              <Label>Max Steps</Label>
-            </TooltipTrigger>
-            <TooltipContent>Set the maximum steps for the simulation.</TooltipContent>
-          </Tooltip>
-          <Input
-            type="number"
-            className="w-24 mt-2"
-            name="maxSteps"
-            value={formData.maxSteps}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div className="mb-4">
-          <Tooltip>
-            <TooltipTrigger>
-              <Label>Timeout (seconds)</Label>
-            </TooltipTrigger>
-            <TooltipContent>Set the timeout duration in seconds.</TooltipContent>
-          </Tooltip>
-          <Input
-            type="number"
-            className="w-24 mt-2"
-            name="timeout"
-            value={formData.timeout}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div className="mb-4 mt-3">
-          <Label className="mr-2">Schedule</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  'w-[240px] justify-start text-left font-normal',
-                  !selectedDate && 'text-muted-foreground'
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+        <div className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold mb-6">Create New Simulation</h1>
 
-        <Separator className="my-8" />
-
-        {/* Simulation Section */}
-        <h2 className="text-2xl font-semibold mb-4">Simulation</h2>
-        <div className="mb-4">
-          <Tooltip>
-            <TooltipTrigger>
-              <Label>Simulation Name</Label>
-            </TooltipTrigger>
-            <TooltipContent>Enter a unique name for your simulation.</TooltipContent>
-          </Tooltip>
-          <Input
-            className="w-1/2 mt-2"
-            name="simulationName"
-            value={formData.simulationName}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div className="mb-4">
-          <Label>Type</Label>
-          <RadioGroup
-            className="mt-2"
-            defaultValue={formData.simulationType}
-            onValueChange={(type) => setFormData({ ...formData, simulationType: type })}
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="default" id="r1" />
-              <Label htmlFor="r1">Default</Label>
+            {/* File Upload */}
+            <div className="mb-4">
+              <Label>Upload Configuration File</Label>
+              <Input type="file" onChange={handleFileUpload} className="w-800 mt-2" />
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="advanced" id="r2" />
-              <Label htmlFor="r2">Advanced</Label>
+
+            {/* General Settings */}
+            <h2 className="text-2xl font-semibold mb-4">General Settings</h2>
+            <div className="mb-4">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Label>Max Steps</Label>
+                </TooltipTrigger>
+                <TooltipContent>Set the maximum steps for the simulation.</TooltipContent>
+              </Tooltip>
+              <Input
+                type="number"
+                className="w-24 mt-2"
+                name="maxSteps"
+                value={formData.maxSteps}
+                onChange={handleInputChange}
+              />
             </div>
-          </RadioGroup>
-        </div>
-        <div className="flex items-center space-x-4 mb-4">
-          <Switch
-            id="hitl"
-            checked={isHumanInTheLoopEnabled}
-            onCheckedChange={toggleHumanInTheLoop}
-          />
-          <Label htmlFor="hitl">Enable Human-in-the-loop </Label>
-        </div>
-
-        <Separator className="my-8" />
-
-        {/* Observability */}
-        <h2 className="text-2xl font-semibold mb-4">Observability</h2>
-        {/* Predefined Metrics Section */}
-        <h2 className="text-xl font-semibold mb-4">Metrics</h2>
-        <div className="flex items-center space-x-4 mb-4">
-          <Switch
-            id="generative-metrics"
-            checked={isGenerativeMetricsEnabled}
-            onCheckedChange={toggleGenerativeMetrics}
-          />
-          <Label htmlFor="generative-metrics">Enable Generative Metrics</Label>
-        </div>
-
-        {isGenerativeMetricsEnabled && (
-          <div className="mb-4">
-            <p className="text-sm text-gray-500">
-              Generative Metrics are enabled. The system will automatically generate metrics based
-              on the simulation's settings.
-            </p>
-          </div>
-        )}
-
-        <h2 className="text-xl font-semibold mb-4">Alerts</h2>
-        <div className="flex items-center space-x-4 mb-4">
-          <Switch
-            id="generative-alerts"
-            checked={isGenerativeAlertsEnabled}
-            onCheckedChange={toggleGenerativeAlerts}
-          />
-          <Label htmlFor="generative-metrics">Enable Generative Alerts</Label>
-        </div>
-
-        {isGenerativeAlertsEnabled && (
-          <div className="mb-4">
-            <p className="text-sm text-gray-500">
-              Generative Alerts are enabled. The system will automatically generate alerts based on
-              the simulation's settings.
-            </p>
-          </div>
-        )}
-
-        <Separator className="my-8" />
-
-        {/* Orchestrator */}
-        <h2 className="text-2xl font-semibold mb-4">Orchestrator</h2>
-        <div className="mb-4">
-          <Tooltip>
-            <TooltipTrigger>
-              <Label>Orchestrator Name</Label>
-            </TooltipTrigger>
-            <TooltipContent>Enter the name of the orchestrator.</TooltipContent>
-          </Tooltip>
-          <Input
-            className="w-1/2 mt-2"
-            name="orchestratorName"
-            value={formData.orchestratorName}
-            onChange={handleInputChange}
-          />
-        </div>
-        <div className="mb-4">
-          <Tooltip>
-            <TooltipTrigger>
-              <Label>Orchestrator Instruction</Label>
-            </TooltipTrigger>
-            <TooltipContent>Enter instructions for the orchestrator.</TooltipContent>
-          </Tooltip>
-          <Textarea
-            className="mt-2 w-full"
-            name="instruction"
-            value={formData.instruction}
-            onChange={handleInputChange}
-          />
-        </div>
-
-        <Separator className="my-8" />
-
-        {/* Agents */}
-        <h2 className="text-2xl font-semibold mb-4">Agents</h2>
-        {formData.agents.length > 0 &&
-          formData.agents.map((agent, index) => (
-            <div key={index} className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <Input
-                  className="w-1/2 mt-2"
-                  placeholder="Agent Name"
-                  value={agent.name}
-                  onChange={(e) => handleAgentChange(index, 'name', e.target.value)}
-                />
-                <Button variant="destructive" onClick={() => removeAgent(index)}>
-                  Remove
-                </Button>
-                {/* <button onClick={() => removeAgent(index)} className="ml-2">
-                <TrashIcon className="h-5 w-5 text-red-500 hover:text-red-700" />
-              </button> */}
-              </div>
-              <Textarea
-                className="w-full mt-2"
-                placeholder="Agent Role"
-                rows={1}
-                value={agent.role}
-                onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
+            <div className="mb-4">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Label>Timeout (seconds)</Label>
+                </TooltipTrigger>
+                <TooltipContent>Set the timeout duration in seconds.</TooltipContent>
+              </Tooltip>
+              <Input
+                type="number"
+                className="w-24 mt-2"
+                name="timeout"
+                value={formData.timeout}
+                onChange={handleInputChange}
               />
-              <Textarea
-                className="w-full mt-2"
-                placeholder="Agent Backstory"
-                value={agent.backstory}
-                rows={4}
-                onChange={(e) => handleAgentChange(index, 'backstory', e.target.value)}
+            </div>
+            <div className="mb-4 mt-3">
+              <Label className="mr-2">Schedule</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-[240px] justify-start text-left font-normal',
+                      !selectedDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Separator className="my-8" />
+
+            {/* Simulation Section */}
+            <h2 className="text-2xl font-semibold mb-4">Simulation</h2>
+            <div className="mb-4">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Label>Simulation Name</Label>
+                </TooltipTrigger>
+                <TooltipContent>Enter a unique name for your simulation.</TooltipContent>
+              </Tooltip>
+              <Input
+                className="w-1/2 mt-2"
+                name="simulationName"
+                value={formData.simulationName}
+                onChange={handleInputChange}
               />
-              {/* Tools Table for Each Agent */}
-              {/* Expand/Collapse on "Tools for X" click */}
-              <div
-                className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
-                onClick={() => toggleExpandAgentsTools(index)}
+            </div>
+            <div className="mb-4">
+              <Label>Type</Label>
+              <RadioGroup
+                className="mt-2"
+                defaultValue={formData.simulationType}
+                onValueChange={(type) => setFormData({ ...formData, simulationType: type })}
               >
-                Tools for {agent.name} {expandedAgentsTools[index] ? '▲' : '▼'}
-              </div>
-
-              {/* Conditionally show ToolsTable */}
-              {expandedAgentsTools[index] && (
-                <div className="mt-2">
-                  <ToolsTable />
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="default" id="r1" />
+                  <Label htmlFor="r1">Default</Label>
                 </div>
-              )}
-              {/* <div className="flex items-center space-x-4 mt-4">
-              <span>Sad</span>
-              <Slider
-                defaultValue={formData.mood}
-                max={100}
-                step={1}
-                onValueChange={(value) => setFormData({ ...formData, mood: value })}
-                className="w-[60%]"
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="advanced" id="r2" />
+                  <Label htmlFor="r2">Advanced</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="flex items-center space-x-4 mb-4">
+              <Switch
+                id="hitl"
+                checked={isHumanInTheLoopEnabled}
+                onCheckedChange={toggleHumanInTheLoop}
               />
-              <span>Happy</span>
-            </div> */}
-              <div
-                className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
-                onClick={() => toggleExpandAgentsMood(index)}
-              >
-                Mood for {agent.name} {expandedAgentsMood[index] ? '▲' : '▼'}
+              <Label htmlFor="hitl">Enable Human-in-the-loop </Label>
+            </div>
+
+            <Separator className="my-8" />
+
+            {/* Observability */}
+            <h2 className="text-2xl font-semibold mb-4">Observability</h2>
+            {/* Predefined Metrics Section */}
+            <h2 className="text-xl font-semibold mb-4">Metrics</h2>
+            <div className="flex items-center space-x-4 mb-4">
+              <Switch
+                id="generative-metrics"
+                checked={isGenerativeMetricsEnabled}
+                onCheckedChange={toggleGenerativeMetrics}
+              />
+              <Label htmlFor="generative-metrics">Enable Generative Metrics</Label>
+            </div>
+
+            {isGenerativeMetricsEnabled && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-500">
+                  Generative Metrics are enabled. The system will automatically generate metrics
+                  based on the simulation's settings.
+                </p>
               </div>
-              {expandedAgentsMood[index] && (
-                <div className="container mx-auto p-8">
-                  {moodSpectrums.map((mood, index) => (
-                    <MoodSlider
-                      key={index}
-                      labelLeft={mood.labelLeft}
-                      labelRight={mood.labelRight}
-                      defaultValue={moodValues[index]}
-                      onChange={(value: number) => handleMoodChange(index, value)}
+            )}
+
+            <h2 className="text-xl font-semibold mb-4">Alerts</h2>
+            <div className="flex items-center space-x-4 mb-4">
+              <Switch
+                id="generative-alerts"
+                checked={isGenerativeAlertsEnabled}
+                onCheckedChange={toggleGenerativeAlerts}
+              />
+              <Label htmlFor="generative-metrics">Enable Generative Alerts</Label>
+            </div>
+
+            {isGenerativeAlertsEnabled && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-500">
+                  Generative Alerts are enabled. The system will automatically generate alerts based
+                  on the simulation's settings.
+                </p>
+              </div>
+            )}
+
+            <Separator className="my-8" />
+
+            {/* Orchestrator */}
+            <h2 className="text-2xl font-semibold mb-4">Orchestrator</h2>
+            <div className="mb-4">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Label>Orchestrator Name</Label>
+                </TooltipTrigger>
+                <TooltipContent>Enter the name of the orchestrator.</TooltipContent>
+              </Tooltip>
+              <Input
+                className="w-1/2 mt-2"
+                name="orchestratorName"
+                value={formData.orchestratorName}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="mb-4">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Label>Orchestrator Instruction</Label>
+                </TooltipTrigger>
+                <TooltipContent>Enter instructions for the orchestrator.</TooltipContent>
+              </Tooltip>
+              <Textarea
+                className="mt-2 w-full"
+                name="instruction"
+                value={formData.instruction}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <Separator className="my-8" />
+
+            {/* Agents */}
+            <h2 className="text-2xl font-semibold mb-4">Agents</h2>
+            {formData.agents.length > 0 &&
+              formData.agents.map((agent, index) => (
+                <div key={index} className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <Input
+                      className="w-1/2 mt-2"
+                      placeholder="Agent Name"
+                      value={agent.name}
+                      onChange={(e) => handleAgentChange(index, 'name', e.target.value)}
                     />
-                  ))}
-                  {/* Dialog for adding new mood */}
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        onClick={() => setIsDialogOpen(true)}
-                        className="mt-5 ml-6"
-                      >
-                        + Add New Mood
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Mood Spectrum</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex items-center space-x-4 mt-4">
-                        <Input
-                          placeholder="Left Mood Label"
-                          value={newMoodLeft}
-                          onChange={(e) => setNewMoodLeft(e.target.value)}
-                        />
-                        <Input
-                          placeholder="Right Mood Label"
-                          value={newMoodRight}
-                          onChange={(e) => setNewMoodRight(e.target.value)}
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button onClick={handleAddMood} variant="default">
-                          Add Mood
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
-            </div>
-          ))}
-        <Button onClick={addAgent} variant="secondary" className="mt-2">
-          + Add Agent
-        </Button>
+                    <Button variant="destructive" onClick={() => removeAgent(index)}>
+                      Remove
+                    </Button>
+                    {/* <button onClick={() => removeAgent(index)} className="ml-2">
+                    <TrashIcon className="h-5 w-5 text-red-500 hover:text-red-700" />
+                  </button> */}
+                  </div>
+                  <Textarea
+                    className="w-full mt-2"
+                    placeholder="Agent Role"
+                    rows={1}
+                    value={agent.role}
+                    onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
+                  />
+                  <Textarea
+                    className="w-full mt-2"
+                    placeholder="Agent Backstory"
+                    value={agent.backstory}
+                    rows={4}
+                    onChange={(e) => handleAgentChange(index, 'backstory', e.target.value)}
+                  />
+                  {/* Tools Table for Each Agent */}
+                  {/* Expand/Collapse on "Tools for X" click */}
+                  <div
+                    className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
+                    onClick={() => toggleExpandAgentsTools(index)}
+                  >
+                    Tools for {agent.name} {expandedAgentsTools[index] ? '▲' : '▼'}
+                  </div>
 
-        {/* Buttons at the bottom */}
-        <div className="flex justify-end space-x-4 mt-8">
-          <Button onClick={handleBackToProject} variant="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleRunSimulation} variant="default">
-            Run Simulation
-          </Button>
-        </div>
-        {/* Confirmation Dialog */}
-        <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Confirm Simulation Details</DialogTitle>
-            </DialogHeader>
-
-            {/* Display Metrics Confirmation */}
-            <div className="space-y-4">
-              {/* Additional simulation details */}
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg text-white">
-                <div className="col-span-2">
-                  <h3 className="font-semibold text-lg">Simulation Details</h3>
-                  <Separator className="my-2 border-gray-600" />
-                </div>
-
-                <div>
-                  <Label className="font-semibold text-gray-400">Simulation Name:</Label>
-                  <p className="text-gray-200">{formData.simulationName}</p>
-                </div>
-
-                <div>
-                  <Label className="font-semibold text-gray-400">Max Steps:</Label>
-                  <p className="text-gray-200">{formData.maxSteps}</p>
-                </div>
-
-                <div>
-                  <Label className="font-semibold text-gray-400">Timeout:</Label>
-                  <p className="text-gray-200">{formData.timeout} seconds</p>
-                </div>
-
-                <div>
-                  <Label className="font-semibold text-gray-400">Task:</Label>
-                  <p className="text-gray-200">{formData.task}</p>
-                </div>
-
-                <div>
-                  <Label className="font-semibold text-gray-400">Orchestrator Name:</Label>
-                  <p className="text-gray-200">{formData.orchestratorName}</p>
-                </div>
-              </div>
-
-              <Separator className="my-4" />
-              <h3 className="font-semibold text-lg">Metrics</h3>
-
-              {/* Make this section scrollable and collapsible */}
-              <div className="max-h-[50vh] overflow-y-auto space-y-4">
-                {formData.metrics ? (
-                  Object.keys(formData.metrics).map((metricKey, index) => (
-                    <div key={index} className="border border-gray-300 rounded-lg p-2">
-                      {/* Collapsible section for each metric */}
-                      <details>
-                        <summary className="cursor-pointer text-sm font-medium">
-                          {formData.metrics[metricKey].name}
-                        </summary>
-                        <div className="space-y-2 mt-2">
-                          <div>
-                            <Label>Metric Name</Label>
-                            <Input
-                              value={formData.metrics[metricKey].name}
-                              onChange={(e) =>
-                                handleMetricChange(metricKey, 'name', e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label>Description</Label>
-                            <Textarea
-                              value={formData.metrics[metricKey].description}
-                              onChange={(e) =>
-                                handleMetricChange(metricKey, 'description', e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label>Type</Label>
-                            <Input
-                              value={formData.metrics[metricKey].prometheus_type}
-                              onChange={(e) =>
-                                handleMetricChange(metricKey, 'prometheus_type', e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label>Unit</Label>
-                            <Input
-                              value={formData.metrics[metricKey].unit}
-                              onChange={(e) =>
-                                handleMetricChange(metricKey, 'unit', e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </details>
+                  {/* Conditionally show ToolsTable */}
+                  {expandedAgentsTools[index] && (
+                    <div className="mt-2">
+                      <ToolsTable />
                     </div>
-                  ))
-                ) : (
-                  <p>No metrics available</p>
-                )}
-              </div>
-            </div>
+                  )}
+                  {/* <div className="flex items-center space-x-4 mt-4">
+                  <span>Sad</span>
+                  <Slider
+                    defaultValue={formData.mood}
+                    max={100}
+                    step={1}
+                    onValueChange={(value) => setFormData({ ...formData, mood: value })}
+                    className="w-[60%]"
+                  />
+                  <span>Happy</span>
+                </div> */}
+                  <div
+                    className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
+                    onClick={() => toggleExpandAgentsMood(index)}
+                  >
+                    Mood for {agent.name} {expandedAgentsMood[index] ? '▲' : '▼'}
+                  </div>
+                  {expandedAgentsMood[index] && (
+                    <div className="container mx-auto p-8">
+                      {moodSpectrums.map((mood, index) => (
+                        <MoodSlider
+                          key={index}
+                          labelLeft={mood.labelLeft}
+                          labelRight={mood.labelRight}
+                          defaultValue={moodValues[index]}
+                          onChange={(value: number) => handleMoodChange(index, value)}
+                        />
+                      ))}
+                      {/* Dialog for adding new mood */}
+                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            onClick={() => setIsDialogOpen(true)}
+                            className="mt-5 ml-6"
+                          >
+                            + Add New Mood
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Mood Spectrum</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex items-center space-x-4 mt-4">
+                            <Input
+                              placeholder="Left Mood Label"
+                              value={newMoodLeft}
+                              onChange={(e) => setNewMoodLeft(e.target.value)}
+                            />
+                            <Input
+                              placeholder="Right Mood Label"
+                              value={newMoodRight}
+                              onChange={(e) => setNewMoodRight(e.target.value)}
+                            />
+                          </div>
+                          <DialogFooter>
+                            <Button onClick={handleAddMood} variant="default">
+                              Add Mood
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
+                </div>
+              ))}
+            <Button onClick={addAgent} variant="secondary" className="mt-2">
+              + Add Agent
+            </Button>
 
-            <DialogFooter>
-              <Button onClick={() => setIsConfirmationOpen(false)} variant="secondary">
+            {/* Buttons at the bottom */}
+            <div className="flex justify-end space-x-4 mt-8">
+              <Button onClick={handleBackToProject} variant="secondary">
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} variant="default">
-                Confirm & Run
+              <Button onClick={handleRunSimulation} variant="default">
+                Run Simulation
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </div>
+            {/* Confirmation Dialog */}
+            <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Confirm Simulation Details</DialogTitle>
+                </DialogHeader>
+
+                {/* Display Metrics Confirmation */}
+                <div className="space-y-4">
+                  {/* Additional simulation details */}
+                  <div className="grid grid-cols-2 gap-4 p-4 rounded-lg text-white">
+                    <div className="col-span-2">
+                      <h3 className="font-semibold text-lg">Simulation Details</h3>
+                      <Separator className="my-2 border-gray-600" />
+                    </div>
+
+                    <div>
+                      <Label className="font-semibold text-gray-400">Simulation Name:</Label>
+                      <p className="text-gray-200">{formData.simulationName}</p>
+                    </div>
+
+                    <div>
+                      <Label className="font-semibold text-gray-400">Max Steps:</Label>
+                      <p className="text-gray-200">{formData.maxSteps}</p>
+                    </div>
+
+                    <div>
+                      <Label className="font-semibold text-gray-400">Timeout:</Label>
+                      <p className="text-gray-200">{formData.timeout} seconds</p>
+                    </div>
+
+                    <div>
+                      <Label className="font-semibold text-gray-400">Task:</Label>
+                      <p className="text-gray-200">{formData.task}</p>
+                    </div>
+
+                    <div>
+                      <Label className="font-semibold text-gray-400">Orchestrator Name:</Label>
+                      <p className="text-gray-200">{formData.orchestratorName}</p>
+                    </div>
+                  </div>
+
+                  <Separator className="my-4" />
+                  <h3 className="font-semibold text-lg">Metrics</h3>
+
+                  {/* Make this section scrollable and collapsible */}
+                  <div className="max-h-[50vh] overflow-y-auto space-y-4">
+                    {formData.metrics ? (
+                      Object.keys(formData.metrics).map((metricKey, index) => (
+                        <div key={index} className="border border-gray-300 rounded-lg p-2">
+                          {/* Collapsible section for each metric */}
+                          <details>
+                            <summary className="cursor-pointer text-sm font-medium">
+                              {formData.metrics[metricKey].name}
+                            </summary>
+                            <div className="space-y-2 mt-2">
+                              <div>
+                                <Label>Metric Name</Label>
+                                <Input
+                                  value={formData.metrics[metricKey].name}
+                                  onChange={(e) =>
+                                    handleMetricChange(metricKey, 'name', e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label>Description</Label>
+                                <Textarea
+                                  value={formData.metrics[metricKey].description}
+                                  onChange={(e) =>
+                                    handleMetricChange(metricKey, 'description', e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label>Type</Label>
+                                <Input
+                                  value={formData.metrics[metricKey].prometheus_type}
+                                  onChange={(e) =>
+                                    handleMetricChange(metricKey, 'prometheus_type', e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label>Unit</Label>
+                                <Input
+                                  value={formData.metrics[metricKey].unit}
+                                  onChange={(e) =>
+                                    handleMetricChange(metricKey, 'unit', e.target.value)
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </details>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No metrics available</p>
+                    )}
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button onClick={() => setIsConfirmationOpen(false)} variant="secondary">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmit} variant="default">
+                    Confirm & Run
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
       </div>
     </TooltipProvider>
   )

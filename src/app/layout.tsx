@@ -42,9 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="flex h-screen">
           <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar />
-            <main className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-              {children}
-            </main>
+            <main className="flex-1 flex flex-col w-full">{children}</main>
           </SidebarProvider>
         </div>
       </body>

@@ -4,12 +4,6 @@ import { cn } from '@/lib/utils'
 import { Simulation } from '@/schemas'
 import { formatDateTime } from '@/utils'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@radix-ui/react-dropdown-menu'
-import {
   CaretSortIcon,
   CheckIcon,
   CubeIcon,
@@ -34,15 +28,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from './ui/alert-dialog'
-import {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from './ui/breadcrumb'
 import { Button } from './ui/button'
 import {
   Command,
@@ -64,27 +49,15 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Textarea } from './ui/textarea'
 
-type SimulationDetailsProps = {
-  simulation: {
-    id: string
-    name: string
-    started_at: string
-    finished_at?: string
-    status: string
-    progress: number
-  }
+interface Props {
+  simulation: Simulation
+  projectId: string
+  projectName: string
 }
 
-const SimulationDetails = ({
-  projectId,
-  simulation,
-}: {
-  projectId: string
-  simulation: Simulation | undefined
-}) => {
+const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const projectName = searchParams.get('projectName') ?? 'Unknown'
 
   const [traces, setTraces] = useState<string[]>([])
   const [loadingState, setLoadingState] = useState({
@@ -333,39 +306,7 @@ const SimulationDetails = ({
   ]
 
   return (
-    <div className="text-foreground p-6 pt-0">
-      <Breadcrumb className="mb-4">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1">
-                <BreadcrumbEllipsis className="h-4 w-4" />
-                <span className="sr-only">Toggle menu</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem>Documentation</DropdownMenuItem>
-                <DropdownMenuItem>Examples</DropdownMenuItem>
-                <DropdownMenuItem>Usage</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink onClick={handleBackToProject} className="cursor-pointer">
-              {projectName}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{simulation.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
+    <div className="w-full py-6">
       <h1 className="text-2xl font-bold mb-4">Simulation: {simulation.name}</h1>
 
       {/* Link to Dashboards */}
@@ -634,7 +575,8 @@ const SimulationDetails = ({
         <div
           ref={traceContainerRef}
           className="bg-gray-900 p-4 mt-1 rounded-lg text-green-400 font-mono overflow-y-auto
-                   h-64 sm:h-80 md:h-96 lg:h-[32rem] xl:h-[40rem] border border-gray-700 shadow-lg"
+                   h-64 sm:h-80 md:h-96 lg:h-[32rem] xl:h-[40rem] border border-gray-700 shadow-lg
+                   w-full"
         >
           {loadingState.isLoadingTraces && <p>Loading traces...</p>}
           {traces.length === 0 && !loadingState.isLoadingTraces ? (
@@ -658,12 +600,13 @@ const SimulationDetails = ({
       </div>
       {/* Embedding the URL */}
       {isDashboardExpanded && simulation.internal_dashboard_url && (
-        <div className="mt-1">
+        <div className="mt-1 w-full">
           <iframe
             src={simulation.internal_dashboard_url}
             width="100%"
             height="600"
             frameBorder="0"
+            className="w-full"
           ></iframe>
         </div>
       )}
@@ -680,7 +623,7 @@ const SimulationDetails = ({
         isOpen={isInstructAgentModalOpen}
         onClose={handleInstructAgentModalClose}
         onSubmit={handleInstructAgentModalSubmit}
-        agents={[...simulation.agents, simulation.orchestrator]}
+        agents={[...(simulation.agents ?? []), simulation.orchestrator ?? { id: 0, name: '' }]}
       />
     </div>
   )

@@ -1,13 +1,23 @@
 
 import { z } from 'zod';
 import { UuidSchema } from './common/uuid';
-import { SimulationStatus } from './simulation';
+import { SimulationStatusSchema } from './simulation';
 
+
+export const PROJECT_STATUSES = {
+    ACTIVE: "active",
+    ARCHIVED: "archived",
+  } as const
+
+
+export const ProjectStatusSchema = z.enum([PROJECT_STATUSES.ACTIVE, PROJECT_STATUSES.ARCHIVED]);
+
+export type ProjectStatus = z.infer<typeof ProjectStatusSchema>
 
 export const ProjectSimulationSchema = z.object({
   id: UuidSchema,
   name: z.string(),
-  status: SimulationStatus,
+  status: SimulationStatusSchema,
   progress: z.number(),
   started_at: z.string(),
   finished_at: z.string().nullable(),
@@ -16,11 +26,19 @@ export const ProjectSimulationSchema = z.object({
 
 export type ProjectSimulation = z.infer<typeof ProjectSimulationSchema>;
 
+export const ConfidenceLevelSchema = z.enum(['LOW', 'MEDIUM', 'HIGH'])
+
+export type ConfidenceLevel = z.infer<typeof ConfidenceLevelSchema>
+
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string(),
+  description: z.string().nullable(),
+  status: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string().nullable(),
   simulations: z.array(ProjectSimulationSchema).default([]),
+  confidence_level: ConfidenceLevelSchema
 });
 
 export const ProjectContextSchema = z.object({

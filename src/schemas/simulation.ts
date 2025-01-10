@@ -12,7 +12,10 @@ export const SIMULATION_STATUSES = {
     TIMEOUT: "timeout",
   } as const
 
-export const SimulationStatus = z.enum([SIMULATION_STATUSES.IN_PROGRESS, SIMULATION_STATUSES.COMPLETED, SIMULATION_STATUSES.FAILED, SIMULATION_STATUSES.ABORTED, SIMULATION_STATUSES.TIMEOUT]);
+
+export const SimulationStatusSchema = z.enum([SIMULATION_STATUSES.IN_PROGRESS, SIMULATION_STATUSES.COMPLETED, SIMULATION_STATUSES.FAILED, SIMULATION_STATUSES.ABORTED, SIMULATION_STATUSES.TIMEOUT]);
+
+export type SimulationStatus = z.infer<typeof SimulationStatusSchema>
 
 export const AgentSchema = z.object({
     id: z.number(),
@@ -22,17 +25,18 @@ export const AgentSchema = z.object({
 export const SimulationSchema = z.object({
   id: UuidSchema,
   name: z.string(),
-  status: SimulationStatus,
+  status: SimulationStatusSchema,
   started_at: IsoDateStringSchema,
   finished_at: IsoDateStringSchema.nullable(),
   aborted_at: IsoDateStringSchema.nullable(),
-  summary: z.string().nullable(),
+  summary: z.string().nullish(),
   progress: z.number(),
-  agents: z.array(AgentSchema),
-  orchestrator: AgentSchema,
-  evaluator: AgentSchema,
-  internal_dashboard_url: z.string().nullable(),
-  public_dashboard_url: z.string().nullable(),
+  agents: z.array(AgentSchema).nullish(),
+  orchestrator: AgentSchema.nullish(),
+  evaluator: AgentSchema.nullish(),
+  internal_dashboard_url: z.string().nullish(),
+  public_dashboard_url: z.string().nullish(),
+  description: z.string().nullish(),
 });
 
 export type Agent = z.infer<typeof AgentSchema>;

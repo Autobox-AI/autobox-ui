@@ -192,7 +192,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground fixed inset-y-0 left-0"
+        className="group peer hidden md:block text-sidebar-foreground fixed inset-y-0 left-0 z-[60]"
         data-state={state}
         data-collapsible={collapsible}
         data-variant={variant}
@@ -257,7 +257,7 @@ const SidebarTrigger = React.forwardRef<HTMLButtonElement, React.ComponentProps<
         variant="ghost"
         size="sm"
         className={cn(
-          'h-8 w-8 hover:bg-zinc-800/50 absolute top-6 right-0 translate-x-1/2 z-50 rounded-full border border-zinc-800 bg-zinc-900',
+          'h-8 w-8 hover:bg-zinc-800/50 absolute top-6 right-0 translate-x-1/2 z-[100] rounded-full border border-zinc-800 bg-zinc-900',
           'transition-transform',
           state === 'collapsed' ? 'rotate-180' : '',
           className

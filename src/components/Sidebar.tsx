@@ -73,10 +73,10 @@ const AppSidebar = () => {
             <SidebarMenuButton asChild tooltip="Home">
               <Link href="/" className="flex items-center gap-3">
                 <div className="min-w-[24px] flex items-center justify-center">
-                  <span className="h-4 w-4">🧊</span>
+                  <span className="h-4 w-4">📦</span>
                 </div>
                 <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
-                  Autobox
+                  Autobox Labs
                 </span>
               </Link>
             </SidebarMenuButton>

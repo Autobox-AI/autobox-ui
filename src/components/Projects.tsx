@@ -1,8 +1,34 @@
 'use client'
-import { Project } from '@/schemas'
-import { Calendar, GitGraph, MoreVertical, Search } from 'lucide-react'
+import { ConfidenceLevel, Project } from '@/schemas'
+import { Calendar, GitGraph, MoreVertical, Search, Thermometer } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
+
+const getConfidenceIcon = (confidence: ConfidenceLevel) => {
+  switch (confidence) {
+    case 'LOW':
+      return <Thermometer className="h-4 w-4 text-red-400" />
+    case 'MEDIUM':
+      return <Thermometer className="h-4 w-4 text-yellow-400" />
+    case 'HIGH':
+      return <Thermometer className="h-4 w-4 text-green-400" />
+    default:
+      return <Thermometer className="h-4 w-4 text-red-400" />
+  }
+}
+
+const getConfidenceColor = (confidence: ConfidenceLevel) => {
+  switch (confidence) {
+    case 'LOW':
+      return 'text-red-400'
+    case 'MEDIUM':
+      return 'text-yellow-400'
+    case 'HIGH':
+      return 'text-green-400'
+    default:
+      return 'text-red-400'
+  }
+}
 
 const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   const router = useRouter()
@@ -41,12 +67,15 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col min-h-screen">
       {/* Header and Search Section - Fixed at top */}
       <div className="w-full bg-background px-6 pt-6 pb-4 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">Projects</h1>
+            <div>
+              <h1 className="text-3xl font-bold">Projects</h1>
+              <p className="text-sm text-zinc-400 mt-1">Manage your projects and simulations</p>
+            </div>
             <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors">
               New Project
             </button>
@@ -68,8 +97,8 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
         </div>
       </div>
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      {/* Content Area - Make it scrollable */}
+      <div className="flex-1 px-6 py-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects && projects.length > 0 ? (
@@ -85,9 +114,19 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                         className="cursor-pointer flex-1 min-w-0"
                         onClick={() => goToProject(project.id)}
                       >
-                        <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
-                          {project.name}
-                        </h2>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
+                            {project.name}
+                          </h2>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {getConfidenceIcon(project.confidence_level || 'LOW')}
+                            <span
+                              className={`text-xs font-medium ${getConfidenceColor(project.confidence_level || 'LOW')}`}
+                            >
+                              {project.confidence_level || 'LOW'}
+                            </span>
+                          </div>
+                        </div>
                         <p
                           className="text-sm text-zinc-400 mt-1 line-clamp-2"
                           title={project.description || 'No description provided'}
@@ -107,7 +146,7 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                     <div className="px-6 pb-4 flex items-center gap-4 text-sm text-zinc-400">
                       <div className="flex items-center gap-1">
                         <GitGraph className="h-4 w-4" />
-                        <span>{project.simulations_count || 0} simulations</span>
+                        <span>{project.simulations.length || 0} simulations</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
