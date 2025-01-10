@@ -1,8 +1,16 @@
 'use client'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Project, Simulation } from '@/schemas'
+import { SIMULATION_STATUSES } from '@/schemas/simulation'
 import { Calendar, GitGraph, MoreVertical, Pause, Play, Search, Thermometer } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 type SimulationStatus = 'running' | 'completed' | 'failed' | 'pending'
 
@@ -46,25 +54,37 @@ const Simulations = ({
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [simulations, setSimulations] = useState(initialSimulations)
+  const [statusFilter, setStatusFilter] = useState<SimulationStatus | 'all'>('all')
 
   const handleSearch = useCallback(
     async (query: string) => {
       setSearchQuery(query)
 
-      if (!query.trim()) {
-        setSimulations(initialSimulations)
-        return
+      let filtered = [...initialSimulations]
+
+      // Apply status filter if not 'all'
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter((simulation) => simulation.status === statusFilter)
       }
 
-      const filteredSimulations = initialSimulations.filter(
-        (simulation) =>
-          simulation.name.toLowerCase().includes(query.toLowerCase()) ||
-          simulation.description?.toLowerCase().includes(query.toLowerCase())
-      )
-      setSimulations(filteredSimulations)
+      // Apply search query if exists
+      if (query.trim()) {
+        filtered = filtered.filter(
+          (simulation) =>
+            simulation.name.toLowerCase().includes(query.toLowerCase()) ||
+            simulation.description?.toLowerCase().includes(query.toLowerCase())
+        )
+      }
+
+      setSimulations(filtered)
     },
-    [initialSimulations]
+    [initialSimulations, statusFilter]
   )
+
+  // Add useEffect to refilter when status changes
+  useEffect(() => {
+    handleSearch(searchQuery)
+  }, [statusFilter, handleSearch, searchQuery])
 
   const goToSimulation = (simulationId: string) => {
     router.push(
@@ -101,17 +121,35 @@ const Simulations = ({
           </div>
 
           {/* Search Bar */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-zinc-400" />
+          <div className="flex gap-4 items-center">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-zinc-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search simulations..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Search simulations..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+            <Select
+              value={statusFilter}
+              onValueChange={(value: SimulationStatus | 'all') => setStatusFilter(value)}
+            >
+              <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value={SIMULATION_STATUSES.IN_PROGRESS}>Running</SelectItem>
+                <SelectItem value={SIMULATION_STATUSES.COMPLETED}>Completed</SelectItem>
+                <SelectItem value={SIMULATION_STATUSES.ABORTED}>Aborted</SelectItem>
+                <SelectItem value={SIMULATION_STATUSES.TIMEOUT}>Timeout</SelectItem>
+                <SelectItem value={SIMULATION_STATUSES.FAILED}>Failed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
