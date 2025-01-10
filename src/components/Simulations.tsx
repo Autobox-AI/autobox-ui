@@ -56,6 +56,47 @@ const Simulations = ({
   const [simulations, setSimulations] = useState(initialSimulations)
   const [statusFilter, setStatusFilter] = useState<SimulationStatus | 'all'>('all')
 
+  // Add effect to handle streaming updates for in-progress simulations
+  useEffect(() => {
+    // Create event sources for all in-progress simulations
+    const eventSources = simulations
+      .filter((sim) => sim.status === SIMULATION_STATUSES.IN_PROGRESS)
+      .map((simulation) => {
+        const eventSource = new EventSource(
+          `http://localhost:8000/simulations/${simulation.id}?streaming=true`
+        )
+
+        eventSource.onmessage = (event) => {
+          const updatedSimulation = JSON.parse(event.data) as Simulation
+
+          setSimulations((prevSimulations) =>
+            prevSimulations.map((sim) =>
+              sim.id === updatedSimulation.id ? updatedSimulation : sim
+            )
+          )
+
+          if (
+            updatedSimulation.progress >= 100 ||
+            updatedSimulation.status !== SIMULATION_STATUSES.IN_PROGRESS
+          ) {
+            eventSource.close()
+          }
+        }
+
+        eventSource.onerror = () => {
+          console.error(`Error with EventSource for simulation ${simulation.id}`)
+          eventSource.close()
+        }
+
+        return eventSource
+      })
+
+    // Cleanup function to close all EventSource instances
+    return () => {
+      eventSources.forEach((es) => es.close())
+    }
+  }, []) // Empty dependency array since we only want to set this up once
+
   const handleSearch = useCallback(
     async (query: string) => {
       setSearchQuery(query)
@@ -231,6 +272,21 @@ const Simulations = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Add progress bar for in-progress simulations */}
+                  {simulation.status === SIMULATION_STATUSES.IN_PROGRESS && (
+                    <div className="px-6 py-2">
+                      <div className="w-full bg-gray-700 rounded-full h-2.5">
+                        <div
+                          className="h-2.5 rounded-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${simulation.progress}%` }}
+                        />
+                      </div>
+                      <div className="text-xs text-zinc-400 mt-1 text-right">
+                        {simulation.progress}%
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
