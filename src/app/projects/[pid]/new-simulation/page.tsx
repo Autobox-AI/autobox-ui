@@ -319,8 +319,8 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen flex flex-col">
-        <div className="p-4 border-b border-zinc-800">
+      <div className="flex flex-col min-h-screen w-full">
+        <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800 ml-[var(--sidebar-width-icon)] md:ml-[220px]">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
