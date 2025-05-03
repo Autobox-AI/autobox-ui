@@ -1,31 +1,33 @@
 'use client'
 
 import {
-  Archive,
-  ChevronDown,
-  ChevronRight,
-  FolderTree,
-  GitGraph,
-  Scale,
-  Search,
-  Settings,
-  User,
+    Archive,
+    BarChart2,
+    ChevronDown,
+    ChevronRight,
+    FolderTree,
+    GitGraph,
+    Scale,
+    Search,
+    Settings,
+    User,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  useSidebar,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    useSidebar,
 } from './ui/sidebar'
 
 const AppSidebar = () => {
@@ -46,7 +48,9 @@ const AppSidebar = () => {
   }, [pathname])
 
   const handleProjectsClick = () => {
-    setIsProjectsExpanded(!isProjectsExpanded)
+    if (state === 'expanded') {
+      setIsProjectsExpanded(!isProjectsExpanded)
+    }
   }
 
   const handleProjectsMouseEnter = () => {
@@ -65,13 +69,34 @@ const AppSidebar = () => {
     isLoggedIn: true,
   }
 
+  const renderSubmenu = (items: { icon: any; label: string; href: string }[]) => (
+    <div className="flex flex-col gap-1 p-2">
+      {items.map((item, index) => (
+        <Link
+          key={index}
+          href={item.href}
+          className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-white/70 hover:bg-zinc-800 hover:text-white"
+        >
+          <item.icon className="h-4 w-4" />
+          <span>{item.label}</span>
+        </Link>
+      ))}
+    </div>
+  )
+
+  const projectsSubmenu = [
+    { icon: FolderTree, label: 'All Projects', href: '/projects' },
+    { icon: GitGraph, label: 'Active', href: '/projects/active' },
+    { icon: Archive, label: 'Archived', href: '/projects/archived' },
+  ]
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="mb-6 mt-1">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Home">
-              <Link href="/" className="flex items-center gap-3">
+              <Link href="/" className="flex items-center gap-3 px-2">
                 <div className="min-w-[24px] flex items-center justify-center">
                   <span className="h-4 w-4">📦</span>
                 </div>
@@ -86,32 +111,52 @@ const AppSidebar = () => {
 
       <SidebarContent>
         <SidebarMenu>
-          <SidebarMenuItem
-            onMouseEnter={handleProjectsMouseEnter}
-            onMouseLeave={handleProjectsMouseLeave}
-          >
-            <SidebarMenuButton
-              tooltip="Projects"
-              onClick={handleProjectsClick}
-              className="w-full flex items-center justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-3 flex-1">
-                <div className="min-w-[24px] flex items-center justify-center">
-                  <FolderTree className="h-4 w-4" />
+          <SidebarMenuItem>
+            {state === 'expanded' ? (
+              <SidebarMenuButton
+                tooltip="Projects"
+                onClick={handleProjectsClick}
+                className="w-full flex items-center justify-between px-2"
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="min-w-[24px] flex items-center justify-center">
+                    <FolderTree className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
+                    Projects
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
-                  Projects
-                </span>
-              </div>
-              <div className="min-w-[24px] flex items-center justify-center text-white">
-                {isProjectsExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </div>
-            </SidebarMenuButton>
-            {isProjectsExpanded && (
+                <div className="min-w-[24px] flex items-center justify-center text-white">
+                  {isProjectsExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </div>
+              </SidebarMenuButton>
+            ) : (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <SidebarMenuButton
+                    tooltip="Projects"
+                    className="w-full px-2"
+                  >
+                    <div className="min-w-[24px] flex items-center justify-center">
+                      <FolderTree className="h-4 w-4" />
+                    </div>
+                  </SidebarMenuButton>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="right"
+                  className="w-48 p-0 bg-zinc-900 border-zinc-800"
+                  align="start"
+                  sideOffset={20}
+                >
+                  {renderSubmenu(projectsSubmenu)}
+                </PopoverContent>
+              </Popover>
+            )}
+            {state === 'expanded' && isProjectsExpanded && (
               <SidebarMenuSub className="mt-1 ml-2 pl-4 border-l border-zinc-800">
                 <SidebarMenuSubItem className="py-1">
                   <SidebarMenuSubButton asChild>
@@ -152,7 +197,7 @@ const AppSidebar = () => {
 
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Simulations">
-              <Link href="/simulations" className="flex items-center gap-3">
+              <Link href="/simulations" className="flex items-center gap-3 px-2">
                 <div className="min-w-[24px] flex items-center justify-center">
                   <Scale className="h-4 w-4" />
                 </div>
@@ -164,8 +209,21 @@ const AppSidebar = () => {
           </SidebarMenuItem>
 
           <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Metrics">
+              <Link href="/metrics" className="flex items-center gap-3 px-2">
+                <div className="min-w-[24px] flex items-center justify-center">
+                  <BarChart2 className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
+                  Metrics
+                </span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Settings">
-              <Link href="/settings" className="flex items-center gap-3">
+              <Link href="/settings" className="flex items-center gap-3 px-2">
                 <div className="min-w-[24px] flex items-center justify-center">
                   <Settings className="h-4 w-4" />
                 </div>
@@ -194,7 +252,7 @@ const AppSidebar = () => {
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <SidebarMenuButton className="w-full" tooltip={user.username}>
+            <SidebarMenuButton className="w-full px-2" tooltip={user.username}>
               <div className="min-w-[24px] flex items-center justify-center">
                 <User className="h-4 w-4" />
               </div>

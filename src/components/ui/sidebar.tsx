@@ -63,30 +63,45 @@ const SidebarProvider = React.forwardRef<
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = React.useState(true)
+    // Initialize state from cookie or default
+    const [_open, _setOpen] = React.useState(() => {
+      if (typeof document !== 'undefined') {
+        const cookie = document.cookie
+          .split('; ')
+          .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
+        return cookie ? cookie.split('=')[1] === 'true' : defaultOpen
+      }
+      return defaultOpen
+    })
+
     const open = openProp ?? _open
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
+        const newValue = typeof value === 'function' ? value(open) : value
+
         if (setOpenProp) {
-          return setOpenProp?.(typeof value === 'function' ? value(open) : value)
+          setOpenProp(newValue)
+        } else {
+          _setOpen(newValue)
         }
 
-        _setOpen(value)
-
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${open}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        // Set cookie with the new value
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${newValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
       },
       [setOpenProp, open]
     )
 
-    // Helper to toggle the sidebar.
+    // Helper to toggle the sidebar
     const toggleSidebar = React.useCallback(() => {
-      return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile])
+      if (isMobile) {
+        setOpenMobile((prev) => !prev)
+      } else {
+        setOpen((prev) => !prev)
+      }
+    }, [isMobile, setOpen])
 
-    // Adds a keyboard shortcut to toggle the sidebar.
+    // Add keyboard shortcut
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
@@ -99,8 +114,6 @@ const SidebarProvider = React.forwardRef<
       return () => window.removeEventListener('keydown', handleKeyDown)
     }, [toggleSidebar])
 
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? 'expanded' : 'collapsed'
 
     const contextValue = React.useMemo<SidebarContext>(
@@ -156,34 +169,11 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, setOpen, toggleSidebar } = useSidebar()
-    const [isHoverExpanded, setIsHoverExpanded] = React.useState(false)
-
-    const handleMouseEnter = React.useCallback(() => {
-      if (state === 'collapsed' && !isMobile) {
-        setOpen(true)
-        setIsHoverExpanded(true)
-      }
-    }, [state, isMobile, setOpen])
-
-    const handleMouseLeave = React.useCallback(() => {
-      if (isHoverExpanded) {
-        setOpen(false)
-        setIsHoverExpanded(false)
-      }
-    }, [isHoverExpanded, setOpen])
-
-    // Reset hover state when sidebar is manually toggled
-    React.useEffect(() => {
-      if (state === 'collapsed') {
-        setIsHoverExpanded(false)
-      }
-    }, [state])
 
     const handleTriggerClick = React.useCallback(
       (event: React.MouseEvent) => {
         event.preventDefault()
         event.stopPropagation()
-        setIsHoverExpanded(false) // Reset hover state when manually toggled
         toggleSidebar()
       },
       [toggleSidebar]
@@ -197,8 +187,6 @@ const Sidebar = React.forwardRef<
         data-collapsible={collapsible}
         data-variant={variant}
         data-side={side}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         <Button
           data-sidebar="trigger"
@@ -697,28 +685,29 @@ const SidebarMenuSubButton = React.forwardRef<
 SidebarMenuSubButton.displayName = 'SidebarMenuSubButton'
 
 export {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSkeleton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
-  useSidebar,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupAction,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInput,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuBadge,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSkeleton,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    SidebarProvider,
+    SidebarRail,
+    SidebarSeparator,
+    SidebarTrigger,
+    useSidebar
 }
+
