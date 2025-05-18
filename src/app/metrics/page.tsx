@@ -1,26 +1,21 @@
 'use client'
 
+import { CounterMetric } from '@/components/metrics/CounterMetric'
+import { GaugeMetric } from '@/components/metrics/GaugeMetric'
+import { HistogramMetric } from '@/components/metrics/HistogramMetric'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Activity, ArrowDownRight, ArrowUpRight, BarChart2, CheckCircle, Clock, Users, XCircle } from 'lucide-react'
+import { Metric } from '@/lib/services/metrics'
 import { useEffect, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-
-interface MetricData {
-  name: string
-  value: number
-  change?: number
-  trend?: 'up' | 'down'
-  icon: React.ElementType
-}
 
 interface TimeSeriesData {
   timestamp: string
   value: number
 }
 
-async function fetchMetrics(): Promise<any> {
+async function fetchMetrics(): Promise<Metric[]> {
   try {
-    const response = await fetch('http://localhost:8000/metrics')
+    const response = await fetch('http://localhost:8080/metrics/simulations/83c006c4-ecf1-404d-afe3-7eb0ff152c49/runs/e8aab6d4-11a2-4cc2-badd-022fdaf8b04c')
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
@@ -28,19 +23,51 @@ async function fetchMetrics(): Promise<any> {
 
     // Parse the Prometheus format metrics
     const lines = text.split('\n')
-    const metrics: Record<string, number> = {}
+    const metrics: Record<string, Metric> = {}
+    let currentMetric: Partial<Metric> | null = null
 
     lines.forEach(line => {
-      if (!line.startsWith('#') && line.trim()) {
+      if (line.startsWith('# HELP')) {
+        const [, name, help] = line.match(/# HELP ([^ ]+) (.+)/) || []
+        if (name && help) {
+          currentMetric = {
+            name,
+            help,
+            type: 'counter', // default type
+            values: []
+          }
+        }
+      } else if (line.startsWith('# TYPE')) {
+        const [, name, type] = line.match(/# TYPE ([^ ]+) ([^ ]+)/) || []
+        if (name && type && currentMetric) {
+          currentMetric.type = type as Metric['type']
+          if (type === 'histogram') {
+            currentMetric.buckets = []
+          }
+          if (!currentMetric.values) {
+            currentMetric.values = []
+          }
+          metrics[name] = currentMetric as Metric
+        }
+      } else if (line.trim() && !line.startsWith('#')) {
         const match = line.match(/^([^{]+)({[^}]+})?[ ]+([0-9.]+)/)
-        if (match) {
-          const [, name, labels, value] = match
-          metrics[name.trim()] = parseFloat(value)
+        if (match && currentMetric) {
+          const [, name, labelsStr, value] = match
+          const labels = labelsStr ? JSON.parse(labelsStr.replace(/([a-zA-Z0-9_]+)="([^"]+)"/g, '"$1":"$2"')) : {}
+
+          if (currentMetric.type === 'histogram' && name.endsWith('_bucket')) {
+            const le = labels.le
+            if (!currentMetric.buckets) currentMetric.buckets = []
+            currentMetric.buckets.push({ le, count: parseFloat(value) })
+          } else {
+            if (!currentMetric.values) currentMetric.values = []
+            currentMetric.values.push({ value: parseFloat(value), labels })
+          }
         }
       }
     })
 
-    return metrics
+    return Object.values(metrics)
   } catch (error) {
     console.error('Error fetching metrics:', error)
     throw error
@@ -48,7 +75,7 @@ async function fetchMetrics(): Promise<any> {
 }
 
 export default function MetricsPage() {
-  const [metrics, setMetrics] = useState<MetricData[]>([])
+  const [metrics, setMetrics] = useState<Metric[]>([])
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -59,59 +86,16 @@ export default function MetricsPage() {
         const data = await fetchMetrics()
         const now = new Date().toISOString()
 
-        // Update time series data
-        setTimeSeriesData(prev => {
-          const newData = [...prev, { timestamp: now, value: data.decision_rounds || 0 }]
-          // Keep only last 10 data points
-          return newData.slice(-10)
-        })
+        // Update time series data for any counter metric
+        const counterMetric = data.find(m => m.type === 'counter')
+        if (counterMetric) {
+          setTimeSeriesData(prev => {
+            const newData = [...prev, { timestamp: now, value: counterMetric.values[0]?.value || 0 }]
+            return newData.slice(-10)
+          })
+        }
 
-        const metricsData: MetricData[] = [
-          {
-            name: 'Success Rate',
-            value: data.final_agreement_score || 0,
-            change: 5,
-            trend: 'up',
-            icon: CheckCircle,
-          },
-          {
-            name: 'Active Users',
-            value: data.nodejs_active_resources_total || 0,
-            change: 12,
-            trend: 'up',
-            icon: Users,
-          },
-          {
-            name: 'Average Runtime',
-            value: Number((data.http_request_duration_seconds_sum / (data.http_request_duration_seconds_count || 1)).toFixed(2)),
-            change: -2,
-            trend: 'down',
-            icon: Clock,
-          },
-          {
-            name: 'Decision Rounds',
-            value: data.decision_rounds || 0,
-            change: 0,
-            trend: 'up',
-            icon: Activity,
-          },
-          {
-            name: 'Error Rate',
-            value: Number(((data.http_request_duration_seconds_count_404 || 0) / (data.http_request_duration_seconds_count || 1) * 100).toFixed(1)),
-            change: -1,
-            trend: 'down',
-            icon: XCircle,
-          },
-          {
-            name: 'Memory Usage (MB)',
-            value: Math.round(data.process_resident_memory_bytes / (1024 * 1024)) || 0,
-            change: 3,
-            trend: 'up',
-            icon: BarChart2,
-          }
-        ]
-
-        setMetrics(metricsData)
+        setMetrics(data)
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load metrics')
@@ -153,55 +137,52 @@ export default function MetricsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-        {metrics.map((metric, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{metric.name}</CardTitle>
-              <metric.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metric.value}</div>
-              {metric.change !== undefined && (
-                <p className={`text-xs ${metric.trend === 'up' ? 'text-green-600' : 'text-red-600'} flex items-center`}>
-                  {metric.trend === 'up' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                  <span>{metric.change}% from last hour</span>
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+        {metrics.map((metric, i) => {
+          switch (metric.type) {
+            case 'counter':
+              return <CounterMetric key={i} metric={metric} />
+            case 'gauge':
+              return <GaugeMetric key={i} metric={metric} />
+            case 'histogram':
+              return <HistogramMetric key={i} metric={metric} />
+            default:
+              return null
+          }
+        })}
       </div>
 
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Decision Rounds Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timeSeriesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={(value) => new Date(value).toLocaleTimeString()}
-                />
-                <YAxis />
-                <Tooltip
-                  labelFormatter={(value) => new Date(value).toLocaleTimeString()}
-                  formatter={(value) => [value, 'Decision Rounds']}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#8884d8"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {timeSeriesData.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Metrics Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timeSeriesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(value) => new Date(value).toLocaleTimeString()}
+                    formatter={(value) => [value, 'Value']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8884d8"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

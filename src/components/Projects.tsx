@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useDebounce } from '@/hooks/useDebounce'
 import { ConfidenceLevel, Project, ProjectStatus } from '@/schemas'
 import { PROJECT_STATUSES } from '@/schemas/project'
 import {
@@ -15,12 +16,13 @@ import {
   List,
   MoreVertical,
   Search,
-  Thermometer,
+  Thermometer
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from './ui/button'
 
+// Move static functions outside component
 const getConfidenceIcon = (confidence: ConfidenceLevel) => {
   switch (confidence) {
     case 'LOW':
@@ -47,53 +49,147 @@ const getConfidenceColor = (confidence: ConfidenceLevel) => {
   }
 }
 
+const formatDate = (date: string | null | undefined) => {
+  if (!date) return 'N/A'
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 type ViewMode = 'grid' | 'table'
+
+interface ProjectCardProps {
+  project: Project
+  onClick: () => void
+}
+
+const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
+  <div
+    className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col"
+  >
+    <div className="p-6 flex-1">
+      <div className="flex justify-between items-start">
+        <div className="cursor-pointer flex-1 min-w-0" onClick={onClick}>
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
+              {project.name}
+            </h2>
+            <div className="flex items-center gap-1 shrink-0">
+              {getConfidenceIcon(project.confidence_level || 'LOW')}
+              <span
+                className={`text-xs font-medium ${getConfidenceColor(project.confidence_level || 'LOW')}`}
+              >
+                {project.confidence_level || 'LOW'}
+              </span>
+            </div>
+          </div>
+          <p
+            className="text-sm text-zinc-400 mt-1 line-clamp-2"
+            title={project.description || 'No description provided'}
+          >
+            {project.description || 'No description provided'}
+          </p>
+        </div>
+        <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0">
+          <MoreVertical className="h-5 w-5 text-zinc-400" />
+        </button>
+      </div>
+    </div>
+
+    {/* Project Stats and Footer */}
+    <div className="mt-auto">
+      {/* Project Stats */}
+      <div className="px-6 pb-4 flex items-center gap-4 text-sm text-zinc-400">
+        <div className="flex items-center gap-1">
+          <GitGraph className="h-4 w-4" />
+          <span>{project.simulations?.length || 0} simulations</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Calendar className="h-4 w-4" />
+          <span>
+            Updated {formatDate(project.updated_at || project.created_at)}
+          </span>
+        </div>
+      </div>
+
+      {/* Project Footer */}
+      <div className="px-6 py-4 bg-zinc-900 border-t border-zinc-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+              }`}
+            />
+            <span className="text-sm text-zinc-400 capitalize">
+              {project.status || 'active'}
+            </span>
+          </div>
+          <button
+            onClick={onClick}
+            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            View Simulations →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+))
+
+ProjectCard.displayName = 'ProjectCard'
 
 const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [projects, setProjects] = useState(initialProjects)
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all')
+  const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
 
-  const handleSearch = useCallback(
-    async (query: string) => {
-      setSearchQuery(query)
+  // Get initial values from URL
+  const initialSearch = searchParams.get('search') || ''
+  const initialStatus = (searchParams.get('status') as ProjectStatus | 'all') || 'all'
 
-      let filtered = [...initialProjects]
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>(initialStatus)
 
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter((project) => project.status === statusFilter)
-      }
+  // Debounce search input
+  const debouncedSearch = useDebounce(searchQuery, 300)
 
-      if (query.trim()) {
-        filtered = filtered.filter(
-          (project) =>
-            project.name.toLowerCase().includes(query.toLowerCase()) ||
-            project.description?.toLowerCase().includes(query.toLowerCase())
-        )
-      }
+  // Update URL when filters change
+  const updateFilters = useCallback((search: string, status: ProjectStatus | 'all') => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (search) {
+      params.set('search', search)
+    } else {
+      params.delete('search')
+    }
+    if (status !== 'all') {
+      params.set('status', status)
+    } else {
+      params.delete('status')
+    }
+    router.push(`/projects?${params.toString()}`)
+  }, [router, searchParams])
 
-      setProjects(filtered)
-    },
-    [initialProjects, statusFilter]
-  )
+  // Handle search changes
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query)
+  }, [])
 
+  // Handle status filter changes
+  const handleStatusChange = useCallback((value: ProjectStatus | 'all') => {
+    setStatusFilter(value)
+  }, [])
+
+  // Update URL when debounced search or status changes
   useEffect(() => {
-    handleSearch(searchQuery)
-  }, [statusFilter, handleSearch, searchQuery])
+    updateFilters(debouncedSearch, statusFilter)
+  }, [debouncedSearch, statusFilter, updateFilters])
 
-  const goToProject = (projectId: string) => {
+  const goToProject = useCallback((projectId: string) => {
     router.push(`/projects/${projectId}/simulations`)
-  }
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  }, [router])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -126,7 +222,7 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
             </div>
             <Select
               value={statusFilter}
-              onValueChange={(value: ProjectStatus | 'all') => setStatusFilter(value)}
+              onValueChange={handleStatusChange}
             >
               <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800">
                 <SelectValue placeholder="Filter by status" />
@@ -163,172 +259,46 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
       <div className="flex-1 px-6 py-6">
         <div className="max-w-7xl mx-auto">
           {viewMode === 'grid' ? (
-            // Existing grid view
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects && projects.length > 0 ? (
-                projects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col"
-                  >
-                    {/* Project Header */}
-                    <div className="p-6 flex-1">
-                      <div className="flex justify-between items-start">
-                        <div
-                          className="cursor-pointer flex-1 min-w-0"
-                          onClick={() => goToProject(project.id)}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
-                              {project.name}
-                            </h2>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {getConfidenceIcon(project.confidence_level || 'LOW')}
-                              <span
-                                className={`text-xs font-medium ${getConfidenceColor(project.confidence_level || 'LOW')}`}
-                              >
-                                {project.confidence_level || 'LOW'}
-                              </span>
-                            </div>
-                          </div>
-                          <p
-                            className="text-sm text-zinc-400 mt-1 line-clamp-2"
-                            title={project.description || 'No description provided'}
-                          >
-                            {project.description || 'No description provided'}
-                          </p>
-                        </div>
-                        <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0">
-                          <MoreVertical className="h-5 w-5 text-zinc-400" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Project Stats and Footer */}
-                    <div className="mt-auto">
-                      {/* Project Stats */}
-                      <div className="px-6 pb-4 flex items-center gap-4 text-sm text-zinc-400">
-                        <div className="flex items-center gap-1">
-                          <GitGraph className="h-4 w-4" />
-                          <span>{project.simulations.length || 0} simulations</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>
-                            Updated {formatDate(project.updated_at || project.created_at)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Project Footer */}
-                      <div className="px-6 py-4 bg-zinc-900 border-t border-zinc-800">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
-                              }`}
-                            />
-                            <span className="text-sm text-zinc-400 capitalize">
-                              {project.status || 'active'}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => goToProject(project.id)}
-                            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                          >
-                            View Simulations →
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full flex flex-col items-center justify-center py-12 text-zinc-400">
-                  <GitGraph className="h-12 w-12 mb-4" />
-                  <h3 className="text-xl font-medium mb-2">
-                    {searchQuery ? 'No projects found' : 'No projects yet'}
-                  </h3>
-                  <p className="text-sm">
-                    {searchQuery
-                      ? 'Try adjusting your search terms'
-                      : 'Create your first project to get started'}
-                  </p>
-                </div>
-              )}
+              {initialProjects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => goToProject(project.id)}
+                />
+              ))}
             </div>
           ) : (
-            // New table view
-            <div className="rounded-md border border-zinc-800">
+            <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-zinc-900">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">
-                      Simulations
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">
-                      Confidence
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">
-                      Updated
-                    </th>
-                    <th className="px-4 py-3"></th>
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left py-3 px-4">Name</th>
+                    <th className="text-left py-3 px-4">Status</th>
+                    <th className="text-left py-3 px-4">Confidence</th>
+                    <th className="text-left py-3 px-4">Last Updated</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {projects && projects.length > 0 ? (
-                    projects.map((project) => (
-                      <tr
-                        key={project.id}
-                        className="border-t border-zinc-800 hover:bg-zinc-900/50 cursor-pointer"
-                        onClick={() => goToProject(project.id)}
-                      >
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-white">{project.name}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
-                              }`}
-                            />
-                            <span className="capitalize text-zinc-400">{project.status}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-zinc-400">
-                          {project.simulations.length} simulations
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            {getConfidenceIcon(project.confidence_level)}
-                            <span className={getConfidenceColor(project.confidence_level)}>
-                              {project.confidence_level}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-zinc-400">
-                          {formatDate(project.updated_at || project.created_at)}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button className="p-2 hover:bg-zinc-800 rounded-full">
-                            <MoreVertical className="h-4 w-4 text-zinc-400" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">
-                        {searchQuery ? 'No projects found' : 'No projects yet'}
+                  {initialProjects.map((project) => (
+                    <tr
+                      key={project.id}
+                      className="border-b border-zinc-800 hover:bg-zinc-900 cursor-pointer"
+                      onClick={() => goToProject(project.id)}
+                    >
+                      <td className="py-3 px-4">{project.name}</td>
+                      <td className="py-3 px-4">{project.status}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          {getConfidenceIcon(project.confidence_level || 'LOW')}
+                          <span className={getConfidenceColor(project.confidence_level || 'LOW')}>
+                            {project.confidence_level || 'LOW'}
+                          </span>
+                        </div>
                       </td>
+                      <td className="py-3 px-4">{formatDate(project.updated_at)}</td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>

@@ -10,19 +10,13 @@ import { cookies } from 'next/headers'
 
 const inter = Inter({ subsets: ['latin'] })
 
-async function fetchOrganizations(): Promise<Organization[]> {
-  const response = await fetch('http://localhost:8000/organizations', { cache: 'reload' })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch organizations')
-  }
-
-  const { organizations } = await response.json()
-  return organizations
-}
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const organizations = await fetchOrganizations()
+export default async function RootLayout({
+  children,
+  organizations,
+}: {
+  children: React.ReactNode
+  organizations: Organization[]
+}) {
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar:state')?.value === 'true'
 
@@ -41,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       >
         <div className="flex h-screen">
           <SidebarProvider defaultOpen={defaultOpen}>
-            <AppSidebar />
+            <AppSidebar organizations={organizations} />
             <main className="flex-1 flex flex-col w-full">{children}</main>
           </SidebarProvider>
         </div>

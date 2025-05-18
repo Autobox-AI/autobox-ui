@@ -1,9 +1,34 @@
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Organization } from '@/schemas/organization'
 import { ArrowRight } from 'lucide-react'
+import { headers } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default function Home() {
+async function fetchOrganizations(): Promise<Organization[]> {
+  console.time('fetchOrganizations')
+  const headersList = await headers()
+  const host = headersList.get('host')
+  const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
+
+  const response = await fetch(`${protocol}://${host}/api/organizations`, {
+    next: {
+      revalidate: 60, // Revalidate every 60 seconds
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch organizations')
+  }
+
+  const { organizations } = await response.json()
+  console.timeEnd('fetchOrganizations')
+  return organizations
+}
+
+export default async function Home() {
+  console.time('HomePageRender')
+  const organizations = await fetchOrganizations()
   const sections = [
     {
       title: 'Projects',
@@ -31,7 +56,7 @@ export default function Home() {
     },
   ]
 
-  return (
+  const page = (
     <div className="min-h-screen flex flex-col items-center justify-start bg-background p-6">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-foreground mb-4">Autobox</h1>
@@ -61,11 +86,12 @@ export default function Home() {
               </CardHeader>
               <div className="relative w-full">
                 <Image
-                  src={item.image} // Image path from the sections data
+                  src={item.image}
                   alt={item.title}
-                  width={300} // Set to your desired width
-                  height={200} // Set to your desired height while maintaining aspect ratio
-                  style={{ objectFit: 'contain' }}
+                  width={300}
+                  height={200}
+                  priority={index === 0}
+                  style={{ objectFit: 'contain', width: '100%', height: 'auto' }}
                   className="mx-auto"
                 />
               </div>
@@ -75,4 +101,6 @@ export default function Home() {
       </div>
     </div>
   )
+  console.timeEnd('HomePageRender')
+  return page
 }

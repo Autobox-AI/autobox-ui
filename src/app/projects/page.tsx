@@ -15,23 +15,51 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Project } from '@/schemas'
+import { headers } from 'next/headers'
+import { Suspense } from 'react'
 
-async function fetchProjects(): Promise<Project[]> {
-  const response = await fetch('http://localhost:8000/projects', {
-    cache: 'no-store',
-  })
+async function fetchProjects(searchParams: { [key: string]: string | string[] | undefined }): Promise<Project[]> {
+  const headersList = await headers()
+  const host = headersList.get('host')
+  const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch projects')
+  // Build query parameters
+  const queryParams = new URLSearchParams()
+  if (searchParams.search) {
+    queryParams.append('search', searchParams.search as string)
+  }
+  if (searchParams.status && searchParams.status !== 'all') {
+    queryParams.append('status', searchParams.status as string)
   }
 
-  const { projects } = await response.json()
-  return projects
+  try {
+    const response = await fetch(`${protocol}://${host}/api/projects?${queryParams.toString()}`, {
+      next: {
+        revalidate: 30, // Reduce revalidation time to 30 seconds
+        tags: ['projects'], // Add cache tag for manual revalidation
+      },
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch projects')
+    }
+
+    const { projects } = await response.json()
+    return projects
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+    return []
+  }
 }
 
-export default async function ProjectsPage() {
-  const projects = await fetchProjects()
-
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   return (
     <div className="flex flex-col min-h-screen w-full">
       <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800 ml-[var(--sidebar-width-icon)] md:ml-[220px]">
@@ -63,8 +91,15 @@ export default async function ProjectsPage() {
       </div>
 
       <div className="flex-1">
-        {!projects.length ? <div>No projects found.</div> : <Projects projects={projects} />}
+        <Suspense fallback={<div>Loading...</div>}>
+          <ProjectsContent searchParams={searchParams} />
+        </Suspense>
       </div>
     </div>
   )
+}
+
+async function ProjectsContent({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+  const projects = await fetchProjects(searchParams)
+  return !projects.length ? <div>No projects found.</div> : <Projects projects={projects} />
 }

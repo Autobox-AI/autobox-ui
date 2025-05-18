@@ -1,36 +1,41 @@
 'use client'
 
+import { Organization } from '@/schemas/organization'
 import {
-    Archive,
-    BarChart2,
-    ChevronDown,
-    ChevronRight,
-    FolderTree,
-    GitGraph,
-    Scale,
-    Search,
-    Settings,
-    User,
+  Archive,
+  BarChart2,
+  ChevronDown,
+  ChevronRight,
+  FolderTree,
+  GitGraph,
+  Scale,
+  Search,
+  Settings,
+  User,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
-    useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  useSidebar,
 } from './ui/sidebar'
 
-const AppSidebar = () => {
+interface AppSidebarProps {
+  organizations: Organization[]
+}
+
+const AppSidebar = ({ organizations }: AppSidebarProps) => {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(false)
   const { state } = useSidebar()
   const pathname = usePathname()
