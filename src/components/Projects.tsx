@@ -11,16 +11,20 @@ import { ConfidenceLevel, Project, ProjectStatus } from '@/schemas'
 import { PROJECT_STATUSES } from '@/schemas/project'
 import {
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   GitGraph,
   LayoutGrid,
   List,
   MoreVertical,
+  Plus,
   Search,
-  Thermometer
+  Thermometer,
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from './ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
 // Move static functions outside component
 const getConfidenceIcon = (confidence: ConfidenceLevel) => {
@@ -73,9 +77,19 @@ const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
       <div className="flex justify-between items-start">
         <div className="cursor-pointer flex-1 min-w-0" onClick={onClick}>
           <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
-              {project.name}
-            </h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
+                  {project.name}
+                </h2>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[300px]">
+                <div className="space-y-1">
+                  <p className="font-semibold">{project.name}</p>
+                  <p className="text-sm text-zinc-400">{project.description || 'No description provided'}</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
             <div className="flex items-center gap-1 shrink-0">
               {getConfidenceIcon(project.confidence_level || 'LOW')}
               <span
@@ -101,16 +115,32 @@ const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
     {/* Project Stats and Footer */}
     <div className="mt-auto">
       {/* Project Stats */}
-      <div className="px-6 pb-4 flex items-center gap-4 text-sm text-zinc-400">
+      <div className="px-6 pb-4 flex items-center justify-between text-sm text-zinc-400">
         <div className="flex items-center gap-1">
-          <GitGraph className="h-4 w-4" />
-          <span>{project.simulations?.length || 0} simulations</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex items-center gap-1 cursor-pointer">
+                <GitGraph className="h-4 w-4" />
+                <span>{project.simulations?.length || 0}</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              Total simulations
+            </TooltipContent>
+          </Tooltip>
         </div>
         <div className="flex items-center gap-1">
-          <Calendar className="h-4 w-4" />
-          <span>
-            Updated {formatDate(project.updated_at || project.created_at)}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex items-center gap-1 cursor-pointer">
+                <Calendar className="h-4 w-4" />
+                <span>{formatDate(project.updated_at || project.created_at)}</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              Last update
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -145,19 +175,28 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const projectsPerPage = 8
 
   // Get initial values from URL
   const initialSearch = searchParams.get('search') || ''
   const initialStatus = (searchParams.get('status') as ProjectStatus | 'all') || 'all'
+  const initialPage = Number(searchParams.get('page')) || 1
 
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>(initialStatus)
+  const [currentPage, setCurrentPage] = useState(initialPage)
+
+  // Calculate pagination
+  const totalPages = Math.ceil(initialProjects.length / projectsPerPage)
+  const startIndex = (currentPage - 1) * projectsPerPage
+  const endIndex = startIndex + projectsPerPage
+  const currentProjects = initialProjects.slice(startIndex, endIndex)
 
   // Debounce search input
   const debouncedSearch = useDebounce(searchQuery, 300)
 
   // Update URL when filters change
-  const updateFilters = useCallback((search: string, status: ProjectStatus | 'all') => {
+  const updateFilters = useCallback((search: string, status: ProjectStatus | 'all', page: number) => {
     const params = new URLSearchParams(searchParams.toString())
     if (search) {
       params.set('search', search)
@@ -168,6 +207,11 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
       params.set('status', status)
     } else {
       params.delete('status')
+    }
+    if (page > 1) {
+      params.set('page', page.toString())
+    } else {
+      params.delete('page')
     }
     router.push(`/projects?${params.toString()}`)
   }, [router, searchParams])
@@ -182,10 +226,16 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
     setStatusFilter(value)
   }, [])
 
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    updateFilters(debouncedSearch, statusFilter, page)
+  }
+
   // Update URL when debounced search or status changes
   useEffect(() => {
-    updateFilters(debouncedSearch, statusFilter)
-  }, [debouncedSearch, statusFilter, updateFilters])
+    updateFilters(debouncedSearch, statusFilter, currentPage)
+  }, [debouncedSearch, statusFilter, currentPage, updateFilters])
 
   const goToProject = useCallback((projectId: string) => {
     router.push(`/projects/${projectId}/simulations`)
@@ -201,7 +251,11 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
               <h1 className="text-3xl font-bold">Projects</h1>
               <p className="text-sm text-zinc-400 mt-1">Manage your projects and simulations</p>
             </div>
-            <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors">
+            <button
+              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors flex items-center gap-2"
+              onClick={() => router.push('/projects/new')}
+            >
+              <Plus className="h-4 w-4" />
               New Project
             </button>
           </div>
@@ -255,12 +309,12 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 px-6 py-6">
+      {/* Projects Grid/Table */}
+      <div className="flex-1 p-6">
         <div className="max-w-7xl mx-auto">
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {initialProjects.map((project) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {currentProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
                   project={project}
@@ -280,7 +334,7 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {initialProjects.map((project) => (
+                  {currentProjects.map((project) => (
                     <tr
                       key={project.id}
                       className="border-b border-zinc-800 hover:bg-zinc-900 cursor-pointer"
@@ -301,6 +355,43 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => handlePageChange(page)}
+                    className="h-8 w-8"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>

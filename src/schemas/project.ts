@@ -1,16 +1,13 @@
-
-import { z } from 'zod';
-import { UuidSchema } from './common/uuid';
-import { SimulationStatusSchema } from './simulation';
-
+import { z } from 'zod'
+import { UuidSchema } from './common/uuid'
+import { SimulationStatusSchema } from './simulation'
 
 export const PROJECT_STATUSES = {
-    ACTIVE: "active",
-    ARCHIVED: "archived",
-  } as const
+  ACTIVE: 'active',
+  ARCHIVED: 'archived',
+} as const
 
-
-export const ProjectStatusSchema = z.enum([PROJECT_STATUSES.ACTIVE, PROJECT_STATUSES.ARCHIVED]);
+export const ProjectStatusSchema = z.enum([PROJECT_STATUSES.ACTIVE, PROJECT_STATUSES.ARCHIVED])
 
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>
 
@@ -22,9 +19,9 @@ export const ProjectSimulationSchema = z.object({
   started_at: z.string(),
   finished_at: z.string().nullable(),
   aborted_at: z.string().nullable(),
-});
+})
 
-export type ProjectSimulation = z.infer<typeof ProjectSimulationSchema>;
+export type ProjectSimulation = z.infer<typeof ProjectSimulationSchema>
 
 export const ConfidenceLevelSchema = z.enum(['LOW', 'MEDIUM', 'HIGH'])
 
@@ -38,14 +35,14 @@ export const ProjectSchema = z.object({
   created_at: z.string(),
   updated_at: z.string().nullable(),
   simulations: z.array(ProjectSimulationSchema).default([]),
-  confidence_level: ConfidenceLevelSchema
-});
+  confidence_level: ConfidenceLevelSchema,
+})
 
 export const ProjectContextSchema = z.object({
-    projects: z.array(ProjectSchema),
-    projectsById: z.record(ProjectSchema),
-    loading: z.boolean(),
-    error: z.string().nullable(),
+  projects: z.array(ProjectSchema),
+  projectsById: z.record(ProjectSchema),
+  loading: z.boolean(),
+  error: z.string().nullable(),
 })
 
 export type Project = z.infer<typeof ProjectSchema>
@@ -55,3 +52,9 @@ export type ProjectContext = z.infer<typeof ProjectContextSchema>
 export interface ProjectContextType extends ProjectContext {
   setProjectsById: React.Dispatch<React.SetStateAction<Record<string, Project>>>
 }
+
+export const ProjectsResponseSchema = z.object({
+  projects: z.array(ProjectSchema),
+})
+
+export type ProjectsResponse = z.infer<typeof ProjectsResponseSchema>

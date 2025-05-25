@@ -35,8 +35,8 @@ async function fetchProjects(searchParams: { [key: string]: string | string[] | 
   try {
     const response = await fetch(`${protocol}://${host}/api/projects?${queryParams.toString()}`, {
       next: {
-        revalidate: 30, // Reduce revalidation time to 30 seconds
-        tags: ['projects'], // Add cache tag for manual revalidation
+        revalidate: 30,
+        tags: ['projects'],
       },
       headers: {
         'Accept': 'application/json',

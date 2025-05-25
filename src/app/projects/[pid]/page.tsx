@@ -1,13 +1,15 @@
 import { redirect } from 'next/navigation'
+import { use } from 'react'
 
 type ProjectDetailsParams = {
-  params: {
+  params: Promise<{
     pid: string
-  }
+  }>
 }
 
 const ProjectDetails = ({ params }: ProjectDetailsParams) => {
-  redirect(`/projects/${params.pid}/simulations`)
+  const { pid } = use(params)
+  redirect(`/projects/${pid}/simulations`)
 }
 
 export default ProjectDetails

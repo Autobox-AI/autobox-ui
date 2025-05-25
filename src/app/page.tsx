@@ -63,7 +63,7 @@ export default async function Home() {
         <p className="text-lg text-muted-foreground">The playground for your mind</p>
       </div>
       {/* Message Input and Send Button */}
-      <div className="w-full max-w-5xl mb-6">
+      <div className="w-full max-w-4xl mb-6">
         <div className="relative">
           <input
             type="text"
@@ -76,23 +76,30 @@ export default async function Home() {
           </button>
         </div>
       </div>
-      <div className="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
+      <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
         {sections.map((item, index) => (
           <Link href={item.link} key={index}>
-            <Card className="border-2 border-gray-700 hover:shadow-xl shadow-md transition-shadow duration-300 cursor-pointer flex flex-col p-3">
+            <Card className="border-2 border-gray-700 hover:shadow-xl shadow-md transition-shadow duration-300 cursor-pointer flex flex-col p-2">
               <CardHeader className="p-2 text-center">
-                <CardTitle className="text-lg mb-2">{item.title}</CardTitle>
-                <CardDescription className="text-sm mb-2">{item.description}</CardDescription>
+                <CardTitle className="text-base mb-1">{item.title}</CardTitle>
+                <CardDescription className="text-xs mb-1">{item.description}</CardDescription>
               </CardHeader>
               <div className="relative w-full">
                 <Image
                   src={item.image}
                   alt={item.title}
-                  width={300}
-                  height={200}
+                  width={500}
+                  height={300}
                   priority={index === 0}
-                  style={{ objectFit: 'contain', width: '100%', height: 'auto' }}
-                  className="mx-auto"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  style={{
+                    objectFit: 'contain',
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: '500px'
+                  }}
+                  className="mx-auto rounded-md"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"
                 />
               </div>
             </Card>

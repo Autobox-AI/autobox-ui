@@ -16,6 +16,7 @@ import {
   MoreVertical,
   Pause,
   Play,
+  Plus,
   Search,
   Thermometer,
 } from 'lucide-react'
@@ -76,7 +77,7 @@ const Simulations = ({
       .filter((sim) => sim.status === SIMULATION_STATUSES.IN_PROGRESS)
       .map((simulation) => {
         const eventSource = new EventSource(
-          `http://localhost:8000/simulations/${simulation.id}?streaming=true`
+          `http://localhost:8080/simulations/${simulation.id}?streaming=true`
         )
 
         eventSource.onmessage = (event) => {
@@ -108,7 +109,7 @@ const Simulations = ({
     return () => {
       eventSources.forEach((es) => es.close())
     }
-  }, []) // Empty dependency array since we only want to set this up once
+  }, [simulations]) // Add simulations as a dependency to re-run when they change
 
   const handleSearch = useCallback(
     async (query: string) => {
@@ -165,11 +166,12 @@ const Simulations = ({
               <p className="text-sm text-zinc-400 mt-1">{project.description}</p>
             </div>
             <button
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors"
+              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors flex items-center gap-2"
               onClick={() =>
                 router.push(`/projects/${project.id}/new-simulation?projectName=${project.name}`)
               }
             >
+              <Plus className="h-4 w-4" />
               New Simulation
             </button>
           </div>
