@@ -84,21 +84,28 @@ async function fetchSimulations(projectId: string): Promise<Simulation[]> {
 }
 
 type ProjectSimulationsParams = {
-  params: {
+  params: Promise<{
     pid: string
-  }
+  }>
 }
 
 export default async function ProjectSimulations({ params }: ProjectSimulationsParams) {
-  try {
-    // Ensure params.pid is available
-    if (!params?.pid) {
-      throw new Error('Project ID is required')
-    }
+  const resolvedParams = await params
 
+  // Ensure params.pid is available
+  if (!resolvedParams?.pid) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Error Loading Project</h1>
+        <p className="text-zinc-400">Project ID is required</p>
+      </div>
+    )
+  }
+
+  try {
     // Fetch data sequentially to avoid race conditions
-    const project = await fetchProject(params.pid)
-    const simulations = await fetchSimulations(params.pid)
+    const project = await fetchProject(resolvedParams.pid)
+    const simulations = await fetchSimulations(resolvedParams.pid)
 
     return (
       <div className="flex flex-col min-h-screen w-full">

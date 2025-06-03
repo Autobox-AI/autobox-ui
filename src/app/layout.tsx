@@ -4,6 +4,7 @@ import '../styles/globals.css'
 
 import AppSidebar from '@/components/Sidebar'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import { Toaster } from "@/components/ui/toaster"
 import { cn } from '@/lib/utils'
 import { Organization } from '@/schemas/organization'
 import { cookies } from 'next/headers'
@@ -39,6 +40,7 @@ export default async function RootLayout({
             <main className="flex-1 flex flex-col w-full">{children}</main>
           </SidebarProvider>
         </div>
+        <Toaster />
       </body>
     </html>
   )

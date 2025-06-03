@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const response = await fetch(`http://localhost:8080/simulations/${params.id}`, {
+    const { id } = await params
+    const response = await fetch(`http://localhost:8080/simulations/${id}`, {
       headers: {
         'Content-Type': 'application/json',
       },

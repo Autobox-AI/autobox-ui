@@ -38,7 +38,7 @@ import { cn } from '@/lib/utils'
 import { CalendarIcon } from '@radix-ui/react-icons'
 import { format } from 'date-fns'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 const initialMoodSpectrums = [
   { labelLeft: 'Calm', labelRight: 'Anxious', defaultValue: 50 },
@@ -71,7 +71,8 @@ interface FormData {
   task: string
   orchestratorName: string
   instruction: string
-  metrics: Record<string, Metric> // This allows string indexing of Metric objects
+  metrics: Record<string, Metric>
+  metricsTemplateId: string
   agents: {
     name: string
     role: string
@@ -83,8 +84,9 @@ interface FormData {
   mood: number[]
 }
 
-const NewSimulation = ({ params }: { params: { pid: string } }) => {
+const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
   const router = useRouter()
+  const unwrappedParams = React.use(params)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date>()
   const searchParams = useSearchParams()
@@ -143,7 +145,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
   }
 
   const handleBackToProject = () => {
-    router.push(`/projects/${params.pid}`)
+    router.push(`/projects/${unwrappedParams.pid}`)
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -153,7 +155,8 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     task: '',
     orchestratorName: '',
     instruction: '',
-    metrics: {}, // Now TypeScript knows this can be indexed with strings
+    metrics: {},
+    metricsTemplateId: '',
     agents: [],
     simulationType: 'default',
     scheduleDate: null,
@@ -193,23 +196,6 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
   const removeAgent = (index: number) =>
     setFormData({ ...formData, agents: formData.agents.filter((_, i) => i !== index) })
 
-  // const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0]
-  //   if (!file) return
-  //   setSelectedFile(file)
-
-  //   const reader = new FileReader()
-  //   reader.onload = (event) => {
-  //     try {
-  //       const jsonData = JSON.parse(event.target?.result as string)
-  //       setFormData(jsonData)
-  //     } catch (error) {
-  //       console.error('Error parsing JSON:', error)
-  //       alert('Invalid file format')
-  //     }
-  //   }
-  //   reader.readAsText(file)
-  // }
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -224,27 +210,33 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
         setFormData({
           simulationName: jsonData.name || '',
           maxSteps: jsonData.max_steps || 150,
-          timeout: jsonData.timeout || 600,
+          timeout: jsonData.timeout_seconds || 600,
           task: jsonData.task || '',
           orchestratorName: jsonData.orchestrator?.name || '',
-          instruction: jsonData.orchestrator?.instruction || '',
+          instruction: jsonData.description || '',
           metrics: jsonData.metrics || {},
-          agents:
-            jsonData.agents?.map((agent: any) => ({
-              name: agent.name || '',
-              role: agent.role || '',
-              backstory: agent.backstory || '',
-              tools: agent.tools || [], // Assuming 'tools' is part of the agent data in the JSON
-            })) || [],
-          simulationType: jsonData.type || 'default',
-          scheduleDate: jsonData.schedule ? new Date(jsonData.schedule) : null,
-          mood: [50], // Adjust mood handling as needed, since it's not in the JSON
+          metricsTemplateId: jsonData.metrics?.template_id || '',
+          agents: jsonData.agents?.map((agent: any) => ({
+            name: agent.name || '',
+            role: agent.role || '',
+            backstory: agent.backstory || '',
+            tools: [], // Initialize empty tools array as it's not in the JSON
+          })) || [],
+          simulationType: 'default',
+          scheduleDate: null,
+          mood: [50],
         })
 
         // Set additional state variables
-        setIsHumanInTheLoopEnabled(jsonData.is_hitl_enabled || false)
-        setIsGenerativeMetricsEnabled(!!jsonData.metrics) // Assuming metrics presence enables generative metrics
-        // Adjust more states based on other JSON fields if necessary
+        setIsHumanInTheLoopEnabled(true) // Default to true as it's not in the JSON
+        setIsGenerativeMetricsEnabled(!!jsonData.metrics) // Enable if metrics are present
+        setIsGenerativeAlertsEnabled(true) // Default to true as it's not in the JSON
+
+        // If there are agents, initialize their expanded states
+        if (jsonData.agents?.length) {
+          setExpandedAgentsTools(new Array(jsonData.agents.length).fill(true))
+          setExpandedAgentsMood(new Array(jsonData.agents.length).fill(true))
+        }
       } catch (error) {
         console.error('Error parsing JSON:', error)
         alert('Invalid file format')
@@ -292,7 +284,7 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
       if (!response.ok) throw new Error('Failed to create simulation')
 
       setIsConfirmationOpen(false)
-      router.push(`/projects/${params.pid}/simulations`)
+      router.push(`/projects/${unwrappedParams.pid}/simulations`)
       router.refresh()
     } catch (err) {
       console.error(err)
@@ -300,8 +292,103 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
     }
   }
 
-  const handleRunSimulation = () => {
-    setIsConfirmationOpen(true)
+  const handleCreateSimulation = async () => {
+    try {
+      console.log('Creating simulation with data:', formData)
+
+      const response = await fetch(`/api/projects/${unwrappedParams.pid}/simulations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.simulationName,
+          max_steps: formData.maxSteps,
+          timeout_seconds: formData.timeout,
+          description: formData.instruction,
+          task: formData.task,
+          metrics: {
+            template_id: formData.metricsTemplateId
+          },
+          logging: {
+            log_path: "/Users/martin.dagostino/workspace/margostino/autobox/logs",
+            verbose: true
+          },
+          evaluator: {
+            name: "EVALUATOR",
+            mailbox: {
+              max_size: 400
+            },
+            llm: {
+              model: "gpt-4.5-preview"
+            }
+          },
+          reporter: {
+            name: "REPORTER",
+            mailbox: {
+              max_size: 400
+            },
+            llm: {
+              model: "gpt-4.5-preview"
+            }
+          },
+          planner: {
+            name: "PLANNER",
+            mailbox: {
+              max_size: 400
+            },
+            llm: {
+              model: "o3-mini"
+            }
+          },
+          orchestrator: {
+            name: "ORCHESTRATOR",
+            mailbox: {
+              max_size: 400
+            },
+            llm: {
+              model: "gpt-4.5-preview"
+            }
+          },
+          agents: formData.agents.map(agent => ({
+            name: agent.name,
+            description: agent.role,
+            role: agent.role,
+            backstory: agent.backstory,
+            llm: {
+              model: "gpt-4.5-preview"
+            },
+            mailbox: {
+              max_size: 100
+            }
+          }))
+        }),
+      })
+
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        console.error('Failed to create simulation:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: responseData
+        })
+        throw new Error(
+          responseData.details
+            ? `Failed to create simulation: ${responseData.error}\nDetails: ${JSON.stringify(responseData.details, null, 2)}`
+            : responseData.error || 'Failed to create simulation'
+        )
+      }
+
+      console.log('Simulation created successfully:', responseData)
+
+      // Redirect to simulations page after successful creation
+      router.push(`/projects/${unwrappedParams.pid}/simulations`)
+    } catch (error) {
+      console.error('Error creating simulation:', error)
+      // Show error to user
+      alert(error instanceof Error ? error.message : 'Failed to create simulation')
+    }
   }
 
   const handleMetricChange = (metricKey: string, field: keyof Metric, value: string) => {
@@ -490,6 +577,22 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
               </div>
             )}
 
+            <div className="mb-4">
+              <Tooltip>
+                <TooltipTrigger>
+                  <Label>Metrics Template ID</Label>
+                </TooltipTrigger>
+                <TooltipContent>Enter the UUID of the metrics template to use for this simulation.</TooltipContent>
+              </Tooltip>
+              <Input
+                className="w-1/2 mt-2"
+                name="metricsTemplateId"
+                value={formData.metricsTemplateId}
+                onChange={handleInputChange}
+                placeholder="Enter metrics template UUID"
+              />
+            </div>
+
             <h2 className="text-xl font-semibold mb-4">Alerts</h2>
             <div className="flex items-center space-x-4 mb-4">
               <Switch
@@ -559,9 +662,6 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                     <Button variant="destructive" onClick={() => removeAgent(index)}>
                       Remove
                     </Button>
-                    {/* <button onClick={() => removeAgent(index)} className="ml-2">
-                    <TrashIcon className="h-5 w-5 text-red-500 hover:text-red-700" />
-                  </button> */}
                   </div>
                   <Textarea
                     className="w-full mt-2"
@@ -577,8 +677,6 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                     rows={4}
                     onChange={(e) => handleAgentChange(index, 'backstory', e.target.value)}
                   />
-                  {/* Tools Table for Each Agent */}
-                  {/* Expand/Collapse on "Tools for X" click */}
                   <div
                     className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
                     onClick={() => toggleExpandAgentsTools(index)}
@@ -586,23 +684,11 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                     Tools for {agent.name} {expandedAgentsTools[index] ? '▲' : '▼'}
                   </div>
 
-                  {/* Conditionally show ToolsTable */}
                   {expandedAgentsTools[index] && (
                     <div className="mt-2">
                       <ToolsTable />
                     </div>
                   )}
-                  {/* <div className="flex items-center space-x-4 mt-4">
-                  <span>Sad</span>
-                  <Slider
-                    defaultValue={formData.mood}
-                    max={100}
-                    step={1}
-                    onValueChange={(value) => setFormData({ ...formData, mood: value })}
-                    className="w-[60%]"
-                  />
-                  <span>Happy</span>
-                </div> */}
                   <div
                     className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
                     onClick={() => toggleExpandAgentsMood(index)}
@@ -620,7 +706,6 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                           onChange={(value: number) => handleMoodChange(index, value)}
                         />
                       ))}
-                      {/* Dialog for adding new mood */}
                       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
                           <Button
@@ -667,20 +752,17 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
               <Button onClick={handleBackToProject} variant="secondary">
                 Cancel
               </Button>
-              <Button onClick={handleRunSimulation} variant="default">
-                Run Simulation
+              <Button onClick={handleCreateSimulation} variant="default">
+                Create
               </Button>
             </div>
-            {/* Confirmation Dialog */}
             <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>
               <DialogContent className="max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Confirm Simulation Details</DialogTitle>
                 </DialogHeader>
 
-                {/* Display Metrics Confirmation */}
                 <div className="space-y-4">
-                  {/* Additional simulation details */}
                   <div className="grid grid-cols-2 gap-4 p-4 rounded-lg text-white">
                     <div className="col-span-2">
                       <h3 className="font-semibold text-lg">Simulation Details</h3>
@@ -716,12 +798,10 @@ const NewSimulation = ({ params }: { params: { pid: string } }) => {
                   <Separator className="my-4" />
                   <h3 className="font-semibold text-lg">Metrics</h3>
 
-                  {/* Make this section scrollable and collapsible */}
                   <div className="max-h-[50vh] overflow-y-auto space-y-4">
                     {formData.metrics ? (
                       Object.keys(formData.metrics).map((metricKey, index) => (
                         <div key={index} className="border border-gray-300 rounded-lg p-2">
-                          {/* Collapsible section for each metric */}
                           <details>
                             <summary className="cursor-pointer text-sm font-medium">
                               {formData.metrics[metricKey].name}

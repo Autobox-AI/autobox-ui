@@ -18,18 +18,20 @@ import { Project } from '@/schemas'
 import { headers } from 'next/headers'
 import { Suspense } from 'react'
 
-async function fetchProjects(searchParams: { [key: string]: string | string[] | undefined }): Promise<Project[]> {
+async function fetchProjects(searchParams: Promise<{ [key: string]: string | string[] | undefined }>): Promise<Project[]> {
   const headersList = await headers()
   const host = headersList.get('host')
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
 
   // Build query parameters
   const queryParams = new URLSearchParams()
-  if (searchParams.search) {
-    queryParams.append('search', searchParams.search as string)
+  const resolvedParams = await searchParams
+
+  if (resolvedParams.search) {
+    queryParams.append('search', resolvedParams.search as string)
   }
-  if (searchParams.status && searchParams.status !== 'all') {
-    queryParams.append('status', searchParams.status as string)
+  if (resolvedParams.status && resolvedParams.status !== 'all') {
+    queryParams.append('status', resolvedParams.status as string)
   }
 
   try {
@@ -58,7 +60,7 @@ async function fetchProjects(searchParams: { [key: string]: string | string[] | 
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   return (
     <div className="flex flex-col min-h-screen w-full">
@@ -99,7 +101,7 @@ export default async function ProjectsPage({
   )
 }
 
-async function ProjectsContent({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+async function ProjectsContent({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const projects = await fetchProjects(searchParams)
   return !projects.length ? <div>No projects found.</div> : <Projects projects={projects} />
 }

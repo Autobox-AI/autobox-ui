@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request, { params }: { params: { pid: string } }) {
   try {
-    const projectId = await Promise.resolve(params.pid)
-    const response = await fetch(`http://localhost:8080/projects/${projectId}`, {
+    const { pid } = await params
+    const response = await fetch(`http://localhost:8080/projects/${pid}`, {
       cache: 'no-store',
     })
 

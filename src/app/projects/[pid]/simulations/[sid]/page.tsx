@@ -32,8 +32,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { format } from "date-fns";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, ChevronRight, GitGraph } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 
 interface Worker {
@@ -55,6 +62,7 @@ interface Run {
   planner_id: string;
   reporter_id: string;
   workers: Worker[];
+  observation?: string;
 }
 
 interface SimulationRunsResponse {
@@ -103,13 +111,14 @@ async function getSimulationRuns(simulationId: string): Promise<SimulationRunsRe
 }
 
 type SortDirection = 'asc' | 'desc';
-type SortField = 'status' | 'progress' | 'started_at' | 'finished_at' | 'workers' | 'summary';
+type SortField = 'status' | 'progress' | 'started_at' | 'finished_at' | 'workers' | 'summary' | 'observation';
 
 export default function SimulationRunsPage({
   params,
 }: {
   params: Promise<{ pid: string; sid: string }>;
 }) {
+  const router = useRouter();
   const { pid, sid } = use(params);
   const [project, setProject] = useState<any>(null);
   const [simulation, setSimulation] = useState<any>(null);
@@ -160,10 +169,13 @@ export default function SimulationRunsPage({
                       (b.finished_at ? new Date(b.finished_at).getTime() : 0);
           break;
         case 'workers':
-          comparison = a.workers.map(w => w.name).join(', ').localeCompare(b.workers.map(w => w.name).join(', '));
+          comparison = a.workers.length - b.workers.length;
           break;
         case 'summary':
           comparison = (a.summary || '').localeCompare(b.summary || '');
+          break;
+        case 'observation':
+          comparison = (a.observation || '').localeCompare(b.observation || '');
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -234,116 +246,177 @@ export default function SimulationRunsPage({
           </Select>
         </div>
         <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer hover:bg-accent"
-                  onClick={() => handleSort('status')}
-                >
-                  <div className="flex items-center gap-1">
-                    Status
-                    {sortField === 'status' && (
-                      <ArrowUpDown className="h-4 w-4" />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-accent"
-                  onClick={() => handleSort('progress')}
-                >
-                  <div className="flex items-center gap-1">
-                    Progress
-                    {sortField === 'progress' && (
-                      <ArrowUpDown className="h-4 w-4" />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-accent"
-                  onClick={() => handleSort('started_at')}
-                >
-                  <div className="flex items-center gap-1">
-                    Started At
-                    {sortField === 'started_at' && (
-                      <ArrowUpDown className="h-4 w-4" />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-accent"
-                  onClick={() => handleSort('finished_at')}
-                >
-                  <div className="flex items-center gap-1">
-                    Finished At
-                    {sortField === 'finished_at' && (
-                      <ArrowUpDown className="h-4 w-4" />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-accent"
-                  onClick={() => handleSort('workers')}
-                >
-                  <div className="flex items-center gap-1">
-                    Workers
-                    {sortField === 'workers' && (
-                      <ArrowUpDown className="h-4 w-4" />
-                    )}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-accent"
-                  onClick={() => handleSort('summary')}
-                >
-                  <div className="flex items-center gap-1">
-                    Summary
-                    {sortField === 'summary' && (
-                      <ArrowUpDown className="h-4 w-4" />
-                    )}
-                  </div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAndSortedRuns.map((run) => (
-                <TableRow key={run.id}>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        run.status === "completed"
-                          ? "success"
-                          : run.status === "in progress"
-                          ? "default"
-                          : "destructive"
-                      }
-                      className={run.status === "in progress" ? "animate-pulse" : ""}
-                    >
-                      {run.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={run.progress * 100} className="w-[100px]" />
-                      <span>{Math.round(run.progress * 100)}%</span>
+          <TooltipProvider>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Status
+                      {sortField === 'status' && (
+                        <ArrowUpDown className="h-4 w-4" />
+                      )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(run.started_at), "PPp")}
-                  </TableCell>
-                  <TableCell>
-                    {run.finished_at
-                      ? format(new Date(run.finished_at), "PPp")
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {run.workers.map((worker) => worker.name).join(", ")}
-                  </TableCell>
-                  <TableCell>{run.summary || "-"}</TableCell>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => handleSort('progress')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Progress
+                      {sortField === 'progress' && (
+                        <ArrowUpDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => handleSort('started_at')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Started At
+                      {sortField === 'started_at' && (
+                        <ArrowUpDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => handleSort('finished_at')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Finished At
+                      {sortField === 'finished_at' && (
+                        <ArrowUpDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => handleSort('workers')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Workers
+                      {sortField === 'workers' && (
+                        <ArrowUpDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => handleSort('summary')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Summary
+                      {sortField === 'summary' && (
+                        <ArrowUpDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-accent"
+                    onClick={() => handleSort('observation')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Observations
+                      {sortField === 'observation' && (
+                        <ArrowUpDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedRuns.length > 0 ? (
+                  filteredAndSortedRuns.map((run) => (
+                    <TableRow
+                      key={run.id}
+                      className="cursor-pointer hover:bg-accent/50 group transition-colors"
+                      onClick={() => router.push(`/projects/${pid}/simulations/${sid}/runs/${run.id}`)}
+                    >
+                      <TableCell>
+                        <Badge
+                          variant={
+                            run.status === "completed"
+                              ? "success"
+                              : run.status === "in progress"
+                              ? "default"
+                              : "destructive"
+                          }
+                          className={run.status === "in progress" ? "animate-pulse" : ""}
+                        >
+                          {run.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress value={run.progress * 100} className="w-[100px]" />
+                          <span>{Math.round(run.progress * 100)}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(run.started_at), "PPp")}
+                      </TableCell>
+                      <TableCell>
+                        {run.finished_at
+                          ? format(new Date(run.finished_at), "PPp")
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {run.workers.length}
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <div className="flex items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger className="w-full text-left">
+                              <div className="truncate text-ellipsis overflow-hidden text-left">
+                                {run.summary || "-"}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[400px]">
+                              <p className="break-words text-left">
+                                {run.summary || "-"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <div className="flex items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger className="w-full text-left">
+                              <div className="truncate text-ellipsis overflow-hidden text-left">
+                                {run.status === "failed" ? run.observation || "No reason provided" : "-"}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[400px]">
+                              <p className="break-words text-left">
+                                {run.status === "failed" ? run.observation || "No reason provided" : "-"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32">
+                      <div className="flex flex-col items-center justify-center text-zinc-400">
+                        <GitGraph className="h-12 w-12 mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No runs yet</h3>
+                        <p className="text-sm">Start a new run to begin your simulation</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TooltipProvider>
         </div>
       </div>
     </div>
