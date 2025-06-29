@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export async function GET(request: Request, { params }: { params: { pid: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ pid: string }> }) {
   try {
     const { pid } = await params
     const response = await fetch(`http://localhost:8080/projects/${pid}`, {

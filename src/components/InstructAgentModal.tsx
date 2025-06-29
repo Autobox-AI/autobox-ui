@@ -28,7 +28,7 @@ const InstructAgentModal = ({ isOpen, onClose, onSubmit, agents }: InstructAgent
 
   const [message, setMessage] = useState('')
   const [openAgentSelector, setOpenAgentSelector] = React.useState(false)
-  const [agentId, setAgentId] = React.useState<string | null>(null)
+  const [_agentId, _setAgentId] = React.useState<string | null>(null)
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     setMessage(e.target.value)

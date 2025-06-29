@@ -39,7 +39,7 @@ async function fetchProject(projectId: string): Promise<Project> {
 
     try {
       return JSON.parse(text)
-    } catch (e) {
+    } catch (_e) {
       console.error('Failed to parse project response:', text)
       throw new Error('Invalid JSON response from server')
     }
@@ -73,7 +73,7 @@ async function fetchSimulations(projectId: string): Promise<Simulation[]> {
     try {
       const data = JSON.parse(text)
       return data.simulations || []
-    } catch (e) {
+    } catch (_e) {
       console.error('Failed to parse simulations response:', text)
       throw new Error('Invalid JSON response from server')
     }
@@ -109,7 +109,7 @@ export default async function ProjectSimulations({ params }: ProjectSimulationsP
 
     return (
       <div className="flex flex-col min-h-screen w-full">
-        <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800 ml-[var(--sidebar-width-icon)] md:ml-[220px]">
+        <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>

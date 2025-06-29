@@ -60,7 +60,7 @@ const initialMoodSpectrums = [
 interface Metric {
   name: string
   description: string
-  prometheus_type: string
+  type: string
   unit: string
 }
 
@@ -87,7 +87,7 @@ interface FormData {
 const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
   const router = useRouter()
   const unwrappedParams = React.use(params)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [_selectedFile, setSelectedFile] = useState<File | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date>()
   const searchParams = useSearchParams()
   const projectName = searchParams.get('projectName') ?? 'Unknown'
@@ -167,7 +167,7 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleToolChange = (agentIndex: number, tool: string, selected: boolean) => {
+  const _handleToolChange = (agentIndex: number, tool: string, selected: boolean) => {
     const agents = [...formData.agents]
     if (selected) {
       agents[agentIndex].tools = [...agents[agentIndex].tools, tool]
@@ -216,12 +216,13 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
           instruction: jsonData.description || '',
           metrics: jsonData.metrics || {},
           metricsTemplateId: jsonData.metrics?.template_id || '',
-          agents: jsonData.agents?.map((agent: any) => ({
-            name: agent.name || '',
-            role: agent.role || '',
-            backstory: agent.backstory || '',
-            tools: [], // Initialize empty tools array as it's not in the JSON
-          })) || [],
+          agents:
+            jsonData.agents?.map((agent: any) => ({
+              name: agent.name || '',
+              role: agent.role || '',
+              backstory: agent.backstory || '',
+              tools: [], // Initialize empty tools array as it's not in the JSON
+            })) || [],
           simulationType: 'default',
           scheduleDate: null,
           mood: [50],
@@ -308,60 +309,60 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
           description: formData.instruction,
           task: formData.task,
           metrics: {
-            template_id: formData.metricsTemplateId
+            template_id: formData.metricsTemplateId,
           },
           logging: {
-            log_path: "/Users/martin.dagostino/workspace/margostino/autobox/logs",
-            verbose: true
+            log_path: '/Users/martin.dagostino/workspace/margostino/autobox/logs',
+            verbose: true,
           },
           evaluator: {
-            name: "EVALUATOR",
+            name: 'EVALUATOR',
             mailbox: {
-              max_size: 400
+              max_size: 400,
             },
             llm: {
-              model: "gpt-4.5-preview"
-            }
+              model: 'gpt-4.5-preview',
+            },
           },
           reporter: {
-            name: "REPORTER",
+            name: 'REPORTER',
             mailbox: {
-              max_size: 400
+              max_size: 400,
             },
             llm: {
-              model: "gpt-4.5-preview"
-            }
+              model: 'gpt-4.5-preview',
+            },
           },
           planner: {
-            name: "PLANNER",
+            name: 'PLANNER',
             mailbox: {
-              max_size: 400
+              max_size: 400,
             },
             llm: {
-              model: "o3-mini"
-            }
+              model: 'o3-mini',
+            },
           },
           orchestrator: {
-            name: "ORCHESTRATOR",
+            name: 'ORCHESTRATOR',
             mailbox: {
-              max_size: 400
+              max_size: 400,
             },
             llm: {
-              model: "gpt-4.5-preview"
-            }
+              model: 'gpt-4.5-preview',
+            },
           },
-          agents: formData.agents.map(agent => ({
+          agents: formData.agents.map((agent) => ({
             name: agent.name,
             description: agent.role,
             role: agent.role,
             backstory: agent.backstory,
             llm: {
-              model: "gpt-4.5-preview"
+              model: 'gpt-4.5-preview',
             },
             mailbox: {
-              max_size: 100
-            }
-          }))
+              max_size: 100,
+            },
+          })),
         }),
       })
 
@@ -371,7 +372,7 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
         console.error('Failed to create simulation:', {
           status: response.status,
           statusText: response.statusText,
-          error: responseData
+          error: responseData,
         })
         throw new Error(
           responseData.details
@@ -407,7 +408,7 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
   return (
     <TooltipProvider>
       <div className="flex flex-col min-h-screen w-full">
-        <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800 ml-[var(--sidebar-width-icon)] md:ml-[220px]">
+        <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -572,7 +573,7 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
               <div className="mb-4">
                 <p className="text-sm text-gray-500">
                   Generative Metrics are enabled. The system will automatically generate metrics
-                  based on the simulation's settings.
+                  based on the simulation&apos;s settings.
                 </p>
               </div>
             )}
@@ -582,7 +583,9 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
                 <TooltipTrigger>
                   <Label>Metrics Template ID</Label>
                 </TooltipTrigger>
-                <TooltipContent>Enter the UUID of the metrics template to use for this simulation.</TooltipContent>
+                <TooltipContent>
+                  Enter the UUID of the metrics template to use for this simulation.
+                </TooltipContent>
               </Tooltip>
               <Input
                 className="w-1/2 mt-2"
@@ -607,7 +610,7 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
               <div className="mb-4">
                 <p className="text-sm text-gray-500">
                   Generative Alerts are enabled. The system will automatically generate alerts based
-                  on the simulation's settings.
+                  on the simulation&apos;s settings.
                 </p>
               </div>
             )}
@@ -828,9 +831,9 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
                               <div>
                                 <Label>Type</Label>
                                 <Input
-                                  value={formData.metrics[metricKey].prometheus_type}
+                                  value={formData.metrics[metricKey].type}
                                   onChange={(e) =>
-                                    handleMetricChange(metricKey, 'prometheus_type', e.target.value)
+                                    handleMetricChange(metricKey, 'type', e.target.value)
                                   }
                                 />
                               </div>

@@ -62,6 +62,43 @@ const formatDate = (date: string | null | undefined) => {
   })
 }
 
+// Helper function to generate pagination items with dots
+const generatePaginationItems = (currentPage: number, totalPages: number) => {
+  const items: (number | 'dots')[] = []
+
+  if (totalPages <= 5) {
+    // Show all pages if 5 or fewer
+    for (let i = 1; i <= totalPages; i++) {
+      items.push(i)
+    }
+    return items
+  }
+
+  // Always show first page
+  items.push(1)
+
+  if (currentPage <= 3) {
+    // Near the beginning
+    items.push(2, 3, 4)
+    if (totalPages > 4) {
+      items.push('dots')
+      items.push(totalPages)
+    }
+  } else if (currentPage >= totalPages - 2) {
+    // Near the end
+    items.push('dots')
+    items.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+  } else {
+    // In the middle
+    items.push('dots')
+    items.push(currentPage - 1, currentPage, currentPage + 1)
+    items.push('dots')
+    items.push(totalPages)
+  }
+
+  return items
+}
+
 type ViewMode = 'grid' | 'table'
 
 interface ProjectCardProps {
@@ -70,9 +107,7 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
-  <div
-    className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col"
-  >
+  <div className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col">
     <div className="p-6 flex-1">
       <div className="flex justify-between items-start">
         <div className="cursor-pointer flex-1 min-w-0" onClick={onClick}>
@@ -86,7 +121,9 @@ const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
               <TooltipContent side="top" className="max-w-[300px]">
                 <div className="space-y-1">
                   <p className="font-semibold">{project.name}</p>
-                  <p className="text-sm text-zinc-400">{project.description || 'No description provided'}</p>
+                  <p className="text-sm text-zinc-400">
+                    {project.description || 'No description provided'}
+                  </p>
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -124,9 +161,7 @@ const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
                 <span>{project.simulations?.length || 0}</span>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">
-              Total simulations
-            </TooltipContent>
+            <TooltipContent side="top">Total simulations</TooltipContent>
           </Tooltip>
         </div>
         <div className="flex items-center gap-1">
@@ -137,9 +172,7 @@ const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
                 <span>{formatDate(project.updated_at || project.created_at)}</span>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">
-              Last update
-            </TooltipContent>
+            <TooltipContent side="top">Last update</TooltipContent>
           </Tooltip>
         </div>
       </div>
@@ -153,9 +186,7 @@ const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
                 project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
               }`}
             />
-            <span className="text-sm text-zinc-400 capitalize">
-              {project.status || 'active'}
-            </span>
+            <span className="text-sm text-zinc-400 capitalize">{project.status || 'active'}</span>
           </div>
           <button
             onClick={onClick}
@@ -196,25 +227,28 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   const debouncedSearch = useDebounce(searchQuery, 300)
 
   // Update URL when filters change
-  const updateFilters = useCallback((search: string, status: ProjectStatus | 'all', page: number) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (search) {
-      params.set('search', search)
-    } else {
-      params.delete('search')
-    }
-    if (status !== 'all') {
-      params.set('status', status)
-    } else {
-      params.delete('status')
-    }
-    if (page > 1) {
-      params.set('page', page.toString())
-    } else {
-      params.delete('page')
-    }
-    router.push(`/projects?${params.toString()}`)
-  }, [router, searchParams])
+  const updateFilters = useCallback(
+    (search: string, status: ProjectStatus | 'all', page: number) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (search) {
+        params.set('search', search)
+      } else {
+        params.delete('search')
+      }
+      if (status !== 'all') {
+        params.set('status', status)
+      } else {
+        params.delete('status')
+      }
+      if (page > 1) {
+        params.set('page', page.toString())
+      } else {
+        params.delete('page')
+      }
+      router.push(`/projects?${params.toString()}`)
+    },
+    [router, searchParams]
+  )
 
   // Handle search changes
   const handleSearch = useCallback((query: string) => {
@@ -237,9 +271,12 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
     updateFilters(debouncedSearch, statusFilter, currentPage)
   }, [debouncedSearch, statusFilter, currentPage, updateFilters])
 
-  const goToProject = useCallback((projectId: string) => {
-    router.push(`/projects/${projectId}/simulations`)
-  }, [router])
+  const goToProject = useCallback(
+    (projectId: string) => {
+      router.push(`/projects/${projectId}/simulations`)
+    },
+    [router]
+  )
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -274,10 +311,7 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                 className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={handleStatusChange}
-            >
+            <Select value={statusFilter} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -371,17 +405,23 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? 'default' : 'outline'}
-                    size="icon"
-                    onClick={() => handlePageChange(page)}
-                    className="h-8 w-8"
-                  >
-                    {page}
-                  </Button>
-                ))}
+                {generatePaginationItems(currentPage, totalPages).map((item, index) =>
+                  item === 'dots' ? (
+                    <span key={`dots-${index}`} className="px-2 text-zinc-400">
+                      ...
+                    </span>
+                  ) : (
+                    <Button
+                      key={item}
+                      variant={currentPage === item ? 'default' : 'outline'}
+                      size="icon"
+                      onClick={() => handlePageChange(item)}
+                      className="h-8 w-8"
+                    >
+                      {item}
+                    </Button>
+                  )
+                )}
               </div>
               <Button
                 variant="outline"

@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     let responseData
     try {
       responseData = JSON.parse(responseText)
-    } catch (e) {
+    } catch (_e) {
       responseData = responseText
     }
 
@@ -125,7 +125,7 @@ export async function PUT(request: Request) {
     let responseData
     try {
       responseData = JSON.parse(responseText)
-    } catch (e) {
+    } catch (_e) {
       responseData = responseText
     }
 

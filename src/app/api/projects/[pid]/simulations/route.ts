@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 
-export async function GET(request: Request, { params }: { params: { pid: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ pid: string }> }) {
   try {
-    const projectId = await Promise.resolve(params.pid)
+    const { pid } = await params
+    const projectId = await Promise.resolve(pid)
     const apiUrl = process.env.API_URL
     console.log('Fetching simulations from:', `${apiUrl}/projects/${projectId}/simulations`)
 
@@ -32,9 +33,10 @@ export async function GET(request: Request, { params }: { params: { pid: string 
   }
 }
 
-export async function POST(request: Request, { params }: { params: { pid: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ pid: string }> }) {
   try {
-    const projectId = await Promise.resolve(params.pid)
+    const { pid } = await params
+    const projectId = await Promise.resolve(pid)
     const apiUrl = process.env.API_URL
     if (!apiUrl) {
       console.error('API_URL environment variable is not set')
@@ -63,7 +65,7 @@ export async function POST(request: Request, { params }: { params: { pid: string
     let responseData
     try {
       responseData = JSON.parse(responseText)
-    } catch (e) {
+    } catch (_e) {
       responseData = responseText
     }
 

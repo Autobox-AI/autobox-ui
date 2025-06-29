@@ -18,12 +18,13 @@ import { Project } from '@/schemas'
 import { headers } from 'next/headers'
 import { Suspense } from 'react'
 
-async function fetchProjects(searchParams: Promise<{ [key: string]: string | string[] | undefined }>): Promise<Project[]> {
+async function fetchProjects(
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+): Promise<Project[]> {
   const headersList = await headers()
   const host = headersList.get('host')
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
 
-  // Build query parameters
   const queryParams = new URLSearchParams()
   const resolvedParams = await searchParams
 
@@ -41,7 +42,7 @@ async function fetchProjects(searchParams: Promise<{ [key: string]: string | str
         tags: ['projects'],
       },
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     })
 
@@ -64,7 +65,7 @@ export default async function ProjectsPage({
 }) {
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800 ml-[var(--sidebar-width-icon)] md:ml-[220px]">
+      <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -101,7 +102,23 @@ export default async function ProjectsPage({
   )
 }
 
-async function ProjectsContent({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+async function ProjectsContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const projects = await fetchProjects(searchParams)
-  return !projects.length ? <div>No projects found.</div> : <Projects projects={projects} />
+
+  if (!projects.length) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] px-6">
+        <h2 className="text-2xl font-bold text-zinc-400 mb-4">No Projects Found</h2>
+        <p className="text-zinc-500 text-center max-w-md">
+          There are no projects available at the moment. Create your first project to get started.
+        </p>
+      </div>
+    )
+  }
+
+  return <Projects projects={projects} />
 }

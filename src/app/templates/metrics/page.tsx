@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/use-toast'
 import { MetricTemplate } from '@/types/metrics'
 import { Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { MetricTemplateForm } from './metric-template-form'
 import { MetricTemplateList } from './metric-template-list'
 
@@ -16,7 +16,7 @@ export default function MetricsTemplatesPage() {
   const [editingTemplate, setEditingTemplate] = useState<MetricTemplate | null>(null)
   const { toast } = useToast()
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     try {
       const response = await fetch('/api/templates/metrics')
       if (!response.ok) {
@@ -24,7 +24,7 @@ export default function MetricsTemplatesPage() {
       }
       const data = await response.json()
       setTemplates(data)
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to fetch metric templates',
@@ -33,11 +33,11 @@ export default function MetricsTemplatesPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
 
   useEffect(() => {
     fetchTemplates()
-  }, [])
+  }, [fetchTemplates])
 
   const handleCreate = async (template: MetricTemplate) => {
     try {
@@ -59,7 +59,7 @@ export default function MetricsTemplatesPage() {
       })
       setIsFormOpen(false)
       fetchTemplates()
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to create metric template',
@@ -88,7 +88,7 @@ export default function MetricsTemplatesPage() {
       })
       setEditingTemplate(null)
       fetchTemplates()
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to update metric template',
@@ -112,7 +112,7 @@ export default function MetricsTemplatesPage() {
         description: 'Metric template deleted successfully',
       })
       fetchTemplates()
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to delete metric template',
@@ -137,10 +137,7 @@ export default function MetricsTemplatesPage() {
             <CardTitle>Create New Template</CardTitle>
           </CardHeader>
           <CardContent>
-            <MetricTemplateForm
-              onSubmit={handleCreate}
-              onCancel={() => setIsFormOpen(false)}
-            />
+            <MetricTemplateForm onSubmit={handleCreate} onCancel={() => setIsFormOpen(false)} />
           </CardContent>
         </Card>
       )}

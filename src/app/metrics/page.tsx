@@ -6,7 +6,15 @@ import { HistogramMetric } from '@/components/metrics/HistogramMetric'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Metric } from '@/lib/services/metrics'
 import { useEffect, useState } from 'react'
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 interface TimeSeriesData {
   timestamp: string
@@ -15,7 +23,9 @@ interface TimeSeriesData {
 
 async function fetchMetrics(): Promise<Metric[]> {
   try {
-    const response = await fetch('http://localhost:8080/metrics/simulations/83c006c4-ecf1-404d-afe3-7eb0ff152c49/runs/e8aab6d4-11a2-4cc2-badd-022fdaf8b04c')
+    const response = await fetch(
+      'http://localhost:8080/metrics/simulations/83c006c4-ecf1-404d-afe3-7eb0ff152c49/runs/e8aab6d4-11a2-4cc2-badd-022fdaf8b04c'
+    )
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
@@ -26,7 +36,7 @@ async function fetchMetrics(): Promise<Metric[]> {
     const metrics: Record<string, Metric> = {}
     let currentMetric: Partial<Metric> | null = null
 
-    lines.forEach(line => {
+    lines.forEach((line) => {
       if (line.startsWith('# HELP')) {
         const [, name, help] = line.match(/# HELP ([^ ]+) (.+)/) || []
         if (name && help) {
@@ -34,7 +44,7 @@ async function fetchMetrics(): Promise<Metric[]> {
             name,
             help,
             type: 'counter', // default type
-            values: []
+            values: [],
           }
         }
       } else if (line.startsWith('# TYPE')) {
@@ -53,7 +63,9 @@ async function fetchMetrics(): Promise<Metric[]> {
         const match = line.match(/^([^{]+)({[^}]+})?[ ]+([0-9.]+)/)
         if (match && currentMetric) {
           const [, name, labelsStr, value] = match
-          const labels = labelsStr ? JSON.parse(labelsStr.replace(/([a-zA-Z0-9_]+)="([^"]+)"/g, '"$1":"$2"')) : {}
+          const labels = labelsStr
+            ? JSON.parse(labelsStr.replace(/([a-zA-Z0-9_]+)="([^"]+)"/g, '"$1":"$2"'))
+            : {}
 
           if (currentMetric.type === 'histogram' && name.endsWith('_bucket')) {
             const le = labels.le
@@ -87,10 +99,13 @@ export default function MetricsPage() {
         const now = new Date().toISOString()
 
         // Update time series data for any counter metric
-        const counterMetric = data.find(m => m.type === 'counter')
+        const counterMetric = data.find((m) => m.type === 'counter')
         if (counterMetric) {
-          setTimeSeriesData(prev => {
-            const newData = [...prev, { timestamp: now, value: counterMetric.values[0]?.value || 0 }]
+          setTimeSeriesData((prev) => {
+            const newData = [
+              ...prev,
+              { timestamp: now, value: counterMetric.values[0]?.value || 0 },
+            ]
             return newData.slice(-10)
           })
         }
@@ -121,7 +136,10 @@ export default function MetricsPage() {
   if (error) {
     return (
       <div className="p-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
+          role="alert"
+        >
           <strong className="font-bold">Error: </strong>
           <span className="block sm:inline">{error}</span>
         </div>

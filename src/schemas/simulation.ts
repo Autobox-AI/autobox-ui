@@ -1,26 +1,29 @@
-
-
-import { z } from 'zod';
-import { IsoDateStringSchema } from './common/date';
-import { UuidSchema } from './common/uuid';
+import { z } from 'zod'
+import { IsoDateStringSchema } from './common/date'
+import { UuidSchema } from './common/uuid'
 
 export const SIMULATION_STATUSES = {
-    IN_PROGRESS: "in progress",
-    COMPLETED: "completed",
-    FAILED: "failed",
-    ABORTED: "aborted",
-    TIMEOUT: "timeout",
-  } as const
+  IN_PROGRESS: 'in progress',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+  ABORTED: 'aborted',
+  TIMEOUT: 'timeout',
+} as const
 
-
-export const SimulationStatusSchema = z.enum([SIMULATION_STATUSES.IN_PROGRESS, SIMULATION_STATUSES.COMPLETED, SIMULATION_STATUSES.FAILED, SIMULATION_STATUSES.ABORTED, SIMULATION_STATUSES.TIMEOUT]);
+export const SimulationStatusSchema = z.enum([
+  SIMULATION_STATUSES.IN_PROGRESS,
+  SIMULATION_STATUSES.COMPLETED,
+  SIMULATION_STATUSES.FAILED,
+  SIMULATION_STATUSES.ABORTED,
+  SIMULATION_STATUSES.TIMEOUT,
+])
 
 export type SimulationStatus = z.infer<typeof SimulationStatusSchema>
 
 export const AgentSchema = z.object({
-    id: z.number(),
-    name: z.string(),
-});
+  id: z.number(),
+  name: z.string(),
+})
 
 export const SimulationSchema = z.object({
   id: UuidSchema,
@@ -37,7 +40,7 @@ export const SimulationSchema = z.object({
   internal_dashboard_url: z.string().nullish(),
   public_dashboard_url: z.string().nullish(),
   description: z.string().nullish(),
-});
+})
 
-export type Agent = z.infer<typeof AgentSchema>;
-export type Simulation = z.infer<typeof SimulationSchema>;
+export type Agent = z.infer<typeof AgentSchema>
+export type Simulation = z.infer<typeof SimulationSchema>

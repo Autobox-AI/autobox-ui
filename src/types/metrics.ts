@@ -3,7 +3,7 @@ export type MetricType = 'counter' | 'gauge' | 'histogram' | 'summary'
 export interface Metric {
   name: string
   description: string
-  prometheus_type: MetricType
+  type: MetricType
   unit: string
 }
 

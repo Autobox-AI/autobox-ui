@@ -8,7 +8,7 @@ type NewSimulationModalProps = {
 }
 
 const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps) => {
-  const [configFile, setConfigFile] = useState<File | null>(null)
+  const [_configFile, setConfigFile] = useState<File | null>(null)
   const [formData, setFormData] = useState<{
     simulationName: string
     maxSteps: number
@@ -71,7 +71,7 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
         } else {
           alert('Invalid file format')
         }
-      } catch (error) {
+      } catch (_error) {
         alert('Invalid JSON file format')
       }
     }
@@ -115,7 +115,7 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
     setIsLoading(true)
 
     // Mock the simulation process
-    const newSimulation2 = {
+    const _newSimulation2 = {
       id: Math.random().toString(36).substr(2, 9), // Generate random ID
       name: formData.simulationName || 'New Simulation',
       startedAt: new Date().toISOString().split('T')[0],

@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table'
 import { MetricTemplate } from '@/types/metrics'
 import { Edit2, Trash2 } from 'lucide-react'
@@ -68,11 +68,7 @@ export function MetricTemplateList({
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Template {template.id}</CardTitle>
             <div className="flex space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(template)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => onEdit(template)}>
                 <Edit2 className="h-4 w-4" />
               </Button>
               <Button
@@ -99,14 +95,10 @@ export function MetricTemplateList({
                   <TableRow key={index}>
                     <TableCell className="font-mono">{metric.name}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
-                        {metric.prometheus_type}
-                      </Badge>
+                      <Badge variant="secondary">{metric.type}</Badge>
                     </TableCell>
                     <TableCell>{metric.unit}</TableCell>
-                    <TableCell className="max-w-md truncate">
-                      {metric.description}
-                    </TableCell>
+                    <TableCell className="max-w-md truncate">{metric.description}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

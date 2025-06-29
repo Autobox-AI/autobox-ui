@@ -3,11 +3,11 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Metric, MetricTemplate, MetricType } from '@/types/metrics'
@@ -20,17 +20,13 @@ interface MetricTemplateFormProps {
   onCancel: () => void
 }
 
-export function MetricTemplateForm({
-  template,
-  onSubmit,
-  onCancel,
-}: MetricTemplateFormProps) {
+export function MetricTemplateForm({ template, onSubmit, onCancel }: MetricTemplateFormProps) {
   const [metrics, setMetrics] = useState<Metric[]>(
     template?.metrics || [
       {
         name: '',
         description: '',
-        prometheus_type: 'counter',
+        type: 'counter',
         unit: '',
       },
     ]
@@ -47,7 +43,7 @@ export function MetricTemplateForm({
       {
         name: '',
         description: '',
-        prometheus_type: 'counter',
+        type: 'counter',
         unit: '',
       },
     ])
@@ -99,10 +95,8 @@ export function MetricTemplateForm({
               <div className="space-y-2">
                 <label className="text-sm font-medium">Type</label>
                 <Select
-                  value={metric.prometheus_type}
-                  onValueChange={(value) =>
-                    updateMetric(index, 'prometheus_type', value as MetricType)
-                  }
+                  value={metric.type}
+                  onValueChange={(value) => updateMetric(index, 'type', value as MetricType)}
                 >
                   <SelectTrigger>
                     <SelectValue />

@@ -27,7 +27,7 @@ import { Button } from './ui/button'
 type SimulationStatus = 'running' | 'completed' | 'failed' | 'pending'
 type ViewMode = 'grid' | 'table'
 
-const getStatusColor = (status: SimulationStatus) => {
+const _getStatusColor = (status: SimulationStatus) => {
   switch (status) {
     case 'running':
       return 'text-blue-400'

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from 'react'
 
 export const useEventSource = (
   url: string | null,
@@ -6,22 +6,22 @@ export const useEventSource = (
   onError?: () => void
 ) => {
   useEffect(() => {
-    if (!url) return;
+    if (!url) return
 
-    const eventSource = new EventSource(url);
+    const eventSource = new EventSource(url)
 
     eventSource.onmessage = (event) => {
-      onMessage(JSON.parse(event.data));
-    };
+      onMessage(JSON.parse(event.data))
+    }
 
     eventSource.onerror = () => {
-      if (onError) onError();
-      eventSource.close();
-    };
+      if (onError) onError()
+      eventSource.close()
+    }
 
     return () => {
-      eventSource.close();
-      console.log('EventSource closed during cleanup.');
-    };
-  }, [url]);
-};
+      eventSource.close()
+      console.log('EventSource closed during cleanup.')
+    }
+  }, [url])
+}

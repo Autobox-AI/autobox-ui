@@ -57,7 +57,7 @@ interface Props {
 
 const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const _searchParams = useSearchParams()
 
   const [traces, setTraces] = useState<string[]>([])
   const [loadingState, setLoadingState] = useState({
@@ -75,7 +75,7 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
   const [isAbortModalOpen, setIsAbortModalOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [openAgentSelector, setOpenAgentSelector] = useState(false)
-  const [agentId, setAgentId] = useState<string | null>(null)
+  const [_agentId, _setAgentId] = useState<string | null>(null)
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null)
   const [openDialog, setOpenDialog] = useState(false)
 
@@ -86,7 +86,7 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
     setSelectedAgent(null) // Reset selected agent
   }
 
-  const handleAbortClick = () => {
+  const _handleAbortClick = () => {
     setIsAbortModalOpen(true)
   }
 
@@ -115,7 +115,7 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
     }
   }
 
-  const handleInstructAgentClick = () => {
+  const _handleInstructAgentClick = () => {
     setIsInstructAgentModalOpen(true)
   }
 
@@ -149,7 +149,7 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
     }
   }
 
-  const handleBackToProject = () => {
+  const _handleBackToProject = () => {
     router.push(`/projects/${projectId}`)
   }
 
@@ -278,7 +278,7 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
         console.log('EventSource closed during cleanup.')
       }
     }
-  }, [simulation?.id, simulation?.status])
+  }, [simulation?.id, simulation?.status, loadingState, simulation])
 
   useEffect(() => {
     if (traceContainerRef.current) {
@@ -512,7 +512,9 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
                 {` ${Math.round(
                   ((localSimulation.finished_at
                     ? new Date(localSimulation.finished_at).getTime()
-                    : new Date(localSimulation.aborted_at!).getTime()) -
+                    : localSimulation.aborted_at
+                      ? new Date(localSimulation.aborted_at).getTime()
+                      : Date.now()) -
                     new Date(localSimulation.started_at).getTime()) /
                     1000
                 )} seconds`}

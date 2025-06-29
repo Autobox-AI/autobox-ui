@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 export default function ProjectsLoading() {
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800 ml-[var(--sidebar-width-icon)] md:ml-[220px]">
+      <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800">
         <Skeleton className="h-8 w-32" />
       </div>
 
@@ -31,10 +31,7 @@ export default function ProjectsLoading() {
           {/* Grid Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-zinc-900 rounded-lg border border-zinc-800 h-[280px] p-6"
-              >
+              <div key={i} className="bg-zinc-900 rounded-lg border border-zinc-800 h-[280px] p-6">
                 <div className="space-y-4">
                   <Skeleton className="h-6 w-3/4" />
                   <Skeleton className="h-4 w-full" />

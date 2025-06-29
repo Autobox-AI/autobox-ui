@@ -28,7 +28,7 @@ async function fetchOrganizations(): Promise<Organization[]> {
 
 export default async function Home() {
   console.time('HomePageRender')
-  const organizations = await fetchOrganizations()
+  const _organizations = await fetchOrganizations()
   const sections = [
     {
       title: 'Projects',
@@ -96,7 +96,7 @@ export default async function Home() {
                     objectFit: 'contain',
                     width: '100%',
                     height: 'auto',
-                    maxWidth: '500px'
+                    maxWidth: '500px',
                   }}
                   className="mx-auto rounded-md"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"

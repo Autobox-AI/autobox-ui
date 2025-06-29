@@ -1,36 +1,36 @@
-"use client"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+'use client'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 export default function NewProjectPage() {
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError("")
+    setError('')
     try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, description }),
       })
       if (!res.ok) {
-        throw new Error("Failed to create project")
+        throw new Error('Failed to create project')
       }
 
       await fetch('/api/revalidate?tag=projects', {
         method: 'POST',
       })
 
-      router.push("/projects")
+      router.push('/projects')
     } catch (err: any) {
-      setError(err.message || "Unknown error")
+      setError(err.message || 'Unknown error')
     } finally {
       setLoading(false)
     }
@@ -56,7 +56,7 @@ export default function NewProjectPage() {
             <input
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               required
               className="w-full px-3 py-2 rounded bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter project name"
@@ -66,7 +66,7 @@ export default function NewProjectPage() {
             <label className="block text-zinc-300 mb-1">Description</label>
             <textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               required
               className="w-full px-3 py-2 rounded bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter project description"
@@ -75,11 +75,16 @@ export default function NewProjectPage() {
           </div>
           {error && <div className="text-red-500 text-sm">{error}</div>}
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.push("/projects")} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/projects')}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Project"}
+              {loading ? 'Creating...' : 'Create Project'}
             </Button>
           </div>
         </form>

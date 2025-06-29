@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -9,21 +9,22 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from '@/components/ui/breadcrumb'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Progress } from "@/components/ui/progress";
+} from '@/components/ui/dropdown-menu'
+import { Progress } from '@/components/ui/progress'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -31,101 +32,89 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { format } from "date-fns";
-import { ArrowUpDown, ChevronRight, GitGraph } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { use, useEffect, useState } from "react";
+} from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { format } from 'date-fns'
+import { ArrowUpDown, ChevronRight, GitGraph, Play } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { use, useEffect, useState } from 'react'
 
-interface Worker {
-  id: string;
-  name: string;
+interface _Worker {
+  id: string
+  name: string
 }
 
 interface Run {
-  id: string;
-  simulation_id: string;
-  status: string;
-  progress: number;
-  started_at: string;
-  finished_at?: string;
-  updated_at: string;
-  summary?: string;
-  orchestrator_id: string;
-  evaluator_id: string;
-  planner_id: string;
-  reporter_id: string;
-  workers: Worker[];
-  observation?: string;
+  id: string
+  simulation_id: string
+  status: string
+  progress: number
+  started_at: string
+  finished_at?: string
+  updated_at: string
+  summary?: string
+  observation?: string
 }
 
 interface SimulationRunsResponse {
-  total: number;
-  runs: Run[];
+  total: number
+  runs: Run[]
 }
 
 async function getProject(projectId: string) {
   const response = await fetch(`http://localhost:8888/api/projects/${projectId}`, {
     cache: 'no-store',
-  });
+  })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch project');
+    throw new Error('Failed to fetch project')
   }
 
-  return response.json();
+  return response.json()
 }
 
 async function getSimulation(projectId: string, simulationId: string) {
   const response = await fetch(`http://localhost:8888/api/simulations/${simulationId}`, {
     cache: 'no-store',
-  });
+  })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch simulation');
+    throw new Error('Failed to fetch simulation')
   }
 
-  return response.json();
+  return response.json()
 }
 
 async function getSimulationRuns(simulationId: string): Promise<SimulationRunsResponse> {
-  const response = await fetch(
-    `http://localhost:8888/api/simulations/${simulationId}/runs`,
-    {
-      next: { revalidate: 10 },
-      cache: 'no-store'
-    }
-  );
+  const response = await fetch(`/api/simulations/${simulationId}/runs`, {
+    next: { revalidate: 10 },
+    cache: 'no-store',
+  })
 
   if (!response.ok) {
-    throw new Error("Failed to fetch simulation runs");
+    throw new Error('Failed to fetch simulation runs')
   }
 
-  return response.json();
+  return response.json()
 }
 
-type SortDirection = 'asc' | 'desc';
-type SortField = 'status' | 'progress' | 'started_at' | 'finished_at' | 'workers' | 'summary' | 'observation';
+type SortDirection = 'asc' | 'desc'
+type SortField = 'status' | 'progress' | 'started_at' | 'finished_at' | 'summary' | 'observation'
 
 export default function SimulationRunsPage({
   params,
 }: {
-  params: Promise<{ pid: string; sid: string }>;
+  params: Promise<{ pid: string; sid: string }>
 }) {
-  const router = useRouter();
-  const { pid, sid } = use(params);
-  const [project, setProject] = useState<any>(null);
-  const [simulation, setSimulation] = useState<any>(null);
-  const [runs, setRuns] = useState<Run[]>([]);
-  const [sortField, setSortField] = useState<SortField>('started_at');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const router = useRouter()
+  const { pid, sid } = use(params)
+  const [project, setProject] = useState<any>(null)
+  const [simulation, setSimulation] = useState<any>(null)
+  const [runs, setRuns] = useState<Run[]>([])
+  const [sortField, setSortField] = useState<SortField>('started_at')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [isCreatingRun, setIsCreatingRun] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -133,61 +122,88 @@ export default function SimulationRunsPage({
         getProject(pid),
         getSimulation(pid, sid),
         getSimulationRuns(sid),
-      ]);
-      setProject(projectData);
-      setSimulation(simulationData);
-      setRuns(runsData.runs);
-    };
-    fetchData();
-  }, [pid, sid]);
+      ])
+      setProject(projectData)
+      setSimulation(simulationData)
+      setRuns(runsData.runs)
+    }
+    fetchData()
+  }, [pid, sid])
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortField(field);
-      setSortDirection('asc');
+      setSortField(field)
+      setSortDirection('asc')
     }
-  };
+  }
 
   const filteredAndSortedRuns = [...runs]
-    .filter(run => statusFilter === 'all' || run.status === statusFilter)
+    .filter((run) => statusFilter === 'all' || run.status === statusFilter)
     .sort((a, b) => {
-      let comparison = 0;
+      let comparison = 0
       switch (sortField) {
         case 'status':
-          comparison = a.status.localeCompare(b.status);
-          break;
+          comparison = a.status.localeCompare(b.status)
+          break
         case 'progress':
-          comparison = a.progress - b.progress;
-          break;
+          comparison = a.progress - b.progress
+          break
         case 'started_at':
-          comparison = new Date(a.started_at).getTime() - new Date(b.started_at).getTime();
-          break;
+          comparison = new Date(a.started_at).getTime() - new Date(b.started_at).getTime()
+          break
         case 'finished_at':
-          comparison = (a.finished_at ? new Date(a.finished_at).getTime() : 0) -
-                      (b.finished_at ? new Date(b.finished_at).getTime() : 0);
-          break;
-        case 'workers':
-          comparison = a.workers.length - b.workers.length;
-          break;
+          comparison =
+            (a.finished_at ? new Date(a.finished_at).getTime() : 0) -
+            (b.finished_at ? new Date(b.finished_at).getTime() : 0)
+          break
         case 'summary':
-          comparison = (a.summary || '').localeCompare(b.summary || '');
-          break;
+          comparison = (a.summary || '').localeCompare(b.summary || '')
+          break
         case 'observation':
-          comparison = (a.observation || '').localeCompare(b.observation || '');
-          break;
+          comparison = (a.observation || '').localeCompare(b.observation || '')
+          break
       }
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+
+  const handleCreateRun = async () => {
+    setIsCreatingRun(true)
+    try {
+      const response = await fetch(`/api/simulations/${sid}/runs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          timeout_seconds: 300,
+          verbose: false,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create run')
+      }
+
+      // Refresh the runs data to get the latest state including the new run
+      const runsData = await getSimulationRuns(sid)
+      setRuns(runsData.runs)
+    } catch (error) {
+      console.error('Error creating run:', error)
+      // You might want to show a toast notification here
+    } finally {
+      setIsCreatingRun(false)
+    }
+  }
 
   if (!project || !simulation) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800 ml-[var(--sidebar-width-icon)] md:ml-[220px]">
+      <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -213,9 +229,7 @@ export default function SimulationRunsPage({
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href={`/projects/${pid}/simulations`}>
-                {project.name}
-              </BreadcrumbLink>
+              <BreadcrumbLink href={`/projects/${pid}/simulations`}>{project.name}</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -232,6 +246,21 @@ export default function SimulationRunsPage({
       </div>
 
       <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-6">
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">{simulation.name}</h1>
+            <p className="text-sm text-zinc-400 mt-1">Simulation Runs</p>
+          </div>
+          <Button
+            onClick={handleCreateRun}
+            disabled={isCreatingRun}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors flex items-center gap-2"
+          >
+            <Play className="h-4 w-4" />
+            {isCreatingRun ? 'Creating...' : 'Run'}
+          </Button>
+        </div>
+
         <div className="mb-4 flex justify-end">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
@@ -256,9 +285,7 @@ export default function SimulationRunsPage({
                   >
                     <div className="flex items-center gap-1">
                       Status
-                      {sortField === 'status' && (
-                        <ArrowUpDown className="h-4 w-4" />
-                      )}
+                      {sortField === 'status' && <ArrowUpDown className="h-4 w-4" />}
                     </div>
                   </TableHead>
                   <TableHead
@@ -267,9 +294,7 @@ export default function SimulationRunsPage({
                   >
                     <div className="flex items-center gap-1">
                       Progress
-                      {sortField === 'progress' && (
-                        <ArrowUpDown className="h-4 w-4" />
-                      )}
+                      {sortField === 'progress' && <ArrowUpDown className="h-4 w-4" />}
                     </div>
                   </TableHead>
                   <TableHead
@@ -278,9 +303,7 @@ export default function SimulationRunsPage({
                   >
                     <div className="flex items-center gap-1">
                       Started At
-                      {sortField === 'started_at' && (
-                        <ArrowUpDown className="h-4 w-4" />
-                      )}
+                      {sortField === 'started_at' && <ArrowUpDown className="h-4 w-4" />}
                     </div>
                   </TableHead>
                   <TableHead
@@ -289,20 +312,7 @@ export default function SimulationRunsPage({
                   >
                     <div className="flex items-center gap-1">
                       Finished At
-                      {sortField === 'finished_at' && (
-                        <ArrowUpDown className="h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-accent"
-                    onClick={() => handleSort('workers')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Workers
-                      {sortField === 'workers' && (
-                        <ArrowUpDown className="h-4 w-4" />
-                      )}
+                      {sortField === 'finished_at' && <ArrowUpDown className="h-4 w-4" />}
                     </div>
                   </TableHead>
                   <TableHead
@@ -311,9 +321,7 @@ export default function SimulationRunsPage({
                   >
                     <div className="flex items-center gap-1">
                       Summary
-                      {sortField === 'summary' && (
-                        <ArrowUpDown className="h-4 w-4" />
-                      )}
+                      {sortField === 'summary' && <ArrowUpDown className="h-4 w-4" />}
                     </div>
                   </TableHead>
                   <TableHead
@@ -322,9 +330,7 @@ export default function SimulationRunsPage({
                   >
                     <div className="flex items-center gap-1">
                       Observations
-                      {sortField === 'observation' && (
-                        <ArrowUpDown className="h-4 w-4" />
-                      )}
+                      {sortField === 'observation' && <ArrowUpDown className="h-4 w-4" />}
                     </div>
                   </TableHead>
                 </TableRow>
@@ -335,51 +341,67 @@ export default function SimulationRunsPage({
                     <TableRow
                       key={run.id}
                       className="cursor-pointer hover:bg-accent/50 group transition-colors"
-                      onClick={() => router.push(`/projects/${pid}/simulations/${sid}/runs/${run.id}`)}
+                      onClick={() =>
+                        router.push(`/projects/${pid}/simulations/${sid}/runs/${run.id}`)
+                      }
                     >
                       <TableCell>
                         <Badge
                           variant={
-                            run.status === "completed"
-                              ? "success"
-                              : run.status === "in progress"
-                              ? "default"
-                              : "destructive"
+                            run.status === 'completed'
+                              ? 'success'
+                              : run.status === 'in progress'
+                                ? 'outline'
+                                : run.status === 'created'
+                                  ? 'outline'
+                                  : run.status === 'aborted'
+                                    ? 'outline'
+                                    : 'outline'
                           }
-                          className={run.status === "in progress" ? "animate-pulse" : ""}
+                          className={`${run.status === 'in progress' ? 'animate-pulse bg-green-500/10 text-green-500 border-green-500/20' : ''} ${
+                            run.status === 'aborted'
+                              ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                              : ''
+                          } ${
+                            run.status === 'failed'
+                              ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                              : ''
+                          } ${
+                            run.status === 'created'
+                              ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                              : ''
+                          }`}
                         >
                           {run.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Progress value={run.progress * 100} className="w-[100px]" />
-                          <span>{Math.round(run.progress * 100)}%</span>
+                          <Progress
+                            value={run.progress}
+                            className={`w-[100px] ${
+                              run.status === 'failed' || run.status === 'aborted'
+                                ? 'bg-zinc-200/20 [&>div]:bg-zinc-500'
+                                : ''
+                            }`}
+                          />
+                          <span>{Math.round(run.progress)}%</span>
                         </div>
                       </TableCell>
+                      <TableCell>{format(new Date(run.started_at), 'PPp')}</TableCell>
                       <TableCell>
-                        {format(new Date(run.started_at), "PPp")}
-                      </TableCell>
-                      <TableCell>
-                        {run.finished_at
-                          ? format(new Date(run.finished_at), "PPp")
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {run.workers.length}
+                        {run.finished_at ? format(new Date(run.finished_at), 'PPp') : '-'}
                       </TableCell>
                       <TableCell className="max-w-[300px]">
                         <div className="flex items-center gap-2">
                           <Tooltip>
                             <TooltipTrigger className="w-full text-left">
                               <div className="truncate text-ellipsis overflow-hidden text-left">
-                                {run.summary || "-"}
+                                {run.summary || '-'}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[400px]">
-                              <p className="break-words text-left">
-                                {run.summary || "-"}
-                              </p>
+                              <p className="break-words text-left">{run.summary || '-'}</p>
                             </TooltipContent>
                           </Tooltip>
                           <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -390,12 +412,16 @@ export default function SimulationRunsPage({
                           <Tooltip>
                             <TooltipTrigger className="w-full text-left">
                               <div className="truncate text-ellipsis overflow-hidden text-left">
-                                {run.status === "failed" ? run.observation || "No reason provided" : "-"}
+                                {run.status === 'failed'
+                                  ? run.observation || 'No reason provided'
+                                  : '-'}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[400px]">
                               <p className="break-words text-left">
-                                {run.status === "failed" ? run.observation || "No reason provided" : "-"}
+                                {run.status === 'failed'
+                                  ? run.observation || 'No reason provided'
+                                  : '-'}
                               </p>
                             </TooltipContent>
                           </Tooltip>
@@ -420,5 +446,5 @@ export default function SimulationRunsPage({
         </div>
       </div>
     </div>
-  );
+  )
 }

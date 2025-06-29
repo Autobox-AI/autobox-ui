@@ -10,12 +10,14 @@ interface HistogramMetricProps {
 
 export function HistogramMetric({ metric }: HistogramMetricProps) {
   const buckets = metric.buckets || []
-  const maxCount = Math.max(...buckets.map(b => b.count))
+  const maxCount = Math.max(...buckets.map((b) => b.count))
 
   return (
     <Card className="col-span-2">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{metric.name.replace(/_/g, ' ').toUpperCase()}</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          {metric.name.replace(/_/g, ' ').toUpperCase()}
+        </CardTitle>
         <BarChart className="h-4 w-4 text-purple-500" />
       </CardHeader>
       <CardContent>
