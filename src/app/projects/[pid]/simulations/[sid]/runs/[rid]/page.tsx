@@ -193,15 +193,6 @@ const MetricChart = memo(
         return d.value === 0
       })
 
-    // Debug log
-    console.log('Rendering chart:', {
-      metricName: metric.name,
-      metricType,
-      mergedData,
-      groupKeys,
-      key: `${metric.name}-${mergedData.length}`,
-    })
-
     const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -552,21 +543,6 @@ export default function RunTracesPage() {
     retryCountRef.current = retryCount
   }, [retryCount])
 
-  // Debug traces state changes
-  useEffect(() => {
-    console.log('Traces state changed:', {
-      tracesLength: traces.length,
-      tracesLoading,
-      tracesError,
-      isStreaming,
-    })
-  }, [traces.length, tracesLoading, tracesError, isStreaming])
-
-  // Debug loading state changes
-  useEffect(() => {
-    console.log('Loading state changed:', tracesLoading)
-  }, [tracesLoading])
-
   // Calculate total metrics count
   const totalMetricsCount = useMemo(() => {
     if (!metrics) return 0
@@ -580,14 +556,7 @@ export default function RunTracesPage() {
 
   // Filter traces based on search query
   const filteredTraces = useMemo(() => {
-    console.log('filteredTraces calculation:', {
-      tracesLength: traces.length,
-      searchQuery,
-      searchQueryTrimmed: searchQuery.trim(),
-    })
-
     if (!searchQuery.trim()) {
-      console.log('No search query, returning all traces:', traces.length)
       return traces
     }
 
@@ -600,7 +569,6 @@ export default function RunTracesPage() {
         trace.created_at.toLowerCase().includes(query)
     )
 
-    console.log('Filtered traces result:', filtered.length)
     return filtered
   }, [traces, searchQuery])
 
@@ -657,41 +625,31 @@ export default function RunTracesPage() {
         }
 
         const data = JSON.parse(event.data)
-        console.log('Parsed streaming data:', data)
-
-        if (data.traces && Array.isArray(data.traces)) {
+        // console.log('Parsed streaming data:', data)
+        if (data) {
           setTraces((prevTraces) => {
-            console.log('setTraces called with prevTraces length:', prevTraces.length)
+            // Normalize the single incoming trace
+            const normalizedTrace = normalizeTrace(data)
 
-            // Normalize incoming traces
-            const normalizedTraces = data.traces.map(normalizeTrace)
-            console.log('Normalized traces:', normalizedTraces.length)
-
-            // Since backend handles deduplication, just append new traces
-            const combinedTraces = [...normalizedTraces, ...prevTraces]
+            // Since backend handles deduplication, just append the new trace
+            const combinedTraces = [normalizedTrace, ...prevTraces]
             const sortedTraces = sortTracesByDate(combinedTraces)
 
-            console.log('Streaming update:', {
-              received: normalizedTraces.length,
-              existing: prevTraces.length,
-              total: sortedTraces.length,
-            })
+            // console.log('Streaming update:', {
+            //   received: 1,
+            //   existing: prevTraces.length,
+            //   total: sortedTraces.length,
+            // })
 
-            console.log('Updated traces count:', sortedTraces.length)
-            console.log(
-              'First few traces:',
-              sortedTraces
-                .slice(0, 3)
-                .map((t) => ({ from: t.from, to: t.to, created_at: t.created_at }))
-            )
+            // console.log('Updated traces count:', sortedTraces.length)
             return sortedTraces
           })
 
-          // Set loading to false after we receive traces
+          // Set loading to false after we receive a trace
           setTracesLoading(false)
         } else {
-          console.log('No traces in streaming data:', data)
-          // Only set loading to false if we don't have traces
+          console.log('No valid trace in streaming data:', data)
+          // Only set loading to false if we don't have a valid trace
           setTracesLoading(false)
         }
         setRetryCount(0) // Reset retry count on success
@@ -718,7 +676,6 @@ export default function RunTracesPage() {
     }
 
     eventSource.onopen = () => {
-      console.log('EventSource connection opened successfully')
       setTracesError(null)
     }
 
@@ -841,14 +798,6 @@ export default function RunTracesPage() {
 
   // Memoized content to prevent unnecessary re-renders
   const tracesContent = useMemo(() => {
-    console.log('tracesContent useMemo called with:', {
-      tracesLoading,
-      tracesError,
-      tracesLength: traces.length,
-      isStreaming,
-      searchQuery,
-    })
-
     if (tracesLoading) {
       return <TracesSkeleton />
     }
@@ -922,7 +871,6 @@ export default function RunTracesPage() {
           {/* Simple scrollable list */}
           <div className="h-full overflow-y-auto">
             {filteredTraces.map((trace, index) => {
-              console.log('Rendering trace item:', index, trace)
               return (
                 <TraceItem
                   key={`${trace.from}-${trace.to}-${trace.created_at}-${index}`}
@@ -981,19 +929,6 @@ export default function RunTracesPage() {
         </Card>
       )
     }
-
-    // Debug logging
-    console.log('Metrics data received:', {
-      counters: metrics.counters?.length || 0,
-      gauges: metrics.gauges?.length || 0,
-      histograms: metrics.histograms?.length || 0,
-      summaries: metrics.summaries?.length || 0,
-      totalMetrics:
-        (metrics.counters?.length || 0) +
-        (metrics.gauges?.length || 0) +
-        (metrics.histograms?.length || 0) +
-        (metrics.summaries?.length || 0),
-    })
 
     return (
       <div className="space-y-6">
