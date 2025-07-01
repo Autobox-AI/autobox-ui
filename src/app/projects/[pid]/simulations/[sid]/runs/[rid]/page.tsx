@@ -9,9 +9,20 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { format } from 'date-fns'
 import { useParams } from 'next/navigation'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -21,8 +32,8 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
@@ -32,6 +43,7 @@ interface Trace {
   to: string
   content: string
   created_at: string
+  is_system_trace: boolean
 }
 
 interface TracesResponse {
@@ -138,6 +150,51 @@ const TraceItem = memo(({ trace, index }: { trace: Trace; index: number }) => {
 
 TraceItem.displayName = 'TraceItem'
 
+// Debug table for metric data using shadcn/ui Table component
+const DebugMetricTable = ({ data, groupKeys }: { data: any[]; groupKeys?: string[] }) => (
+  <div className="mt-4">
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[120px]">Time</TableHead>
+            {groupKeys && groupKeys.length > 0 ? (
+              groupKeys.map((key) => (
+                <TableHead key={key} className="text-center">
+                  {key}
+                </TableHead>
+              ))
+            ) : (
+              <TableHead className="text-center">Value</TableHead>
+            )}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.slice(0, 5).map((row, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-mono text-xs">{row.timestamp}</TableCell>
+              {groupKeys && groupKeys.length > 0 ? (
+                groupKeys.map((key) => (
+                  <TableCell key={key} className="text-center font-mono text-xs">
+                    {row[key] !== null && row[key] !== undefined ? row[key] : '-'}
+                  </TableCell>
+                ))
+              ) : (
+                <TableCell className="text-center font-mono text-xs">{row.value}</TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+    {data.length > 5 && (
+      <div className="text-xs text-muted-foreground mt-2 text-center">
+        ...and {data.length - 5} more data points
+      </div>
+    )}
+  </div>
+)
+
 // Simple chart component without lazy loading
 const MetricChart = memo(
   ({ metric, metricType }: { metric: MetricDefinition; metricType: string }) => {
@@ -206,24 +263,30 @@ const MetricChart = memo(
 
     if (!metric.data?.length || !mergedData.length) {
       return (
-        <div className="flex items-center justify-center h-32 text-muted-foreground border border-dashed border-gray-600 rounded-md">
-          <div className="text-center">
-            <p>No data available for {metric.name}</p>
-            <p className="text-xs mt-1">Data points: {metric.data?.length || 0}</p>
-          </div>
-        </div>
+        <Card className="border-dashed">
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="text-center">
+              <p className="text-muted-foreground">No data available for {metric.name}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Data points: {metric.data?.length || 0}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )
     }
 
     if (allZero) {
       return (
-        <div className="flex flex-col items-center justify-center h-32 text-yellow-400 border border-dashed border-gray-600 rounded-md">
-          <div className="text-center">
-            <p>All values are zero for {metric.name}</p>
-            <p className="text-xs mt-1">Data points: {mergedData.length}</p>
-          </div>
-          <DebugMetricTable data={mergedData} groupKeys={groupKeys} />
-        </div>
+        <Card className="border-dashed border-yellow-500/50">
+          <CardContent className="flex flex-col items-center justify-center h-32">
+            <div className="text-center">
+              <p className="text-yellow-500 font-medium">All values are zero for {metric.name}</p>
+              <p className="text-xs text-muted-foreground mt-1">Data points: {mergedData.length}</p>
+            </div>
+            <DebugMetricTable data={mergedData} groupKeys={groupKeys} />
+          </CardContent>
+        </Card>
       )
     }
 
@@ -233,7 +296,7 @@ const MetricChart = memo(
     return (
       <div
         ref={containerRef}
-        className="w-full border border-gray-700 rounded-md p-2 bg-[#18181b]"
+        className="w-full border rounded-lg p-4 bg-card"
         style={{ height: 320, minWidth: 400 }}
       >
         <ResponsiveContainer width={'100%'} height={300} key={chartKey}>
@@ -246,32 +309,32 @@ const MetricChart = memo(
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis
                 dataKey="timestamp"
-                tick={{ fontSize: 12, fill: '#fff' }}
+                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
                 angle={-45}
                 textAnchor="end"
                 height={60}
-                stroke="#fff"
+                stroke="hsl(var(--foreground))"
               />
               <YAxis
-                tick={{ fontSize: 12, fill: '#fff' }}
-                stroke="#fff"
+                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
+                stroke="hsl(var(--foreground))"
                 label={
                   metric.unit
                     ? {
                         value: metric.unit,
                         angle: -90,
                         position: 'insideLeft',
-                        style: { fill: '#fff' },
+                        style: { fill: 'hsl(var(--foreground))' },
                       }
                     : undefined
                 }
               />
-              <Tooltip
+              <RechartsTooltip
                 contentStyle={{
-                  backgroundColor: '#222',
-                  border: '1px solid #444',
+                  backgroundColor: 'hsl(var(--popover))',
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '6px',
-                  color: '#fff',
+                  color: 'hsl(var(--popover-foreground))',
                 }}
                 formatter={(value: any, name: string) => {
                   if (groupKeys.length > 0) {
@@ -306,32 +369,32 @@ const MetricChart = memo(
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis
                 dataKey="timestamp"
-                tick={{ fontSize: 12, fill: '#fff' }}
+                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
                 angle={-45}
                 textAnchor="end"
                 height={60}
-                stroke="#fff"
+                stroke="hsl(var(--foreground))"
               />
               <YAxis
-                tick={{ fontSize: 12, fill: '#fff' }}
-                stroke="#fff"
+                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
+                stroke="hsl(var(--foreground))"
                 label={
                   metric.unit
                     ? {
                         value: metric.unit,
                         angle: -90,
                         position: 'insideLeft',
-                        style: { fill: '#fff' },
+                        style: { fill: 'hsl(var(--foreground))' },
                       }
                     : undefined
                 }
               />
-              <Tooltip
+              <RechartsTooltip
                 contentStyle={{
-                  backgroundColor: '#222',
-                  border: '1px solid #444',
+                  backgroundColor: 'hsl(var(--popover))',
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '6px',
-                  color: '#fff',
+                  color: 'hsl(var(--popover-foreground))',
                 }}
                 formatter={(value: any, name: string) => {
                   if (groupKeys.length > 0) {
@@ -385,64 +448,53 @@ const MetricChart = memo(
 
 MetricChart.displayName = 'MetricChart'
 
-// Debug table for metric data
-const DebugMetricTable = ({ data, groupKeys }: { data: any[]; groupKeys?: string[] }) => (
-  <div className="overflow-x-auto mt-2 text-xs text-gray-300">
-    <table className="min-w-full border border-gray-700 rounded">
-      <thead>
-        <tr>
-          <th className="border border-gray-700 px-2">Time</th>
-          {groupKeys && groupKeys.length > 0 ? (
-            groupKeys.map((key) => (
-              <th key={key} className="border border-gray-700 px-2">
-                {key}
-              </th>
-            ))
-          ) : (
-            <th className="border border-gray-700 px-2">Value</th>
-          )}
-        </tr>
-      </thead>
-      <tbody>
-        {data.slice(0, 5).map((row, i) => (
-          <tr key={i}>
-            <td className="border border-gray-700 px-2">{row.timestamp}</td>
-            {groupKeys && groupKeys.length > 0 ? (
-              groupKeys.map((key) => (
-                <td key={key} className="border border-gray-700 px-2">
-                  {row[key]}
-                </td>
-              ))
-            ) : (
-              <td className="border border-gray-700 px-2">{row.value}</td>
-            )}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-    {data.length > 5 && <div className="text-gray-500">...and {data.length - 5} more</div>}
-  </div>
-)
-
-// Optimized metric card
+// Optimized metric card using shadcn/ui Card components
 const MetricCard = memo(
   ({ metric, metricType }: { metric: MetricDefinition; metricType: string }) => {
+    const dataPointCount = metric.data?.length || 0
+    const hasTags = metric.tag_definitions.length > 0
+
     return (
-      <Card className="p-6">
-        <div className="mb-4">
-          <h4 className="text-md font-medium mb-2">{metric.name}</h4>
-          <p className="text-sm text-muted-foreground mb-2">{metric.description}</p>
-          {metric.tag_definitions.length > 0 && (
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg">{metric.name}</CardTitle>
+              <CardDescription className="text-sm">{metric.description}</CardDescription>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {dataPointCount} points
+              </Badge>
+              {metric.unit && (
+                <Badge variant="outline" className="text-xs">
+                  {metric.unit}
+                </Badge>
+              )}
+            </div>
+          </div>
+          {hasTags && (
             <div className="flex gap-2 flex-wrap">
               {metric.tag_definitions.map((tag, tagIndex) => (
-                <Badge key={tagIndex} variant="outline" className="text-xs">
-                  {tag.tag}: {tag.description}
-                </Badge>
+                <TooltipProvider key={tagIndex}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="text-xs cursor-help">
+                        {tag.tag}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{tag.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
             </div>
           )}
-        </div>
-        <MetricChart metric={metric} metricType={metricType} />
+        </CardHeader>
+        <CardContent>
+          <MetricChart metric={metric} metricType={metricType} />
+        </CardContent>
       </Card>
     )
   }
@@ -464,9 +516,12 @@ const MetricsSection = memo(
     if (!metrics.length) return null
 
     return (
-      <div>
-        <h3 className="text-lg font-semibold mb-4">{title}</h3>
-        <div className="space-y-4">
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-semibold">{title}</h3>
+          <Badge variant="secondary">{metrics.length} metrics</Badge>
+        </div>
+        <div className="grid gap-6">
           {metrics.map((metric, index) => (
             <MetricCard key={`${metric.name}-${index}`} metric={metric} metricType={metricType} />
           ))}
@@ -478,12 +533,12 @@ const MetricsSection = memo(
 
 MetricsSection.displayName = 'MetricsSection'
 
-// Loading skeletons
+// Loading skeletons using shadcn/ui Skeleton
 const TracesSkeleton = memo(() => (
   <div className="space-y-4">
     {Array.from({ length: 5 }).map((_, i) => (
-      <Card key={i} className="p-6">
-        <div className="space-y-4">
+      <Card key={i}>
+        <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Skeleton className="h-6 w-20" />
@@ -493,12 +548,11 @@ const TracesSkeleton = memo(() => (
             </div>
             <Skeleton className="h-6 w-40" />
           </div>
-          <div className="w-full h-px bg-border" />
-          <div>
-            <Skeleton className="h-4 w-24 mb-3" />
-            <Skeleton className="h-32 w-full" />
-          </div>
-        </div>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-4 w-24 mb-3" />
+          <Skeleton className="h-32 w-full" />
+        </CardContent>
       </Card>
     ))}
   </div>
@@ -509,9 +563,22 @@ TracesSkeleton.displayName = 'TracesSkeleton'
 const MetricsSkeleton = memo(() => (
   <div className="space-y-6">
     {Array.from({ length: 3 }).map((_, i) => (
-      <Card key={i} className="p-6">
-        <Skeleton className="h-6 w-[200px] mb-4" />
-        <Skeleton className="h-[300px] w-full" />
+      <Card key={i}>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-[200px]" />
+              <Skeleton className="h-4 w-[300px]" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-12" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] w-full" />
+        </CardContent>
       </Card>
     ))}
   </div>
@@ -529,7 +596,9 @@ export default function RunTracesPage() {
   const [metricsError, setMetricsError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('traces')
   const [searchQuery, setSearchQuery] = useState('')
+  const [showSystemTraces, setShowSystemTraces] = useState(true)
   const [isStreaming, setIsStreaming] = useState(false)
+  const [showScrollButtons, setShowScrollButtons] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const maxRetries = 5
@@ -537,11 +606,67 @@ export default function RunTracesPage() {
   const setupTracesStreamingRef = useRef<(() => EventSource | undefined) | null>(null)
   const fetchMetricsRef = useRef<(() => Promise<void>) | null>(null)
   const fetchTracesRef = useRef<(() => Promise<void>) | null>(null)
+  const tracesScrollRef = useRef<HTMLDivElement>(null)
 
   // Update ref when retryCount changes
   useEffect(() => {
     retryCountRef.current = retryCount
   }, [retryCount])
+
+  // Scroll event handler for traces list
+  const handleTracesScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement
+    const { scrollTop, scrollHeight, clientHeight } = target
+    const scrollPercentage = scrollTop / (scrollHeight - clientHeight)
+
+    // Show scroll buttons when scrolled more than 10% or when there's significant content
+    setShowScrollButtons(scrollPercentage > 0.1 || scrollHeight > clientHeight * 2)
+  }, [])
+
+  // Scroll to top function
+  const scrollToTop = useCallback(() => {
+    if (tracesScrollRef.current) {
+      tracesScrollRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      })
+    }
+  }, [])
+
+  // Scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    if (tracesScrollRef.current) {
+      tracesScrollRef.current.scrollTo({
+        top: tracesScrollRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
+  }, [])
+
+  // Keyboard shortcuts for scrolling
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle shortcuts when traces tab is active and there are traces
+      if (activeTab !== 'traces' || tracesLoading || tracesError || traces.length === 0) {
+        return
+      }
+
+      // Home key - scroll to top
+      if (e.key === 'Home') {
+        e.preventDefault()
+        scrollToTop()
+      }
+
+      // End key - scroll to bottom
+      if (e.key === 'End') {
+        e.preventDefault()
+        scrollToBottom()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeTab, tracesLoading, tracesError, traces.length, scrollToTop, scrollToBottom])
 
   // Calculate total metrics count
   const totalMetricsCount = useMemo(() => {
@@ -554,23 +679,29 @@ export default function RunTracesPage() {
     )
   }, [metrics])
 
-  // Filter traces based on search query
+  // Filter traces based on search query and system trace toggle
   const filteredTraces = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return traces
+    let filtered = traces
+
+    // Filter out system traces if toggle is off
+    if (!showSystemTraces) {
+      filtered = filtered.filter((trace) => !trace.is_system_trace)
     }
 
-    const query = searchQuery.toLowerCase()
-    const filtered = traces.filter(
-      (trace) =>
-        trace.from.toLowerCase().includes(query) ||
-        trace.to.toLowerCase().includes(query) ||
-        trace.content.toLowerCase().includes(query) ||
-        trace.created_at.toLowerCase().includes(query)
-    )
+    // Apply search query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (trace) =>
+          trace.from.toLowerCase().includes(query) ||
+          trace.to.toLowerCase().includes(query) ||
+          trace.content.toLowerCase().includes(query) ||
+          trace.created_at.toLowerCase().includes(query)
+      )
+    }
 
     return filtered
-  }, [traces, searchQuery])
+  }, [traces, searchQuery, showSystemTraces])
 
   // Helper function to normalize trace data
   const normalizeTrace = useCallback(
@@ -578,6 +709,7 @@ export default function RunTracesPage() {
       from: trace.from || trace.From || '',
       to: trace.to || trace.To || '',
       content: trace.content || trace.Content || '',
+      is_system_trace: trace.is_system_trace,
       created_at: trace.created_at || trace.createdAt || trace.CreatedAt || '',
     }),
     []
@@ -804,105 +936,68 @@ export default function RunTracesPage() {
 
     if (tracesError) {
       return (
-        <Card className="p-6">
-          <div className="text-red-500">
-            <p className="font-medium mb-2">Error loading traces:</p>
-            <p>{tracesError}</p>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Traces</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-destructive">{tracesError}</p>
+          </CardContent>
         </Card>
       )
     }
 
     if (!traces.length) {
       return (
-        <Card className="p-6">
-          <div className="text-muted-foreground">
-            <p>No traces available</p>
-            {isStreaming && (
-              <div className="mt-2 flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm">Listening for new traces...</span>
-              </div>
-            )}
-          </div>
+        <Card>
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="text-center">
+              <p className="text-muted-foreground">No traces available</p>
+              {isStreaming && (
+                <div className="mt-2 flex items-center gap-2 justify-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-muted-foreground">Listening for new traces...</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
         </Card>
       )
     }
 
     return (
-      <div className="flex flex-col flex-1">
-        {/* Search input */}
-        <div className="mb-6 relative z-10 flex-shrink-0">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search traces..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+      <div ref={tracesScrollRef} className="h-full overflow-y-auto" onScroll={handleTracesScroll}>
+        {filteredTraces.map((trace, index) => {
+          return (
+            <TraceItem
+              key={`${trace.from}-${trace.to}-${trace.created_at}-${index}`}
+              trace={trace}
+              index={index}
             />
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-              <svg
-                className="w-4 h-4 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            {searchQuery && (
-              <div className="text-sm text-muted-foreground">
-                Showing {filteredTraces.length} of {traces.length} traces
-              </div>
-            )}
-          </div>
-        </div>
+          )
+        })}
 
-        {/* Traces list container */}
-        <div className="flex-1 relative overflow-hidden">
-          {/* Simple scrollable list */}
-          <div className="h-full overflow-y-auto">
-            {filteredTraces.map((trace, index) => {
-              return (
-                <TraceItem
-                  key={`${trace.from}-${trace.to}-${trace.created_at}-${index}`}
-                  trace={trace}
-                  index={index}
-                />
-              )
-            })}
-          </div>
-
-          {/* Scroll down indicator */}
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10 bg-gradient-to-t from-background to-transparent h-8 w-full flex items-center justify-center">
-            <div className="bg-background/80 backdrop-blur-sm rounded-full p-2 border border-border">
-              <svg
-                className="w-4 h-4 text-muted-foreground animate-bounce"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
+        {/* Scroll down indicator */}
+        <div className="sticky bottom-0 left-1/2 transform -translate-x-1/2 z-10 bg-gradient-to-t from-background to-transparent h-8 w-full flex items-center justify-center">
+          <div className="bg-background/80 backdrop-blur-sm rounded-full p-2 border border-border">
+            <svg
+              className="w-4 h-4 text-muted-foreground animate-bounce"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </div>
         </div>
       </div>
     )
-  }, [tracesLoading, tracesError, traces.length, isStreaming, searchQuery, filteredTraces])
+  }, [tracesLoading, tracesError, traces.length, isStreaming, filteredTraces, handleTracesScroll])
 
   const metricsContent = useMemo(() => {
     if (metricsLoading) {
@@ -911,31 +1006,42 @@ export default function RunTracesPage() {
 
     if (metricsError) {
       return (
-        <Card className="p-6">
-          <div className="text-red-500">
-            <p className="font-medium mb-2">Error loading metrics:</p>
-            <p>{metricsError}</p>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-destructive">{metricsError}</p>
+          </CardContent>
         </Card>
       )
     }
 
     if (!metrics) {
       return (
-        <Card className="p-6">
-          <div className="text-muted-foreground">
-            <p>No metrics available</p>
-          </div>
+        <Card>
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="text-center">
+              <p className="text-muted-foreground">No metrics available</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Metrics will appear here when the simulation run generates data
+              </p>
+            </div>
+          </CardContent>
         </Card>
       )
     }
 
     return (
-      <div className="space-y-6">
-        <MetricsSection title="Counters" metrics={metrics.counters} metricType="counter" />
-        <MetricsSection title="Gauges" metrics={metrics.gauges} metricType="gauge" />
-        <MetricsSection title="Histograms" metrics={metrics.histograms} metricType="histogram" />
-        <MetricsSection title="Summaries" metrics={metrics.summaries} metricType="summary" />
+      <div className="space-y-8">
+        <MetricsSection title="Counters" metrics={metrics.counters || []} metricType="counter" />
+        <MetricsSection title="Gauges" metrics={metrics.gauges || []} metricType="gauge" />
+        <MetricsSection
+          title="Histograms"
+          metrics={metrics.histograms || []}
+          metricType="histogram"
+        />
+        <MetricsSection title="Summaries" metrics={metrics.summaries || []} metricType="summary" />
       </div>
     )
   }, [metricsLoading, metricsError, metrics])
@@ -981,13 +1087,145 @@ export default function RunTracesPage() {
               {isStreaming && (
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               )}
-              Traces ({traces.length})
+              Traces ({filteredTraces.length})
             </TabsTrigger>
             <TabsTrigger value="metrics">Metrics ({totalMetricsCount})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="traces" className="mt-6 flex-1 flex flex-col">
-            {tracesContent}
+            {/* Search and filter controls - sticky and always visible */}
+            {!tracesLoading && !tracesError && traces.length > 0 && (
+              <Card className="mb-6 sticky top-0 z-20 flex-shrink-0 bg-background/95 backdrop-blur-sm border-b shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    {/* Search input */}
+                    <div className="relative flex-1">
+                      <svg
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      <Input
+                        type="text"
+                        placeholder="Search traces..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-10"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Search results counter */}
+                    {searchQuery.trim() && (
+                      <div className="text-sm text-muted-foreground whitespace-nowrap">
+                        {filteredTraces.length} of {traces.length} traces
+                      </div>
+                    )}
+
+                    {/* System traces toggle */}
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <Checkbox
+                        id="system-traces"
+                        checked={showSystemTraces}
+                        onCheckedChange={(checked) => setShowSystemTraces(checked as boolean)}
+                      />
+                      <label
+                        htmlFor="system-traces"
+                        className="text-sm text-muted-foreground cursor-pointer"
+                      >
+                        Show system traces
+                      </label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            <div className="flex-1 overflow-hidden">{tracesContent}</div>
+
+            {/* Floating scroll buttons */}
+            {showScrollButtons && !tracesLoading && !tracesError && traces.length > 0 && (
+              <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2">
+                {/* Scroll to top button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={scrollToTop}
+                        className="w-12 h-12 bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-background flex items-center justify-center group"
+                      >
+                        <svg
+                          className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 10l7-7m0 0l7 7m-7-7v18"
+                          />
+                        </svg>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Scroll to top (Home)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Scroll to bottom button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={scrollToBottom}
+                        className="w-12 h-12 bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-background flex items-center justify-center group"
+                      >
+                        <svg
+                          className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                          />
+                        </svg>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Scroll to bottom (End)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent
