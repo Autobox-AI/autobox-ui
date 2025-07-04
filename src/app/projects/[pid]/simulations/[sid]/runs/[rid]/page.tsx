@@ -535,52 +535,84 @@ MetricsSection.displayName = 'MetricsSection'
 
 // Loading skeletons using shadcn/ui Skeleton
 const TracesSkeleton = memo(() => (
-  <div className="space-y-4">
-    {Array.from({ length: 5 }).map((_, i) => (
-      <Card key={i}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-6 w-32" />
+  <div className="flex flex-col items-center justify-center min-h-[400px]">
+    <div className="flex flex-col items-center space-y-4 mb-8">
+      <div className="relative">
+        <div className="w-12 h-12 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
+        <div
+          className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin"
+          style={{ animationDuration: '1.5s' }}
+        ></div>
+      </div>
+      <div className="text-center">
+        <h2 className="text-xl font-semibold text-zinc-300 mb-2">Loading Traces</h2>
+        <p className="text-sm text-zinc-500">Please wait while we fetch the trace data...</p>
+      </div>
+    </div>
+
+    <div className="space-y-4 w-full">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Card key={i}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <Skeleton className="h-6 w-40" />
             </div>
-            <Skeleton className="h-6 w-40" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-4 w-24 mb-3" />
-          <Skeleton className="h-32 w-full" />
-        </CardContent>
-      </Card>
-    ))}
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-24 mb-3" />
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   </div>
 ))
 
 TracesSkeleton.displayName = 'TracesSkeleton'
 
 const MetricsSkeleton = memo(() => (
-  <div className="space-y-6">
-    {Array.from({ length: 3 }).map((_, i) => (
-      <Card key={i}>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-6 w-[200px]" />
-              <Skeleton className="h-4 w-[300px]" />
+  <div className="flex flex-col items-center justify-center min-h-[400px]">
+    <div className="flex flex-col items-center space-y-4 mb-8">
+      <div className="relative">
+        <div className="w-12 h-12 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
+        <div
+          className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin"
+          style={{ animationDuration: '1.5s' }}
+        ></div>
+      </div>
+      <div className="text-center">
+        <h2 className="text-xl font-semibold text-zinc-300 mb-2">Loading Metrics</h2>
+        <p className="text-sm text-zinc-500">Please wait while we fetch the metrics data...</p>
+      </div>
+    </div>
+
+    <div className="space-y-6 w-full">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Card key={i}>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-[200px]" />
+                <Skeleton className="h-4 w-[300px]" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-5 w-12" />
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-5 w-12" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[300px] w-full" />
-        </CardContent>
-      </Card>
-    ))}
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[300px] w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   </div>
 ))
 
@@ -619,13 +651,14 @@ export default function RunTracesPage() {
     const { scrollTop, scrollHeight, clientHeight } = target
     const scrollPercentage = scrollTop / (scrollHeight - clientHeight)
 
-    // Show scroll buttons when scrolled more than 10% or when there's significant content
-    setShowScrollButtons(scrollPercentage > 0.1 || scrollHeight > clientHeight * 2)
+    // Show scroll buttons when content is scrollable
+    setShowScrollButtons(scrollHeight > clientHeight)
   }, [])
 
   // Scroll to top function
   const scrollToTop = useCallback(() => {
     if (tracesScrollRef.current) {
+      console.log('Scroll to top triggered')
       tracesScrollRef.current.scrollTo({
         top: 0,
         behavior: 'smooth',
@@ -636,6 +669,7 @@ export default function RunTracesPage() {
   // Scroll to bottom function
   const scrollToBottom = useCallback(() => {
     if (tracesScrollRef.current) {
+      console.log('Scroll to bottom triggered')
       tracesScrollRef.current.scrollTo({
         top: tracesScrollRef.current.scrollHeight,
         behavior: 'smooth',
@@ -928,6 +962,27 @@ export default function RunTracesPage() {
     }
   }, [activeTab])
 
+  // Ensure scroll arrows show up as soon as content is scrollable
+  useEffect(() => {
+    if (tracesScrollRef.current && traces.length > 0) {
+      const { scrollHeight, clientHeight } = tracesScrollRef.current
+      setShowScrollButtons(scrollHeight > clientHeight)
+    } else {
+      setShowScrollButtons(false)
+    }
+  }, [traces.length])
+
+  // Auto-scroll to bottom when new traces arrive, unless user has scrolled up
+  useEffect(() => {
+    const scrollEl = tracesScrollRef.current
+    if (!scrollEl) return
+    // If user is near the bottom (within 100px), auto-scroll
+    const isNearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 100
+    if (isNearBottom) {
+      scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' })
+    }
+  }, [filteredTraces.length])
+
   // Memoized content to prevent unnecessary re-renders
   const tracesContent = useMemo(() => {
     if (tracesLoading) {
@@ -966,12 +1021,13 @@ export default function RunTracesPage() {
     }
 
     return (
-      <div className="relative h-full">
+      <div className="relative flex-1 min-h-0">
         {/* Main scrollable content */}
         <div
           ref={tracesScrollRef}
-          className="h-full overflow-y-auto pr-4"
+          className="flex-1 min-h-0 overflow-y-auto pr-4"
           onScroll={handleTracesScroll}
+          style={{ height: '100%' }}
         >
           {filteredTraces.map((trace, index) => {
             return (
@@ -983,69 +1039,6 @@ export default function RunTracesPage() {
             )
           })}
         </div>
-
-        {/* Scroll arrows on the right side */}
-        {showScrollButtons && (
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-10">
-            {/* Scroll to top arrow */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={scrollToTop}
-                    className="w-8 h-8 bg-background/95 backdrop-blur-sm border border-border rounded-l-md shadow-md hover:shadow-lg transition-all duration-200 hover:bg-accent flex items-center justify-center group"
-                  >
-                    <svg
-                      className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 10l7-7m0 0l7 7m-7-7v18"
-                      />
-                    </svg>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>Scroll to top (Home)</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* Scroll to bottom arrow */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={scrollToBottom}
-                    className="w-8 h-8 bg-background/95 backdrop-blur-sm border border-border rounded-l-md shadow-md hover:shadow-lg transition-all duration-200 hover:bg-accent flex items-center justify-center group"
-                  >
-                    <svg
-                      className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                      />
-                    </svg>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>Scroll to bottom (End)</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
       </div>
     )
   }, [
@@ -1059,14 +1052,6 @@ export default function RunTracesPage() {
     scrollToTop,
     scrollToBottom,
   ])
-
-  // Ensure scroll arrows show up as soon as content is scrollable
-  useEffect(() => {
-    if (tracesScrollRef.current) {
-      const { scrollHeight, clientHeight } = tracesScrollRef.current
-      setShowScrollButtons(scrollHeight > clientHeight)
-    }
-  }, [filteredTraces])
 
   const metricsContent = useMemo(() => {
     if (metricsLoading) {
@@ -1145,7 +1130,7 @@ export default function RunTracesPage() {
         </Breadcrumb>
       </div>
 
-      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-6 flex flex-col">
+      <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto px-6 py-6 flex flex-col">
         <Tabs
           defaultValue="traces"
           className="w-full flex flex-col flex-1"
@@ -1161,7 +1146,7 @@ export default function RunTracesPage() {
             <TabsTrigger value="metrics">Metrics ({totalMetricsCount})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="traces" className="mt-6 flex-1 flex flex-col">
+          <TabsContent value="traces" className="mt-6 flex-1 min-h-0 flex flex-col">
             {/* Search and filter controls - sticky and always visible */}
             {!tracesLoading && !tracesError && traces.length > 0 && (
               <Card className="mb-6 sticky top-0 z-20 flex-shrink-0 bg-background/95 backdrop-blur-sm border-b shadow-sm">
@@ -1231,7 +1216,7 @@ export default function RunTracesPage() {
                 </CardContent>
               </Card>
             )}
-            <div className="flex-1 overflow-hidden">{tracesContent}</div>
+            <div className="flex-1 min-h-0 overflow-hidden">{tracesContent}</div>
           </TabsContent>
 
           <TabsContent
@@ -1243,6 +1228,65 @@ export default function RunTracesPage() {
           </TabsContent>
         </Tabs>
       </div>
+      {/* --- FIX: Add scroll arrows as fixed elements on the right side of the screen --- */}
+      {activeTab === 'traces' && traces.length > 0 && (
+        <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={scrollToTop}
+                  className="w-12 h-12 bg-background/90 border border-border rounded-full shadow-xl hover:bg-accent flex items-center justify-center group transition-all duration-200"
+                >
+                  <svg
+                    className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 10l7-7m0 0l7 7m-7-7v18"
+                    />
+                  </svg>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Scroll to top (Home)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={scrollToBottom}
+                  className="w-12 h-12 bg-background/90 border border-border rounded-full shadow-xl hover:bg-accent flex items-center justify-center group transition-all duration-200"
+                >
+                  <svg
+                    className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
+                  </svg>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Scroll to bottom (End)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
     </div>
   )
 }
