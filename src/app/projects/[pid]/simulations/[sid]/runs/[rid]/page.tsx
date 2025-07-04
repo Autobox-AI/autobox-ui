@@ -1,5 +1,6 @@
 'use client'
 
+import { RunGaugeMetric } from '@/components/metrics/GaugeMetric'
 import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
@@ -65,13 +66,11 @@ interface MetricDefinition {
     tag: string
   }>
   data: MetricDataPoint[]
+  type: 'counter' | 'gauge' | 'histogram' | 'summary'
 }
 
 interface MetricsResponse {
-  counters: MetricDefinition[]
-  gauges: MetricDefinition[]
-  histograms: MetricDefinition[]
-  summaries: MetricDefinition[]
+  metrics: MetricDefinition[]
 }
 
 // Pre-computed colors array to avoid recreation
@@ -449,89 +448,61 @@ const MetricChart = memo(
 MetricChart.displayName = 'MetricChart'
 
 // Optimized metric card using shadcn/ui Card components
-const MetricCard = memo(
-  ({ metric, metricType }: { metric: MetricDefinition; metricType: string }) => {
-    const dataPointCount = metric.data?.length || 0
-    const hasTags = metric.tag_definitions.length > 0
+const MetricCard = memo(({ metric }: { metric: MetricDefinition }) => {
+  const dataPointCount = metric.data?.length || 0
+  const hasTags = metric.tag_definitions.length > 0
 
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-lg">{metric.name}</CardTitle>
-              <CardDescription className="text-sm">{metric.description}</CardDescription>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {dataPointCount} points
-              </Badge>
-              {metric.unit && (
-                <Badge variant="outline" className="text-xs">
-                  {metric.unit}
-                </Badge>
-              )}
-            </div>
-          </div>
-          {hasTags && (
-            <div className="flex gap-2 flex-wrap">
-              {metric.tag_definitions.map((tag, tagIndex) => (
-                <TooltipProvider key={tagIndex}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="outline" className="text-xs cursor-help">
-                        {tag.tag}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{tag.description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          <MetricChart metric={metric} metricType={metricType} />
-        </CardContent>
-      </Card>
-    )
+  // For gauge metrics, use the special gauge component
+  if (metric.type === 'gauge') {
+    return <RunGaugeMetric metric={metric} />
   }
-)
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-lg">{metric.name}</CardTitle>
+            <CardDescription className="text-sm">{metric.description}</CardDescription>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {dataPointCount} points
+            </Badge>
+            {metric.unit && (
+              <Badge variant="outline" className="text-xs">
+                {metric.unit}
+              </Badge>
+            )}
+          </div>
+        </div>
+        {hasTags && (
+          <div className="flex gap-2 flex-wrap">
+            {metric.tag_definitions.map((tag, tagIndex) => (
+              <TooltipProvider key={tagIndex}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs cursor-help">
+                      {tag.tag}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{tag.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent>
+        <MetricChart metric={metric} metricType={metric.type} />
+      </CardContent>
+    </Card>
+  )
+})
 
 MetricCard.displayName = 'MetricCard'
-
-// Optimized metrics section with lazy loading
-const MetricsSection = memo(
-  ({
-    title,
-    metrics,
-    metricType,
-  }: {
-    title: string
-    metrics: MetricDefinition[]
-    metricType: string
-  }) => {
-    if (!metrics.length) return null
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xl font-semibold">{title}</h3>
-          <Badge variant="secondary">{metrics.length} metrics</Badge>
-        </div>
-        <div className="grid gap-6">
-          {metrics.map((metric, index) => (
-            <MetricCard key={`${metric.name}-${index}`} metric={metric} metricType={metricType} />
-          ))}
-        </div>
-      </div>
-    )
-  }
-)
-
-MetricsSection.displayName = 'MetricsSection'
 
 // Loading skeletons using shadcn/ui Skeleton
 const TracesSkeleton = memo(() => (
@@ -705,12 +676,7 @@ export default function RunTracesPage() {
   // Calculate total metrics count
   const totalMetricsCount = useMemo(() => {
     if (!metrics) return 0
-    return (
-      (metrics.counters?.length || 0) +
-      (metrics.gauges?.length || 0) +
-      (metrics.histograms?.length || 0) +
-      (metrics.summaries?.length || 0)
-    )
+    return metrics.metrics?.length || 0
   }, [metrics])
 
   // Filter traces based on search query and system trace toggle
@@ -1071,7 +1037,7 @@ export default function RunTracesPage() {
       )
     }
 
-    if (!metrics) {
+    if (!metrics || !metrics.metrics?.length) {
       return (
         <Card>
           <CardContent className="flex items-center justify-center h-32">
@@ -1087,15 +1053,10 @@ export default function RunTracesPage() {
     }
 
     return (
-      <div className="space-y-8">
-        <MetricsSection title="Counters" metrics={metrics.counters || []} metricType="counter" />
-        <MetricsSection title="Gauges" metrics={metrics.gauges || []} metricType="gauge" />
-        <MetricsSection
-          title="Histograms"
-          metrics={metrics.histograms || []}
-          metricType="histogram"
-        />
-        <MetricsSection title="Summaries" metrics={metrics.summaries || []} metricType="summary" />
+      <div className="space-y-6">
+        {metrics.metrics.map((metric, index) => (
+          <MetricCard key={`${metric.name}-${index}`} metric={metric} />
+        ))}
       </div>
     )
   }, [metricsLoading, metricsError, metrics])

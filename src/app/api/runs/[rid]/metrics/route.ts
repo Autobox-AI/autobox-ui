@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+interface MetricDataPoint {
+  time: string
+  value: number
+  tags: Record<string, string>
+}
+
+interface MetricDefinition {
+  name: string
+  description: string
+  unit?: string
+  tag_definitions: Array<{
+    description: string
+    tag: string
+  }>
+  data: MetricDataPoint[]
+}
+
+interface FlattenedMetric extends MetricDefinition {
+  type: 'counter' | 'gauge' | 'histogram' | 'summary'
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ rid: string }> }) {
   try {
     const { rid } = await params
@@ -29,7 +50,39 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+
+    // Flatten the metrics while preserving order and adding type information
+    const flattenedMetrics: FlattenedMetric[] = []
+
+    // Add counters with type
+    if (data.counters) {
+      data.counters.forEach((metric: MetricDefinition) => {
+        flattenedMetrics.push({ ...metric, type: 'counter' })
+      })
+    }
+
+    // Add gauges with type
+    if (data.gauges) {
+      data.gauges.forEach((metric: MetricDefinition) => {
+        flattenedMetrics.push({ ...metric, type: 'gauge' })
+      })
+    }
+
+    // Add histograms with type
+    if (data.histograms) {
+      data.histograms.forEach((metric: MetricDefinition) => {
+        flattenedMetrics.push({ ...metric, type: 'histogram' })
+      })
+    }
+
+    // Add summaries with type
+    if (data.summaries) {
+      data.summaries.forEach((metric: MetricDefinition) => {
+        flattenedMetrics.push({ ...metric, type: 'summary' })
+      })
+    }
+
+    return NextResponse.json({ metrics: flattenedMetrics })
   } catch (error) {
     console.error('Error fetching metrics:', error)
 

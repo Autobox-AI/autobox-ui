@@ -34,10 +34,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useRunPolling } from '@/hooks/useRunPolling'
 import { format } from 'date-fns'
 import { ArrowUpDown, ChevronRight, GitGraph, Play } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { use, useEffect, useState } from 'react'
+import { use, useCallback, useEffect, useState } from 'react'
 
 interface _Worker {
   id: string
@@ -115,6 +116,18 @@ export default function SimulationRunsPage({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [isCreatingRun, setIsCreatingRun] = useState(false)
+
+  // Callback function to update a specific run in the runs array
+  const handleRunUpdate = useCallback((updatedRun: Run) => {
+    setRuns((prevRuns) => prevRuns.map((run) => (run.id === updatedRun.id ? updatedRun : run)))
+  }, [])
+
+  // Use the polling hook for runs that are in progress
+  useRunPolling({
+    runs,
+    onRunUpdate: handleRunUpdate,
+    pollingInterval: 3000, // Poll every 3 seconds
+  })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -388,9 +401,13 @@ export default function SimulationRunsPage({
                             run.status === 'created'
                               ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
                               : ''
+                          } ${
+                            run.status === 'completed' && !run.summary
+                              ? 'animate-pulse bg-blue-500/10 text-blue-500 border-blue-500/20'
+                              : ''
                           }`}
                         >
-                          {run.status}
+                          {run.status === 'completed' && !run.summary ? 'completed*' : run.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -415,11 +432,23 @@ export default function SimulationRunsPage({
                           <Tooltip>
                             <TooltipTrigger className="w-full text-left">
                               <div className="truncate text-ellipsis overflow-hidden text-left">
-                                {run.summary || '-'}
+                                {run.status === 'completed' && !run.summary ? (
+                                  <span className="text-blue-400 animate-pulse">
+                                    Generating summary...
+                                  </span>
+                                ) : (
+                                  run.summary || '-'
+                                )}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[400px]">
-                              <p className="break-words text-left">{run.summary || '-'}</p>
+                              <p className="break-words text-left">
+                                {run.status === 'completed' && !run.summary ? (
+                                  <span className="text-blue-400">Generating summary...</span>
+                                ) : (
+                                  run.summary || '-'
+                                )}
+                              </p>
                             </TooltipContent>
                           </Tooltip>
                           <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
