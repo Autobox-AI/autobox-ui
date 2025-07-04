@@ -21,7 +21,7 @@ import {
   Thermometer,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from './ui/button'
 
 type SimulationStatus = 'running' | 'completed' | 'failed' | 'pending'
@@ -56,6 +56,37 @@ const getStatusIcon = (status: SimulationStatus) => {
       return <Thermometer className="h-4 w-4 text-zinc-400" />
   }
 }
+
+const NewSimulationCard = React.memo(
+  ({ projectId, projectName }: { projectId: string; projectName: string }) => {
+    const router = useRouter()
+
+    return (
+      <div
+        className="group relative bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-700 overflow-hidden hover:border-zinc-600 transition-all duration-200 h-[280px] flex flex-col cursor-pointer"
+        onClick={() =>
+          router.push(
+            `/projects/${projectId}/new-simulation?projectName=${encodeURIComponent(projectName)}`
+          )
+        }
+      >
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-4 group-hover:bg-zinc-700 transition-colors">
+            <Plus className="h-8 w-8 text-zinc-400 group-hover:text-zinc-300" />
+          </div>
+          <h3 className="text-lg font-semibold text-zinc-300 mb-2 group-hover:text-zinc-200 transition-colors">
+            Create New Simulation
+          </h3>
+          <p className="text-sm text-zinc-500 text-center max-w-32 group-hover:text-zinc-400 transition-colors">
+            Start a new simulation in this project
+          </p>
+        </div>
+      </div>
+    )
+  }
+)
+
+NewSimulationCard.displayName = 'NewSimulationCard'
 
 const Simulations = ({
   project,
@@ -165,15 +196,6 @@ const Simulations = ({
               <h1 className="text-3xl font-bold">{project.name}</h1>
               <p className="text-sm text-zinc-400 mt-1">{project.description}</p>
             </div>
-            <button
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors flex items-center gap-2"
-              onClick={() =>
-                router.push(`/projects/${project.id}/new-simulation?projectName=${project.name}`)
-              }
-            >
-              <Plus className="h-4 w-4" />
-              New Simulation
-            </button>
           </div>
 
           {/* Search Bar and View Toggle */}
@@ -234,6 +256,7 @@ const Simulations = ({
           {viewMode === 'grid' ? (
             // Existing grid view
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <NewSimulationCard projectId={project.id} projectName={project.name} />
               {simulations && simulations.length > 0 ? (
                 simulations.map((simulation) => (
                   <div

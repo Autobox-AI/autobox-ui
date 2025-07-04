@@ -17,6 +17,7 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
       // Handle streaming response
       const response = await fetch(backendUrl, {
         cache: 'no-store',
+        signal: AbortSignal.timeout(30000), // 30 second timeout
       })
 
       if (!response.ok) {

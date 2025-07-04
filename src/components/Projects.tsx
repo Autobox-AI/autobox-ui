@@ -1,5 +1,22 @@
 'use client'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,6 +37,7 @@ import {
   Plus,
   Search,
   Thermometer,
+  Trash2,
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -104,109 +122,195 @@ type ViewMode = 'grid' | 'table'
 interface ProjectCardProps {
   project: Project
   onClick: () => void
+  onDelete: (projectId: string) => void
 }
 
-const ProjectCard = React.memo(({ project, onClick }: ProjectCardProps) => (
-  <div className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col">
-    <div className="p-6 flex-1">
-      <div className="flex justify-between items-start">
-        <div className="cursor-pointer flex-1 min-w-0" onClick={onClick}>
-          <div className="flex items-center gap-2 mb-1">
+const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps) => {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      await onDelete(project.id)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDropdownOpenChange = (open: boolean) => {
+    setIsDropdownOpen(open)
+  }
+
+  return (
+    <div className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col">
+      <div className="p-6 flex-1">
+        <div className="flex justify-between items-start">
+          <div className="cursor-pointer flex-1 min-w-0" onClick={onClick}>
+            <div className="flex items-center gap-2 mb-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
+                    {project.name}
+                  </h2>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[300px]">
+                  <div className="space-y-1">
+                    <p className="font-semibold">{project.name}</p>
+                    <p className="text-sm text-zinc-400">
+                      {project.description || 'No description provided'}
+                    </p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+              <div className="flex items-center gap-1 shrink-0">
+                {getConfidenceIcon(project.confidence_level || 'LOW')}
+                <span
+                  className={`text-xs font-medium ${getConfidenceColor(project.confidence_level || 'LOW')}`}
+                >
+                  {project.confidence_level || 'LOW'}
+                </span>
+              </div>
+            </div>
+            <p
+              className="text-sm text-zinc-400 mt-1 line-clamp-2"
+              title={project.description || 'No description provided'}
+            >
+              {project.description || 'No description provided'}
+            </p>
+          </div>
+          <DropdownMenu open={isDropdownOpen} onOpenChange={handleDropdownOpenChange}>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0">
+                <MoreVertical className="h-5 w-5 text-zinc-400" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    className="text-red-400 focus:text-red-400 focus:bg-red-400/10"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Project
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete &quot;{project.name}&quot;? This action cannot
+                      be undone and will permanently remove the project and all its simulations.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setIsDropdownOpen(false)}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        await handleDelete()
+                        setIsDropdownOpen(false)
+                      }}
+                      disabled={isDeleting}
+                      className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete Project'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Project Stats and Footer */}
+      <div className="mt-auto">
+        {/* Project Stats */}
+        <div className="px-6 pb-4 flex items-center justify-between text-sm text-zinc-400">
+          <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
-                  {project.name}
-                </h2>
+                <span className="flex items-center gap-1 cursor-pointer">
+                  <GitGraph className="h-4 w-4" />
+                  <span>{project.simulations?.length || 0}</span>
+                </span>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[300px]">
-                <div className="space-y-1">
-                  <p className="font-semibold">{project.name}</p>
-                  <p className="text-sm text-zinc-400">
-                    {project.description || 'No description provided'}
-                  </p>
-                </div>
-              </TooltipContent>
+              <TooltipContent side="top">Total simulations</TooltipContent>
             </Tooltip>
-            <div className="flex items-center gap-1 shrink-0">
-              {getConfidenceIcon(project.confidence_level || 'LOW')}
-              <span
-                className={`text-xs font-medium ${getConfidenceColor(project.confidence_level || 'LOW')}`}
-              >
-                {project.confidence_level || 'LOW'}
-              </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex items-center gap-1 cursor-pointer">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(project.updated_at || project.created_at)}</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">Last update</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* Project Footer */}
+        <div className="px-6 py-4 bg-zinc-900 border-t border-zinc-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+                }`}
+              />
+              <span className="text-sm text-zinc-400 capitalize">{project.status || 'active'}</span>
             </div>
+            <button
+              onClick={onClick}
+              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              View Simulations →
+            </button>
           </div>
-          <p
-            className="text-sm text-zinc-400 mt-1 line-clamp-2"
-            title={project.description || 'No description provided'}
-          >
-            {project.description || 'No description provided'}
-          </p>
-        </div>
-        <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0">
-          <MoreVertical className="h-5 w-5 text-zinc-400" />
-        </button>
-      </div>
-    </div>
-
-    {/* Project Stats and Footer */}
-    <div className="mt-auto">
-      {/* Project Stats */}
-      <div className="px-6 pb-4 flex items-center justify-between text-sm text-zinc-400">
-        <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="flex items-center gap-1 cursor-pointer">
-                <GitGraph className="h-4 w-4" />
-                <span>{project.simulations?.length || 0}</span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">Total simulations</TooltipContent>
-          </Tooltip>
-        </div>
-        <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="flex items-center gap-1 cursor-pointer">
-                <Calendar className="h-4 w-4" />
-                <span>{formatDate(project.updated_at || project.created_at)}</span>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">Last update</TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-
-      {/* Project Footer */}
-      <div className="px-6 py-4 bg-zinc-900 border-t border-zinc-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
-              }`}
-            />
-            <span className="text-sm text-zinc-400 capitalize">{project.status || 'active'}</span>
-          </div>
-          <button
-            onClick={onClick}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            View Simulations →
-          </button>
         </div>
       </div>
     </div>
-  </div>
-))
+  )
+})
 
 ProjectCard.displayName = 'ProjectCard'
+
+const NewProjectCard = React.memo(() => {
+  const router = useRouter()
+
+  return (
+    <div
+      className="group relative bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-700 overflow-hidden hover:border-zinc-600 transition-all duration-200 h-[280px] flex flex-col cursor-pointer"
+      onClick={() => router.push('/projects/new')}
+    >
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-4 group-hover:bg-zinc-700 transition-colors">
+          <Plus className="h-8 w-8 text-zinc-400 group-hover:text-zinc-300" />
+        </div>
+        <h3 className="text-lg font-semibold text-zinc-300 mb-2 group-hover:text-zinc-200 transition-colors">
+          Create New Project
+        </h3>
+        <p className="text-sm text-zinc-500 text-center max-w-32 group-hover:text-zinc-400 transition-colors">
+          Start a new project to organize your simulations
+        </p>
+      </div>
+    </div>
+  )
+})
+
+NewProjectCard.displayName = 'NewProjectCard'
 
 const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const projectsPerPage = 8
+  const [projects, setProjects] = useState(initialProjects)
 
   // Get initial values from URL
   const initialSearch = searchParams.get('search') || ''
@@ -218,10 +322,10 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   const [currentPage, setCurrentPage] = useState(initialPage)
 
   // Calculate pagination
-  const totalPages = Math.ceil(initialProjects.length / projectsPerPage)
+  const totalPages = Math.ceil(projects.length / projectsPerPage)
   const startIndex = (currentPage - 1) * projectsPerPage
   const endIndex = startIndex + projectsPerPage
-  const currentProjects = initialProjects.slice(startIndex, endIndex)
+  const currentProjects = projects.slice(startIndex, endIndex)
 
   // Debounce search input
   const debouncedSearch = useDebounce(searchQuery, 300)
@@ -271,12 +375,42 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
     updateFilters(debouncedSearch, statusFilter, currentPage)
   }, [debouncedSearch, statusFilter, currentPage, updateFilters])
 
+  // Update projects state when initialProjects changes
+  useEffect(() => {
+    setProjects(initialProjects)
+  }, [initialProjects])
+
   const goToProject = useCallback(
     (projectId: string) => {
       router.push(`/projects/${projectId}/simulations`)
     },
     [router]
   )
+
+  const handleDeleteProject = useCallback(async (projectId: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete project')
+      }
+
+      // Remove the project from the local state
+      setProjects((prevProjects) => prevProjects.filter((project) => project.id !== projectId))
+
+      // Revalidate the projects cache
+      await fetch('/api/revalidate?tag=projects', {
+        method: 'POST',
+      })
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      // You could add a toast notification here to show the error
+      alert('Failed to delete project. Please try again.')
+    }
+  }, [])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -288,13 +422,6 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
               <h1 className="text-3xl font-bold">Projects</h1>
               <p className="text-sm text-zinc-400 mt-1">Manage your projects and simulations</p>
             </div>
-            <button
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors flex items-center gap-2"
-              onClick={() => router.push('/projects/new')}
-            >
-              <Plus className="h-4 w-4" />
-              New Project
-            </button>
           </div>
 
           {/* Search Bar and View Toggle */}
@@ -348,11 +475,13 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
         <div className="max-w-7xl mx-auto">
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <NewProjectCard />
               {currentProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
                   project={project}
                   onClick={() => goToProject(project.id)}
+                  onDelete={handleDeleteProject}
                 />
               ))}
             </div>

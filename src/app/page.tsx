@@ -1,8 +1,8 @@
+import OptimizedImage from '@/components/OptimizedImage'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Organization } from '@/schemas/organization'
 import { ArrowRight } from 'lucide-react'
 import { headers } from 'next/headers'
-import Image from 'next/image'
 import Link from 'next/link'
 
 async function fetchOrganizations(): Promise<Organization[]> {
@@ -85,19 +85,13 @@ export default async function Home() {
                 <CardDescription className="text-xs mb-1">{item.description}</CardDescription>
               </CardHeader>
               <div className="relative w-full">
-                <Image
+                <OptimizedImage
                   src={item.image}
                   alt={item.title}
                   width={500}
                   height={300}
                   priority={index === 0}
                   loading={index === 0 ? 'eager' : 'lazy'}
-                  style={{
-                    objectFit: 'contain',
-                    width: '100%',
-                    height: 'auto',
-                    maxWidth: '500px',
-                  }}
                   className="mx-auto rounded-md"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"
                 />

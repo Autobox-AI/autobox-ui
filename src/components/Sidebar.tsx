@@ -138,9 +138,12 @@ const AppSidebar = ({ organizations }: AppSidebarProps) => {
                     height={24}
                   />
                 </div>
-                <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
-                  Autobox Studio
-                </span>
+                <div className="flex flex-col transition-opacity group-data-[state=collapsed]:opacity-0">
+                  <span className="text-sm font-medium text-white">Autobox Studio</span>
+                  {organizations.length > 0 && organizations[0]?.name && (
+                    <span className="text-xs text-white/60">{organizations[0].name}</span>
+                  )}
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

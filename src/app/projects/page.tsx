@@ -8,6 +8,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Project } from '@/schemas'
+import { Plus } from 'lucide-react'
 import { headers } from 'next/headers'
+import Link from 'next/link'
 import { Suspense } from 'react'
 
 async function fetchProjects(
@@ -113,9 +116,15 @@ async function ProjectsContent({
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] px-6">
         <h2 className="text-2xl font-bold text-zinc-400 mb-4">No Projects Found</h2>
-        <p className="text-zinc-500 text-center max-w-md">
+        <p className="text-zinc-500 text-center max-w-md mb-6">
           There are no projects available at the moment. Create your first project to get started.
         </p>
+        <Button asChild className="flex items-center gap-2">
+          <Link href="/projects/new">
+            <Plus className="h-4 w-4" />
+            Create New Project
+          </Link>
+        </Button>
       </div>
     )
   }

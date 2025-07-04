@@ -966,38 +966,107 @@ export default function RunTracesPage() {
     }
 
     return (
-      <div ref={tracesScrollRef} className="h-full overflow-y-auto" onScroll={handleTracesScroll}>
-        {filteredTraces.map((trace, index) => {
-          return (
-            <TraceItem
-              key={`${trace.from}-${trace.to}-${trace.created_at}-${index}`}
-              trace={trace}
-              index={index}
-            />
-          )
-        })}
-
-        {/* Scroll down indicator */}
-        <div className="sticky bottom-0 left-1/2 transform -translate-x-1/2 z-10 bg-gradient-to-t from-background to-transparent h-8 w-full flex items-center justify-center">
-          <div className="bg-background/80 backdrop-blur-sm rounded-full p-2 border border-border">
-            <svg
-              className="w-4 h-4 text-muted-foreground animate-bounce"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
+      <div className="relative h-full">
+        {/* Main scrollable content */}
+        <div
+          ref={tracesScrollRef}
+          className="h-full overflow-y-auto pr-4"
+          onScroll={handleTracesScroll}
+        >
+          {filteredTraces.map((trace, index) => {
+            return (
+              <TraceItem
+                key={`${trace.from}-${trace.to}-${trace.created_at}-${index}`}
+                trace={trace}
+                index={index}
               />
-            </svg>
-          </div>
+            )
+          })}
         </div>
+
+        {/* Scroll arrows on the right side */}
+        {showScrollButtons && (
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-10">
+            {/* Scroll to top arrow */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={scrollToTop}
+                    className="w-8 h-8 bg-background/95 backdrop-blur-sm border border-border rounded-l-md shadow-md hover:shadow-lg transition-all duration-200 hover:bg-accent flex items-center justify-center group"
+                  >
+                    <svg
+                      className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 10l7-7m0 0l7 7m-7-7v18"
+                      />
+                    </svg>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Scroll to top (Home)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Scroll to bottom arrow */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={scrollToBottom}
+                    className="w-8 h-8 bg-background/95 backdrop-blur-sm border border-border rounded-l-md shadow-md hover:shadow-lg transition-all duration-200 hover:bg-accent flex items-center justify-center group"
+                  >
+                    <svg
+                      className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                      />
+                    </svg>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Scroll to bottom (End)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </div>
     )
-  }, [tracesLoading, tracesError, traces.length, isStreaming, filteredTraces, handleTracesScroll])
+  }, [
+    tracesLoading,
+    tracesError,
+    traces.length,
+    isStreaming,
+    filteredTraces,
+    handleTracesScroll,
+    showScrollButtons,
+    scrollToTop,
+    scrollToBottom,
+  ])
+
+  // Ensure scroll arrows show up as soon as content is scrollable
+  useEffect(() => {
+    if (tracesScrollRef.current) {
+      const { scrollHeight, clientHeight } = tracesScrollRef.current
+      setShowScrollButtons(scrollHeight > clientHeight)
+    }
+  }, [filteredTraces])
 
   const metricsContent = useMemo(() => {
     if (metricsLoading) {
@@ -1163,69 +1232,6 @@ export default function RunTracesPage() {
               </Card>
             )}
             <div className="flex-1 overflow-hidden">{tracesContent}</div>
-
-            {/* Floating scroll buttons */}
-            {showScrollButtons && !tracesLoading && !tracesError && traces.length > 0 && (
-              <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2">
-                {/* Scroll to top button */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={scrollToTop}
-                        className="w-12 h-12 bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-background flex items-center justify-center group"
-                      >
-                        <svg
-                          className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 10l7-7m0 0l7 7m-7-7v18"
-                          />
-                        </svg>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Scroll to top (Home)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                {/* Scroll to bottom button */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={scrollToBottom}
-                        className="w-12 h-12 bg-background/90 backdrop-blur-sm border border-border rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-background flex items-center justify-center group"
-                      >
-                        <svg
-                          className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                          />
-                        </svg>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Scroll to bottom (End)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent
