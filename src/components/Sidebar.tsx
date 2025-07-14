@@ -111,7 +111,7 @@ const AppSidebar = ({ organizations }: AppSidebarProps) => {
 
   const projectsSubmenu = [
     { icon: FolderTree, label: 'All Projects', href: '/projects' },
-    { icon: GitGraph, label: 'Active', href: '/projects/active' },
+    { icon: GitGraph, label: 'Active', href: '/projects' },
     { icon: Archive, label: 'Archived', href: '/projects/archived' },
   ]
 
@@ -225,7 +225,7 @@ const AppSidebar = ({ organizations }: AppSidebarProps) => {
                 <SidebarMenuSubItem className="py-1">
                   <SidebarMenuSubButton asChild>
                     <Link
-                      href="/projects/active"
+                      href="/projects"
                       className="flex items-center gap-2 text-sm text-white/70 hover:text-white"
                     >
                       <GitGraph className="h-4 w-4" />
