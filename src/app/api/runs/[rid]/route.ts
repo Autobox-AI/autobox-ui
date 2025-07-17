@@ -7,7 +7,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ rid:
       headers: {
         'Content-Type': 'application/json',
       },
-      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -15,13 +14,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ rid:
     }
 
     const data = await response.json()
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
-      },
-    })
+    
+    // Forward cache headers from backend if available
+    const cacheControl = response.headers.get('Cache-Control')
+    const etag = response.headers.get('ETag')
+    const lastModified = response.headers.get('Last-Modified')
+    
+    const responseHeaders: Record<string, string> = {}
+    if (cacheControl) responseHeaders['Cache-Control'] = cacheControl
+    if (etag) responseHeaders['ETag'] = etag
+    if (lastModified) responseHeaders['Last-Modified'] = lastModified
+    
+    return NextResponse.json(data, { headers: responseHeaders })
   } catch (_error) {
     return NextResponse.json({ error: 'Failed to fetch run' }, { status: 500 })
   }

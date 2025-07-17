@@ -14,7 +14,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+    
+    // Forward cache headers from backend if available
+    const cacheControl = response.headers.get('Cache-Control')
+    const etag = response.headers.get('ETag')
+    const lastModified = response.headers.get('Last-Modified')
+    
+    const responseHeaders: Record<string, string> = {}
+    if (cacheControl) responseHeaders['Cache-Control'] = cacheControl
+    if (etag) responseHeaders['ETag'] = etag
+    if (lastModified) responseHeaders['Last-Modified'] = lastModified
+    
+    return NextResponse.json(data, { headers: responseHeaders })
   } catch (_error) {
     return NextResponse.json({ error: 'Failed to fetch simulation runs' }, { status: 500 })
   }

@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { format } from 'date-fns'
 import { useParams } from 'next/navigation'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { usePrefetch } from '@/hooks/usePrefetch'
 import {
   Bar,
   BarChart,
@@ -593,6 +594,7 @@ export default function RunTracesPage() {
   const params = useParams()
   const [traces, setTraces] = useState<Trace[]>([])
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null)
+  const { getPrefetchedData } = usePrefetch()
   const [tracesLoading, setTracesLoading] = useState(true)
   const [metricsLoading, setMetricsLoading] = useState(true)
   const [tracesError, setTracesError] = useState<string | null>(null)
@@ -724,7 +726,7 @@ export default function RunTracesPage() {
     })
   }, [])
 
-  // Streaming traces setup
+  // Streaming traces setup with progressive loading
   const setupTracesStreaming = useCallback(() => {
     if (!params.rid) return
 
@@ -767,17 +769,10 @@ export default function RunTracesPage() {
             const combinedTraces = [normalizedTrace, ...prevTraces]
             const sortedTraces = sortTracesByDate(combinedTraces)
 
-            // console.log('Streaming update:', {
-            //   received: 1,
-            //   existing: prevTraces.length,
-            //   total: sortedTraces.length,
-            // })
-
-            // console.log('Updated traces count:', sortedTraces.length)
             return sortedTraces
           })
 
-          // Set loading to false after we receive a trace
+          // Set loading to false after we receive first trace (progressive loading)
           setTracesLoading(false)
         } else {
           console.log('No valid trace in streaming data:', data)
@@ -825,6 +820,42 @@ export default function RunTracesPage() {
     }
   }, [retryCount, maxRetries, setupTracesStreaming])
 
+  // Hybrid approach: Load initial traces immediately, then stream updates
+  const fetchInitialTraces = useCallback(async () => {
+    if (!params.rid) return
+
+    try {
+      // Check if we have prefetched data
+      const prefetchedData = getPrefetchedData('traces', params.rid as string)
+      if (prefetchedData) {
+        console.log('Using prefetched trace data')
+        const normalizedTraces = prefetchedData.traces.map(normalizeTrace)
+        const sortedTraces = sortTracesByDate(normalizedTraces)
+        setTraces(sortedTraces)
+        setTracesLoading(false)
+        return
+      }
+
+      const response = await fetch(`/api/runs/${params.rid}/traces`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch traces')
+      }
+      const data: TracesResponse = await response.json()
+
+      // Normalize and sort traces
+      const normalizedTraces = data.traces.map(normalizeTrace)
+      const sortedTraces = sortTracesByDate(normalizedTraces)
+
+      setTraces(sortedTraces)
+      setTracesLoading(false) // Show data immediately
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      setTracesError(errorMessage)
+      setTracesLoading(false)
+    }
+  }, [params.rid, normalizeTrace, sortTracesByDate, getPrefetchedData])
+
   // Fallback fetch function for non-streaming
   const fetchTraces = useCallback(async () => {
     if (!params.rid) return
@@ -858,6 +889,16 @@ export default function RunTracesPage() {
     try {
       setMetricsLoading(true)
       setMetricsError(null)
+      
+      // Check if we have prefetched data
+      const prefetchedData = getPrefetchedData('metrics', params.rid as string)
+      if (prefetchedData) {
+        console.log('Using prefetched metrics data')
+        setMetrics(prefetchedData)
+        setMetricsLoading(false)
+        return
+      }
+
       const response = await fetch(`/api/runs/${params.rid}/metrics`)
       if (!response.ok) {
         const errorData = await response.json()
@@ -871,7 +912,7 @@ export default function RunTracesPage() {
     } finally {
       setMetricsLoading(false)
     }
-  }, [params.rid])
+  }, [params.rid, getPrefetchedData])
 
   // Update function refs after function declarations
   useEffect(() => {
@@ -880,12 +921,17 @@ export default function RunTracesPage() {
     fetchTracesRef.current = fetchTraces
   }, [setupTracesStreaming, fetchMetrics, fetchTraces])
 
-  // Setup streaming on mount - only run once when component mounts or params.rid changes
+  // Setup hybrid loading on mount - load initial data immediately, then stream updates
   useEffect(() => {
     if (params.rid) {
-      // Try streaming first, fallback to regular fetch if it fails
-      const eventSource = setupTracesStreaming()
+      // Load initial traces immediately for fast display
+      fetchInitialTraces()
+      
+      // Load metrics in parallel
       fetchMetrics()
+      
+      // Set up streaming for real-time updates
+      const eventSource = setupTracesStreaming()
 
       // Set up a fallback timer in case streaming doesn't work
       const fallbackTimer = setTimeout(() => {
@@ -908,7 +954,7 @@ export default function RunTracesPage() {
         }
       }
     }
-  }, [params.rid, setupTracesStreaming, fetchMetrics, fetchTraces])
+  }, [params.rid, fetchInitialTraces, setupTracesStreaming, fetchMetrics, fetchTraces])
 
   // Cleanup on unmount
   useEffect(() => {

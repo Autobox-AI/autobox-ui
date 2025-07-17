@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useRunPolling } from '@/hooks/useRunPolling'
+import { usePrefetch } from '@/hooks/usePrefetch'
 import { format } from 'date-fns'
 import { ArrowUpDown, ChevronRight, GitGraph, Play } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -127,6 +128,12 @@ export default function SimulationRunsPage({
     runs,
     onRunUpdate: handleRunUpdate,
     pollingInterval: 3000, // Poll every 3 seconds
+  })
+
+  // Use prefetch hook for faster navigation
+  const { prefetchRun, cancelPrefetch } = usePrefetch({
+    enabled: true,
+    delay: 200, // Prefetch after 200ms hover
   })
 
   useEffect(() => {
@@ -375,6 +382,8 @@ export default function SimulationRunsPage({
                       onClick={() =>
                         router.push(`/projects/${pid}/simulations/${sid}/runs/${run.id}`)
                       }
+                      onMouseEnter={() => prefetchRun(run.id)}
+                      onMouseLeave={() => cancelPrefetch()}
                     >
                       <TableCell>
                         <Badge
