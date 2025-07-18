@@ -15,6 +15,7 @@ interface MetricDefinition {
     tag: string
   }>
   data: MetricDataPoint[]
+  type: string // Backend sends uppercase like "COUNTER", "GAUGE", etc.
 }
 
 interface FlattenedMetric extends MetricDefinition {
@@ -51,34 +52,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const data = await response.json()
 
-    // Flatten the metrics while preserving order and adding type information
+    // Process the metrics from the new backend schema
     const flattenedMetrics: FlattenedMetric[] = []
 
-    // Add counters with type
-    if (data.counters) {
-      data.counters.forEach((metric: MetricDefinition) => {
-        flattenedMetrics.push({ ...metric, type: 'counter' })
-      })
-    }
-
-    // Add gauges with type
-    if (data.gauges) {
-      data.gauges.forEach((metric: MetricDefinition) => {
-        flattenedMetrics.push({ ...metric, type: 'gauge' })
-      })
-    }
-
-    // Add histograms with type
-    if (data.histograms) {
-      data.histograms.forEach((metric: MetricDefinition) => {
-        flattenedMetrics.push({ ...metric, type: 'histogram' })
-      })
-    }
-
-    // Add summaries with type
-    if (data.summaries) {
-      data.summaries.forEach((metric: MetricDefinition) => {
-        flattenedMetrics.push({ ...metric, type: 'summary' })
+    // Backend now sends metrics in a single array with type field
+    if (data.metrics && Array.isArray(data.metrics)) {
+      data.metrics.forEach((metric: MetricDefinition) => {
+        // Convert backend type (uppercase) to frontend type (lowercase)
+        const frontendType = metric.type.toLowerCase() as 'counter' | 'gauge' | 'histogram' | 'summary'
+        flattenedMetrics.push({ ...metric, type: frontendType })
       })
     }
 

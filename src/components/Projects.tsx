@@ -42,7 +42,9 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from './ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip'
+import { BookmarkButton } from './BookmarkButton'
+import { BOOKMARK_TYPES } from '@/schemas'
 
 // Move static functions outside component
 const getConfidenceIcon = (confidence: ConfidenceLevel) => {
@@ -179,12 +181,21 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
               {project.description || 'No description provided'}
             </p>
           </div>
-          <DropdownMenu open={isDropdownOpen} onOpenChange={handleDropdownOpenChange}>
-            <DropdownMenuTrigger asChild>
-              <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0">
-                <MoreVertical className="h-5 w-5 text-zinc-400" />
-              </button>
-            </DropdownMenuTrigger>
+          <div className="flex items-center gap-2 shrink-0">
+            <BookmarkButton
+              type={BOOKMARK_TYPES.PROJECT}
+              itemId={project.id}
+              itemName={project.name}
+              itemDescription={project.description}
+              size="sm"
+              variant="ghost"
+            />
+            <DropdownMenu open={isDropdownOpen} onOpenChange={handleDropdownOpenChange}>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0">
+                  <MoreVertical className="h-5 w-5 text-zinc-400" />
+                </button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -222,7 +233,8 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
                 </AlertDialogContent>
               </AlertDialog>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -265,12 +277,22 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
               />
               <span className="text-sm text-zinc-400 capitalize">{project.status || 'active'}</span>
             </div>
-            <button
-              onClick={onClick}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              View Simulations →
-            </button>
+            <div className="flex items-center gap-2">
+              <BookmarkButton
+                type={BOOKMARK_TYPES.PROJECT}
+                itemId={project.id}
+                itemName={project.name}
+                itemDescription={project.description}
+                size="sm"
+                variant="ghost"
+              />
+              <button
+                onClick={onClick}
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                View Simulations →
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -413,7 +435,8 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   }, [])
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <TooltipProvider>
+      <div className="flex flex-col min-h-screen">
       {/* Header and Search Section - Fixed at top */}
       <div className="w-full bg-background px-6 pt-6 pb-4 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -494,6 +517,7 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                     <th className="text-left py-3 px-4">Status</th>
                     <th className="text-left py-3 px-4">Confidence</th>
                     <th className="text-left py-3 px-4">Last Updated</th>
+                    <th className="text-left py-3 px-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -514,6 +538,18 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
                         </div>
                       </td>
                       <td className="py-3 px-4">{formatDate(project.updated_at)}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <BookmarkButton
+                            type={BOOKMARK_TYPES.PROJECT}
+                            itemId={project.id}
+                            itemName={project.name}
+                            itemDescription={project.description}
+                            size="sm"
+                            variant="ghost"
+                          />
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -566,6 +602,7 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   )
 }
 

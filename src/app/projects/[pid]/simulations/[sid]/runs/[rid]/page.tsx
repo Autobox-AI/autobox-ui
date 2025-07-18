@@ -24,10 +24,10 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { usePrefetch } from '@/hooks/usePrefetch'
 import { format } from 'date-fns'
 import { useParams } from 'next/navigation'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { usePrefetch } from '@/hooks/usePrefetch'
 import {
   Bar,
   BarChart,
@@ -151,49 +151,79 @@ const TraceItem = memo(({ trace, index }: { trace: Trace; index: number }) => {
 TraceItem.displayName = 'TraceItem'
 
 // Debug table for metric data using shadcn/ui Table component
-const DebugMetricTable = ({ data, groupKeys }: { data: any[]; groupKeys?: string[] }) => (
-  <div className="mt-4">
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[120px]">Time</TableHead>
-            {groupKeys && groupKeys.length > 0 ? (
-              groupKeys.map((key) => (
-                <TableHead key={key} className="text-center">
-                  {key}
-                </TableHead>
-              ))
-            ) : (
-              <TableHead className="text-center">Value</TableHead>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.slice(0, 5).map((row, i) => (
-            <TableRow key={i}>
-              <TableCell className="font-mono text-xs">{row.timestamp}</TableCell>
-              {groupKeys && groupKeys.length > 0 ? (
-                groupKeys.map((key) => (
-                  <TableCell key={key} className="text-center font-mono text-xs">
-                    {row[key] !== null && row[key] !== undefined ? row[key] : '-'}
-                  </TableCell>
-                ))
-              ) : (
-                <TableCell className="text-center font-mono text-xs">{row.value}</TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-    {data.length > 5 && (
-      <div className="text-xs text-muted-foreground mt-2 text-center">
-        ...and {data.length - 5} more data points
+const DebugMetricTable = ({ data, groupKeys }: { data: any[]; groupKeys?: string[] }) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg
+              className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            {isExpanded ? 'Hide' : 'Show'} data table
+          </button>
+          <span className="text-xs text-muted-foreground">({data.length} points)</span>
+        </div>
       </div>
-    )}
-  </div>
-)
+
+      {isExpanded && (
+        <div className="rounded-md border overflow-hidden bg-background relative z-10 shadow-lg">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[120px] min-w-[120px]">Time</TableHead>
+                  {groupKeys && groupKeys.length > 0 ? (
+                    groupKeys.map((key) => (
+                      <TableHead key={key} className="text-center min-w-[100px]">
+                        <div className="truncate" title={key}>
+                          {key}
+                        </div>
+                      </TableHead>
+                    ))
+                  ) : (
+                    <TableHead className="text-center min-w-[100px]">Value</TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.slice(0, 10).map((row, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-mono text-xs">{row.timestamp}</TableCell>
+                    {groupKeys && groupKeys.length > 0 ? (
+                      groupKeys.map((key) => (
+                        <TableCell key={key} className="text-center font-mono text-xs">
+                          {row[key] !== null && row[key] !== undefined ? row[key] : '-'}
+                        </TableCell>
+                      ))
+                    ) : (
+                      <TableCell className="text-center font-mono text-xs">{row.value}</TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {data.length > 10 && (
+            <div className="text-xs text-muted-foreground p-3 text-center border-t bg-background">
+              Showing first 10 of {data.length} data points
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Simple chart component without lazy loading
 const MetricChart = memo(
@@ -263,30 +293,64 @@ const MetricChart = memo(
 
     if (!metric.data?.length || !mergedData.length) {
       return (
-        <Card className="border-dashed">
-          <CardContent className="flex items-center justify-center h-32">
+        <div className="border-dashed border-2 border-muted rounded-lg p-8">
+          <div className="flex items-center justify-center">
             <div className="text-center">
-              <p className="text-muted-foreground">No data available for {metric.name}</p>
+              <div className="mx-auto mb-4 w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">
+                No data available for {metric.name}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Data points: {metric.data?.length || 0}
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )
     }
 
     if (allZero) {
       return (
-        <Card className="border-dashed border-yellow-500/50">
-          <CardContent className="flex flex-col items-center justify-center h-32">
-            <div className="text-center">
-              <p className="text-yellow-500 font-medium">All values are zero for {metric.name}</p>
+        <div className="border-dashed border-2 border-yellow-500/30 rounded-lg p-6 bg-yellow-500/5">
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-center mb-4">
+              <div className="mx-auto mb-3 w-12 h-12 bg-yellow-500/10 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-yellow-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                All values are zero for {metric.name}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">Data points: {mergedData.length}</p>
             </div>
             <DebugMetricTable data={mergedData} groupKeys={groupKeys} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )
     }
 
@@ -296,8 +360,8 @@ const MetricChart = memo(
     return (
       <div
         ref={containerRef}
-        className="w-full border rounded-lg p-4 bg-card"
-        style={{ height: 320, minWidth: 400 }}
+        className="w-full border rounded-lg p-4 bg-card/50"
+        style={{ height: 320 }}
       >
         <ResponsiveContainer width={'100%'} height={300} key={chartKey}>
           {metricType === 'gauge' ? (
@@ -459,15 +523,17 @@ const MetricCard = memo(({ metric }: { metric: MetricDefinition }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="h-full">
+      <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg">{metric.name}</CardTitle>
-            <CardDescription className="text-sm">{metric.description}</CardDescription>
+          <div className="space-y-2">
+            <CardTitle className="text-lg font-semibold">{metric.name}</CardTitle>
+            <CardDescription className="text-sm leading-relaxed">
+              {metric.description}
+            </CardDescription>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs font-medium">
               {dataPointCount} points
             </Badge>
             {metric.unit && (
@@ -478,12 +544,12 @@ const MetricCard = memo(({ metric }: { metric: MetricDefinition }) => {
           </div>
         </div>
         {hasTags && (
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap mt-3">
             {metric.tag_definitions.map((tag, tagIndex) => (
               <TooltipProvider key={tagIndex}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-xs cursor-help">
+                    <Badge variant="outline" className="text-xs cursor-help hover:bg-muted">
                       {tag.tag}
                     </Badge>
                   </TooltipTrigger>
@@ -549,34 +615,42 @@ const TracesSkeleton = memo(() => (
 TracesSkeleton.displayName = 'TracesSkeleton'
 
 const MetricsSkeleton = memo(() => (
-  <div className="flex flex-col items-center justify-center min-h-[400px]">
-    <div className="flex flex-col items-center space-y-4 mb-8">
-      <div className="relative">
-        <div className="w-12 h-12 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
-        <div
-          className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin"
-          style={{ animationDuration: '1.5s' }}
-        ></div>
-      </div>
-      <div className="text-center">
-        <h2 className="text-xl font-semibold text-zinc-300 mb-2">Loading Metrics</h2>
-        <p className="text-sm text-zinc-500">Please wait while we fetch the metrics data...</p>
+  <div className="space-y-8">
+    <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center space-y-4 mb-8">
+        <div className="relative">
+          <div className="w-12 h-12 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
+          <div
+            className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-primary/60 rounded-full animate-spin"
+            style={{ animationDuration: '1.5s' }}
+          ></div>
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Loading Metrics</h2>
+          <p className="text-sm text-muted-foreground">
+            Please wait while we fetch the metrics data...
+          </p>
+        </div>
       </div>
     </div>
 
-    <div className="space-y-6 w-full">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <Card key={i}>
-          <CardHeader>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="h-full">
+          <CardHeader className="pb-4">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <Skeleton className="h-6 w-[200px]" />
                 <Skeleton className="h-4 w-[300px]" />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col items-end gap-2">
                 <Skeleton className="h-5 w-16" />
                 <Skeleton className="h-5 w-12" />
               </div>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-20" />
             </div>
           </CardHeader>
           <CardContent>
@@ -889,7 +963,7 @@ export default function RunTracesPage() {
     try {
       setMetricsLoading(true)
       setMetricsError(null)
-      
+
       // Check if we have prefetched data
       const prefetchedData = getPrefetchedData('metrics', params.rid as string)
       if (prefetchedData) {
@@ -926,10 +1000,10 @@ export default function RunTracesPage() {
     if (params.rid) {
       // Load initial traces immediately for fast display
       fetchInitialTraces()
-      
+
       // Load metrics in parallel
       fetchMetrics()
-      
+
       // Set up streaming for real-time updates
       const eventSource = setupTracesStreaming()
 
@@ -1072,12 +1146,27 @@ export default function RunTracesPage() {
 
     if (metricsError) {
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-destructive">Error Loading Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-destructive">{metricsError}</p>
+        <Card className="border-destructive/20 bg-destructive/5">
+          <CardContent className="flex items-center justify-center py-16">
+            <div className="text-center max-w-md">
+              <div className="mx-auto mb-6 w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-destructive"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Metrics</h3>
+              <p className="text-sm text-destructive/80">{metricsError}</p>
+            </div>
           </CardContent>
         </Card>
       )
@@ -1085,12 +1174,28 @@ export default function RunTracesPage() {
 
     if (!metrics || !metrics.metrics?.length) {
       return (
-        <Card>
-          <CardContent className="flex items-center justify-center h-32">
-            <div className="text-center">
-              <p className="text-muted-foreground">No metrics available</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Metrics will appear here when the simulation run generates data
+        <Card className="border-dashed">
+          <CardContent className="flex items-center justify-center py-16">
+            <div className="text-center max-w-md">
+              <div className="mx-auto mb-6 w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No metrics available</h3>
+              <p className="text-sm text-muted-foreground">
+                Metrics will appear here when the simulation run generates data. Once the run
+                produces metrics, they will be displayed with interactive charts and visualizations.
               </p>
             </div>
           </CardContent>
@@ -1099,10 +1204,13 @@ export default function RunTracesPage() {
     }
 
     return (
-      <div className="space-y-6">
-        {metrics.metrics.map((metric, index) => (
-          <MetricCard key={`${metric.name}-${index}`} metric={metric} />
-        ))}
+      <div className="space-y-8">
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {metrics.metrics.map((metric, index) => (
+            <MetricCard key={`${metric.name}-${index}`} metric={metric} />
+          ))}
+        </div>
       </div>
     )
   }, [metricsLoading, metricsError, metrics])

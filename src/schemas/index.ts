@@ -18,3 +18,14 @@ export {
   type Simulation,
   type SimulationStatus,
 } from './simulation'
+export {
+  BookmarkSchema,
+  BookmarksResponseSchema,
+  BookmarkTypeSchema,
+  CreateBookmarkSchema,
+  BOOKMARK_TYPES,
+  type Bookmark,
+  type BookmarkType,
+  type BookmarksResponse,
+  type CreateBookmark,
+} from './bookmark'

@@ -23,6 +23,9 @@ import {
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from './ui/button'
+import { BookmarkButton } from './BookmarkButton'
+import { BOOKMARK_TYPES } from '@/schemas'
+import { TooltipProvider } from './ui/tooltip'
 
 type SimulationStatus = 'running' | 'completed' | 'failed' | 'pending'
 type ViewMode = 'grid' | 'table'
@@ -187,7 +190,8 @@ const Simulations = ({
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <TooltipProvider>
+      <div className="flex flex-col min-h-screen">
       {/* Header and Search Section - Fixed at top */}
       <div className="w-full bg-background px-6 pt-6 pb-4 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -321,12 +325,24 @@ const Simulations = ({
                               {simulation.status || 'pending'}
                             </span>
                           </div>
-                          <button
-                            onClick={() => goToSimulation(simulation.id)}
-                            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                          >
-                            View Details →
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <BookmarkButton
+                              type={BOOKMARK_TYPES.SIMULATION}
+                              itemId={simulation.id}
+                              itemName={simulation.name}
+                              itemDescription={simulation.description}
+                              projectId={project.id}
+                              projectName={project.name}
+                              size="sm"
+                              variant="ghost"
+                            />
+                            <button
+                              onClick={() => goToSimulation(simulation.id)}
+                              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                            >
+                              View Details →
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -417,9 +433,21 @@ const Simulations = ({
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button className="p-2 hover:bg-zinc-800 rounded-full">
-                            <MoreVertical className="h-4 w-4 text-zinc-400" />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <BookmarkButton
+                              type={BOOKMARK_TYPES.SIMULATION}
+                              itemId={simulation.id}
+                              itemName={simulation.name}
+                              itemDescription={simulation.description}
+                              projectId={project.id}
+                              projectName={project.name}
+                              size="sm"
+                              variant="ghost"
+                            />
+                            <button className="p-2 hover:bg-zinc-800 rounded-full">
+                              <MoreVertical className="h-4 w-4 text-zinc-400" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -437,6 +465,7 @@ const Simulations = ({
         </div>
       </div>
     </div>
+    </TooltipProvider>
   )
 }
 
