@@ -1,10 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -12,9 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { User, MessageSquare, Settings, ExternalLink, Search } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { MessageSquare, Search, Settings, User } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { useState } from 'react'
 
 interface Agent {
   id: string
@@ -146,15 +146,6 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-600">Manage and monitor the agents in this simulation run</p>
-        </div>
-        <Badge variant="secondary">
-          {filteredAgents.length} of {agents.length} {agents.length === 1 ? 'Agent' : 'Agents'}
-        </Badge>
-      </div>
-
       {/* Filter Controls */}
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
@@ -177,9 +168,9 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="SYSTEM">System Agents</SelectItem>
-            <SelectItem value="WORKER">Custom Agents</SelectItem>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="SYSTEM">System</SelectItem>
+            <SelectItem value="WORKER">Worker</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -235,7 +226,7 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
                     <div className="flex gap-2 pt-2">
                       <Button asChild size="sm" variant="outline" className="flex-1">
                         <Link
-                          href={`/projects/${params.pid}/simulations/${params.sid}/runs/${runId}/workers/${agent.id}`}
+                          href={`/runs/${runId}/workers/${agent.id}`}
                         >
                           <Settings className="w-4 h-4 mr-1" />
                           Manage
@@ -243,7 +234,7 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
                       </Button>
                       <Button asChild size="sm" variant="outline" className="flex-1">
                         <Link
-                          href={`/projects/${params.pid}/simulations/${params.sid}/runs/${runId}/workers/${agent.id}?tab=traces`}
+                          href={`/runs/${runId}/workers/${agent.id}?tab=traces`}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" />
                           Traces

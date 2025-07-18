@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePrefetch } from '@/hooks/usePrefetch'
 import { format } from 'date-fns'
+import { Search } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -686,6 +687,7 @@ export default function RunTracesPage() {
   const [metricsError, setMetricsError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('traces')
   const [searchQuery, setSearchQuery] = useState('')
+  const [metricsSearchQuery, setMetricsSearchQuery] = useState('')
   const [showSystemTraces, setShowSystemTraces] = useState(true)
   const [agentCount, setAgentCount] = useState(0)
   const [agents, setAgents] = useState<any[]>([])
@@ -1242,17 +1244,48 @@ export default function RunTracesPage() {
       )
     }
 
+    // Filter metrics based on search query
+    const filteredMetrics = metrics.metrics.filter((metric) => {
+      return metricsSearchQuery === '' || metric.name.toLowerCase().includes(metricsSearchQuery.toLowerCase())
+    })
+
     return (
       <div className="space-y-8">
+        {/* Search Filter */}
+        <div className="mb-6">
+          <div className="flex gap-4 items-center">
+            {/* Search input */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search metrics..."
+                value={metricsSearchQuery}
+                onChange={(e) => setMetricsSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* Search results counter */}
+          {metricsSearchQuery.trim() && (
+            <div className="text-sm text-muted-foreground mt-2">
+              {filteredMetrics.length} of {metrics.metrics.length} metrics
+            </div>
+          )}
+        </div>
+
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {metrics.metrics.map((metric, index) => (
+          {filteredMetrics.map((metric, index) => (
             <MetricCard key={`${metric.name}-${index}`} metric={metric} />
           ))}
         </div>
       </div>
     )
-  }, [metricsLoading, metricsError, metrics])
+  }, [metricsLoading, metricsError, metrics, metricsSearchQuery])
 
   return (
     <div className="flex flex-col h-screen w-full">
@@ -1302,74 +1335,47 @@ export default function RunTracesPage() {
           </TabsList>
 
           <TabsContent value="traces" className="mt-6 flex-1 min-h-0 flex flex-col">
-            {/* Search and filter controls - sticky and always visible */}
+            {/* Search and filter controls */}
             {!tracesLoading && !tracesError && traces.length > 0 && (
-              <Card className="mb-6 sticky top-0 z-20 flex-shrink-0 bg-background/95 backdrop-blur-sm border-b shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    {/* Search input */}
-                    <div className="relative flex-1">
-                      <svg
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                      <Input
-                        type="text"
-                        placeholder="Search traces..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-10"
-                      />
-                      {searchQuery && (
-                        <button
-                          onClick={() => setSearchQuery('')}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      )}
+              <div className="mb-6">
+                <div className="flex gap-4 items-center">
+                  {/* Search input */}
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-5 w-5 text-gray-400" />
                     </div>
-
-                    {/* Search results counter */}
-                    {searchQuery.trim() && (
-                      <div className="text-sm text-muted-foreground whitespace-nowrap">
-                        {filteredTraces.length} of {traces.length} traces
-                      </div>
-                    )}
-
-                    {/* System traces toggle */}
-                    <div className="flex items-center gap-2 whitespace-nowrap">
-                      <Checkbox
-                        id="system-traces"
-                        checked={showSystemTraces}
-                        onCheckedChange={(checked) => setShowSystemTraces(checked as boolean)}
-                      />
-                      <label
-                        htmlFor="system-traces"
-                        className="text-sm text-muted-foreground cursor-pointer"
-                      >
-                        Show system traces
-                      </label>
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search traces..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                    />
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* System traces toggle */}
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <Checkbox
+                      id="system-traces"
+                      checked={showSystemTraces}
+                      onCheckedChange={(checked) => setShowSystemTraces(checked as boolean)}
+                    />
+                    <label
+                      htmlFor="system-traces"
+                      className="text-sm text-muted-foreground cursor-pointer"
+                    >
+                      Show system traces
+                    </label>
+                  </div>
+                </div>
+
+                {/* Search results counter */}
+                {searchQuery.trim() && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    {filteredTraces.length} of {traces.length} traces
+                  </div>
+                )}
+              </div>
             )}
             <div className="flex-1 min-h-0 overflow-hidden">{tracesContent}</div>
           </TabsContent>

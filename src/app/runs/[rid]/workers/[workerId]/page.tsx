@@ -36,7 +36,7 @@ interface Trace {
 
 export default function WorkerDetailPage() {
   const params = useParams()
-  const { pid, sid, rid, workerId } = params
+  const { rid, workerId } = params
   const { toast } = useToast()
 
   const [worker, setWorker] = useState<Worker | null>(null)
@@ -210,17 +210,11 @@ export default function WorkerDetailPage() {
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/projects/${pid}`}>Project</BreadcrumbLink>
+            <BreadcrumbLink href="/">Home</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/projects/${pid}/simulations/${sid}`}>Simulation</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href={`/runs/${rid}`}>
-              Run
-            </BreadcrumbLink>
+            <BreadcrumbLink href={`/runs/${rid}`}>Run</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -239,7 +233,7 @@ export default function WorkerDetailPage() {
                     <User className="w-5 h-5" />
                     {editing ? 'Edit Agent' : worker.name}
                   </CardTitle>
-                  <CardDescription>Settings</CardDescription>
+                  {/* <CardDescription>Settings</CardDescription> */}
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className={getWorkerTypeColor(workerType)}>{workerType}</Badge>
