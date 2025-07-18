@@ -21,18 +21,18 @@ export function useBookmarks(type?: BookmarkType): UseBookmarksReturn {
     try {
       setLoading(true)
       setError(null)
-      
+
       const params = new URLSearchParams()
       if (type) {
         params.append('type', type)
       }
-      
+
       const response = await fetch(`/api/bookmarks?${params.toString()}`)
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch bookmarks')
       }
-      
+
       const data = await response.json()
       setBookmarks(data.bookmarks)
     } catch (err) {
@@ -51,23 +51,23 @@ export function useBookmarks(type?: BookmarkType): UseBookmarksReturn {
         },
         body: JSON.stringify(bookmark),
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to create/remove bookmark')
       }
-      
+
       const result = await response.json()
-      
+
       console.log('Bookmark API result:', result)
-      
+
       if (result.action === 'added') {
         // Add bookmark to local state
-        setBookmarks(prev => [result.bookmark, ...prev])
+        setBookmarks((prev) => [result.bookmark, ...prev])
         console.log('Bookmark added to local state')
       } else if (result.action === 'removed') {
         // Remove bookmark from local state
-        setBookmarks(prev => prev.filter(b => b.id !== result.bookmark.id))
+        setBookmarks((prev) => prev.filter((b) => b.id !== result.bookmark.id))
         console.log('Bookmark removed from local state')
       }
     } catch (err) {
@@ -80,29 +80,33 @@ export function useBookmarks(type?: BookmarkType): UseBookmarksReturn {
       const response = await fetch(`/api/bookmarks/${id}`, {
         method: 'DELETE',
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to delete bookmark')
       }
-      
-      setBookmarks(prev => prev.filter(bookmark => bookmark.id !== id))
+
+      setBookmarks((prev) => prev.filter((bookmark) => bookmark.id !== id))
     } catch (err) {
       throw err
     }
   }, [])
 
-  const isBookmarked = useCallback((type: BookmarkType, itemId: string) => {
-    return bookmarks.some(bookmark => 
-      bookmark.type === type && bookmark.item_id === itemId
-    )
-  }, [bookmarks])
+  const isBookmarked = useCallback(
+    (type: BookmarkType, itemId: string) => {
+      return bookmarks.some((bookmark) => bookmark.type === type && bookmark.item_id === itemId)
+    },
+    [bookmarks]
+  )
 
-  const getBookmarkId = useCallback((type: BookmarkType, itemId: string) => {
-    const bookmark = bookmarks.find(bookmark => 
-      bookmark.type === type && bookmark.item_id === itemId
-    )
-    return bookmark?.id || null
-  }, [bookmarks])
+  const getBookmarkId = useCallback(
+    (type: BookmarkType, itemId: string) => {
+      const bookmark = bookmarks.find(
+        (bookmark) => bookmark.type === type && bookmark.item_id === itemId
+      )
+      return bookmark?.id || null
+    },
+    [bookmarks]
+  )
 
   useEffect(() => {
     fetchBookmarks()

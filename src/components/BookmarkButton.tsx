@@ -31,17 +31,17 @@ export function BookmarkButton({
 }: BookmarkButtonProps) {
   const { isBookmarked, getBookmarkId, createBookmark, deleteBookmark } = useBookmarkContext()
   const [loading, setLoading] = useState(false)
-  
+
   const bookmarked = isBookmarked(type, itemId)
   const bookmarkId = getBookmarkId(type, itemId)
 
   const handleToggleBookmark = async (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent parent click handlers
-    
+
     if (loading) return
-    
+
     setLoading(true)
-    
+
     try {
       // Always use the POST API which now handles toggle logic
       const bookmarkData: CreateBookmark = {
@@ -81,8 +81,8 @@ export function BookmarkButton({
           onClick={handleToggleBookmark}
           disabled={loading}
           className={`${buttonSizes[size]} ${className} ${
-            bookmarked 
-              ? 'text-yellow-500 hover:text-yellow-400' 
+            bookmarked
+              ? 'text-yellow-500 hover:text-yellow-400'
               : 'text-zinc-400 hover:text-zinc-300'
           }`}
         >
@@ -93,9 +93,7 @@ export function BookmarkButton({
           )}
         </Button>
       </TooltipTrigger>
-      <TooltipContent>
-        {bookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
-      </TooltipContent>
+      <TooltipContent>{bookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}</TooltipContent>
     </Tooltip>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import AgentsTab from '@/components/AgentsTab'
 import { RunGaugeMetric } from '@/components/metrics/GaugeMetric'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -79,6 +80,8 @@ const CHART_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#e
 
 // Optimized trace item with aggressive memoization
 const TraceItem = memo(({ trace, index }: { trace: Trace; index: number }) => {
+  const params = useParams()
+
   // Memoize expensive operations with stable references
   const formattedDate = useMemo(
     () => format(new Date(trace.created_at), 'MMM dd, yyyy HH:mm:ss'),
@@ -104,13 +107,21 @@ const TraceItem = memo(({ trace, index }: { trace: Trace; index: number }) => {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-muted-foreground">FROM:</span>
-              <Badge variant="outline" className="font-semibold">
+              <Badge
+                variant="outline"
+                className="font-semibold cursor-pointer hover:bg-accent"
+                title="Click to view worker details"
+              >
                 {trace.from}
               </Badge>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-muted-foreground">TO:</span>
-              <Badge variant="outline" className="font-semibold">
+              <Badge
+                variant="outline"
+                className="font-semibold cursor-pointer hover:bg-accent"
+                title="Click to view worker details"
+              >
                 {trace.to}
               </Badge>
             </div>
@@ -676,6 +687,10 @@ export default function RunTracesPage() {
   const [activeTab, setActiveTab] = useState('traces')
   const [searchQuery, setSearchQuery] = useState('')
   const [showSystemTraces, setShowSystemTraces] = useState(true)
+  const [agentCount, setAgentCount] = useState(0)
+  const [agents, setAgents] = useState<any[]>([])
+  const [agentsLoading, setAgentsLoading] = useState(true)
+  const [agentsError, setAgentsError] = useState<string | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   const [showScrollButtons, setShowScrollButtons] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -988,12 +1003,35 @@ export default function RunTracesPage() {
     }
   }, [params.rid, getPrefetchedData])
 
+  const fetchAgents = useCallback(async () => {
+    if (!params.rid) return
+
+    try {
+      setAgentsLoading(true)
+      setAgentsError(null)
+      const response = await fetch(`/api/runs/${params.rid}/workers`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch agents')
+      }
+      const data = await response.json()
+      const workers = data.workers || []
+      setAgents(workers)
+      setAgentCount(workers.length)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      setAgentsError(errorMessage)
+    } finally {
+      setAgentsLoading(false)
+    }
+  }, [params.rid])
+
   // Update function refs after function declarations
   useEffect(() => {
     setupTracesStreamingRef.current = setupTracesStreaming
     fetchMetricsRef.current = fetchMetrics
     fetchTracesRef.current = fetchTraces
-  }, [setupTracesStreaming, fetchMetrics, fetchTraces])
+  }, [setupTracesStreaming, fetchMetrics, fetchTraces, fetchAgents])
 
   // Setup hybrid loading on mount - load initial data immediately, then stream updates
   useEffect(() => {
@@ -1001,8 +1039,9 @@ export default function RunTracesPage() {
       // Load initial traces immediately for fast display
       fetchInitialTraces()
 
-      // Load metrics in parallel
+      // Load metrics and agents in parallel
       fetchMetrics()
+      fetchAgents()
 
       // Set up streaming for real-time updates
       const eventSource = setupTracesStreaming()
@@ -1028,7 +1067,7 @@ export default function RunTracesPage() {
         }
       }
     }
-  }, [params.rid, fetchInitialTraces, setupTracesStreaming, fetchMetrics, fetchTraces])
+  }, [params.rid, fetchInitialTraces, setupTracesStreaming, fetchMetrics, fetchTraces, fetchAgents])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1245,19 +1284,20 @@ export default function RunTracesPage() {
         </Breadcrumb>
       </div>
 
-      <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto px-6 py-6 flex flex-col">
+      <div className="flex-1 min-h-0 w-full max-w-7xl mx-auto px-6 pb-6 pt-0 flex flex-col">
         <Tabs
           defaultValue="traces"
           className="w-full flex flex-col flex-1"
           onValueChange={setActiveTab}
         >
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
             <TabsTrigger value="traces" className="flex items-center gap-2">
               {isStreaming && (
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               )}
               Traces ({filteredTraces.length})
             </TabsTrigger>
+            <TabsTrigger value="workers">Agents ({agentCount})</TabsTrigger>
             <TabsTrigger value="metrics">Metrics ({totalMetricsCount})</TabsTrigger>
           </TabsList>
 
@@ -1332,6 +1372,15 @@ export default function RunTracesPage() {
               </Card>
             )}
             <div className="flex-1 min-h-0 overflow-hidden">{tracesContent}</div>
+          </TabsContent>
+
+          <TabsContent value="workers" className="mt-6 flex-1">
+            <AgentsTab 
+              runId={params.rid as string} 
+              agents={agents}
+              loading={agentsLoading}
+              error={agentsError}
+            />
           </TabsContent>
 
           <TabsContent

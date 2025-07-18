@@ -59,7 +59,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (data.metrics && Array.isArray(data.metrics)) {
       data.metrics.forEach((metric: MetricDefinition) => {
         // Convert backend type (uppercase) to frontend type (lowercase)
-        const frontendType = metric.type.toLowerCase() as 'counter' | 'gauge' | 'histogram' | 'summary'
+        const frontendType = metric.type.toLowerCase() as
+          | 'counter'
+          | 'gauge'
+          | 'histogram'
+          | 'summary'
         flattenedMetrics.push({ ...metric, type: frontendType })
       })
     }
@@ -68,12 +72,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const cacheControl = response.headers.get('Cache-Control')
     const etag = response.headers.get('ETag')
     const lastModified = response.headers.get('Last-Modified')
-    
+
     const responseHeaders: Record<string, string> = {}
     if (cacheControl) responseHeaders['Cache-Control'] = cacheControl
     if (etag) responseHeaders['ETag'] = etag
     if (lastModified) responseHeaders['Last-Modified'] = lastModified
-    
+
     return NextResponse.json({ metrics: flattenedMetrics }, { headers: responseHeaders })
   } catch (error) {
     console.error('Error fetching metrics:', error)

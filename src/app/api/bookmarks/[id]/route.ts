@@ -2,26 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const apiUrl = process.env.API_URL
-    
+
     const response = await fetch(`${apiUrl}/bookmarks/${id}`, {
       method: 'DELETE',
     })
-    
+
     if (!response.ok) {
       if (response.status === 404) {
-        return NextResponse.json(
-          { error: 'Bookmark not found' },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: 'Bookmark not found' }, { status: 404 })
       }
       throw new Error('Failed to delete bookmark from backend')
     }
-    
+
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
@@ -33,28 +30,22 @@ export async function DELETE(
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
     const apiUrl = process.env.API_URL
-    
+
     const response = await fetch(`${apiUrl}/bookmarks/${id}`, {
       cache: 'no-store',
     })
-    
+
     if (!response.ok) {
       if (response.status === 404) {
-        return NextResponse.json(
-          { error: 'Bookmark not found' },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: 'Bookmark not found' }, { status: 404 })
       }
       throw new Error('Failed to fetch bookmark from backend')
     }
-    
+
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {

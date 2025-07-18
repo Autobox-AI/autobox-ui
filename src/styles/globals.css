@@ -38,6 +38,11 @@
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Fix for hidden tabpanels - ensure they don't take up space */
+  [role="tabpanel"][hidden] {
+    display: none !important;
+  }
 }
 
 /* Base layer for color variables and dark mode configuration */

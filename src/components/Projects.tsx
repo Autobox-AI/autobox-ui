@@ -196,43 +196,44 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
                   <MoreVertical className="h-5 w-5 text-zinc-400" />
                 </button>
               </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    className="text-red-400 focus:text-red-400 focus:bg-red-400/10"
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Project
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Project</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete &quot;{project.name}&quot;? This action cannot
-                      be undone and will permanently remove the project and all its simulations.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setIsDropdownOpen(false)}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={async () => {
-                        await handleDelete()
-                        setIsDropdownOpen(false)
-                      }}
-                      disabled={isDeleting}
-                      className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              <DropdownMenuContent align="end" className="w-48">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem
+                      className="text-red-400 focus:text-red-400 focus:bg-red-400/10"
+                      onSelect={(e) => e.preventDefault()}
                     >
-                      {isDeleting ? 'Deleting...' : 'Delete Project'}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Project
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete &quot;{project.name}&quot;? This action
+                        cannot be undone and will permanently remove the project and all its
+                        simulations.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setIsDropdownOpen(false)}>
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          await handleDelete()
+                          setIsDropdownOpen(false)
+                        }}
+                        disabled={isDeleting}
+                        className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                      >
+                        {isDeleting ? 'Deleting...' : 'Delete Project'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
@@ -437,171 +438,171 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   return (
     <TooltipProvider>
       <div className="flex flex-col min-h-screen">
-      {/* Header and Search Section - Fixed at top */}
-      <div className="w-full bg-background px-6 pt-6 pb-4 border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">Projects</h1>
-              <p className="text-sm text-zinc-400 mt-1">Manage your projects and simulations</p>
-            </div>
-          </div>
-
-          {/* Search Bar and View Toggle */}
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-zinc-400" />
+        {/* Header and Search Section - Fixed at top */}
+        <div className="w-full bg-background px-6 pt-6 pb-4 border-b border-zinc-800">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold">Projects</h1>
+                <p className="text-sm text-zinc-400 mt-1">Manage your projects and simulations</p>
               </div>
-              <input
-                type="text"
-                placeholder="Search projects..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
             </div>
-            <Select value={statusFilter} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value={PROJECT_STATUSES.ACTIVE}>Active</SelectItem>
-                <SelectItem value={PROJECT_STATUSES.ARCHIVED}>Archived</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex gap-1">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('grid')}
-                className="h-10 w-10"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('table')}
-                className="h-10 w-10"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Projects Grid/Table */}
-      <div className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto">
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              <NewProjectCard />
-              {currentProjects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onClick={() => goToProject(project.id)}
-                  onDelete={handleDeleteProject}
+            {/* Search Bar and View Toggle */}
+            <div className="flex gap-4 items-center">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-zinc-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-md text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-zinc-800">
-                    <th className="text-left py-3 px-4">Name</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-left py-3 px-4">Confidence</th>
-                    <th className="text-left py-3 px-4">Last Updated</th>
-                    <th className="text-left py-3 px-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentProjects.map((project) => (
-                    <tr
-                      key={project.id}
-                      className="border-b border-zinc-800 hover:bg-zinc-900 cursor-pointer"
-                      onClick={() => goToProject(project.id)}
-                    >
-                      <td className="py-3 px-4">{project.name}</td>
-                      <td className="py-3 px-4">{project.status}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1">
-                          {getConfidenceIcon(project.confidence_level || 'LOW')}
-                          <span className={getConfidenceColor(project.confidence_level || 'LOW')}>
-                            {project.confidence_level || 'LOW'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">{formatDate(project.updated_at)}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <BookmarkButton
-                            type={BOOKMARK_TYPES.PROJECT}
-                            itemId={project.id}
-                            itemName={project.name}
-                            itemDescription={project.description}
-                            size="sm"
-                            variant="ghost"
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-8">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="h-8 w-8"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center gap-1">
-                {generatePaginationItems(currentPage, totalPages).map((item, index) =>
-                  item === 'dots' ? (
-                    <span key={`dots-${index}`} className="px-2 text-zinc-400">
-                      ...
-                    </span>
-                  ) : (
-                    <Button
-                      key={item}
-                      variant={currentPage === item ? 'default' : 'outline'}
-                      size="icon"
-                      onClick={() => handlePageChange(item)}
-                      className="h-8 w-8"
-                    >
-                      {item}
-                    </Button>
-                  )
-                )}
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="h-8 w-8"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <Select value={statusFilter} onValueChange={handleStatusChange}>
+                <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value={PROJECT_STATUSES.ACTIVE}>Active</SelectItem>
+                  <SelectItem value={PROJECT_STATUSES.ARCHIVED}>Archived</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex gap-1">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('grid')}
+                  className="h-10 w-10"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('table')}
+                  className="h-10 w-10"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Projects Grid/Table */}
+        <div className="flex-1 p-6">
+          <div className="max-w-7xl mx-auto">
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <NewProjectCard />
+                {currentProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onClick={() => goToProject(project.id)}
+                    onDelete={handleDeleteProject}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-zinc-800">
+                      <th className="text-left py-3 px-4">Name</th>
+                      <th className="text-left py-3 px-4">Status</th>
+                      <th className="text-left py-3 px-4">Confidence</th>
+                      <th className="text-left py-3 px-4">Last Updated</th>
+                      <th className="text-left py-3 px-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentProjects.map((project) => (
+                      <tr
+                        key={project.id}
+                        className="border-b border-zinc-800 hover:bg-zinc-900 cursor-pointer"
+                        onClick={() => goToProject(project.id)}
+                      >
+                        <td className="py-3 px-4">{project.name}</td>
+                        <td className="py-3 px-4">{project.status}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1">
+                            {getConfidenceIcon(project.confidence_level || 'LOW')}
+                            <span className={getConfidenceColor(project.confidence_level || 'LOW')}>
+                              {project.confidence_level || 'LOW'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">{formatDate(project.updated_at)}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <BookmarkButton
+                              type={BOOKMARK_TYPES.PROJECT}
+                              itemId={project.id}
+                              itemName={project.name}
+                              itemDescription={project.description}
+                              size="sm"
+                              variant="ghost"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {generatePaginationItems(currentPage, totalPages).map((item, index) =>
+                    item === 'dots' ? (
+                      <span key={`dots-${index}`} className="px-2 text-zinc-400">
+                        ...
+                      </span>
+                    ) : (
+                      <Button
+                        key={item}
+                        variant={currentPage === item ? 'default' : 'outline'}
+                        size="icon"
+                        onClick={() => handlePageChange(item)}
+                        className="h-8 w-8"
+                      >
+                        {item}
+                      </Button>
+                    )
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </TooltipProvider>
   )
 }
