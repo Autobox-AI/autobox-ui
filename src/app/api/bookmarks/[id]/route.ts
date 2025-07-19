@@ -7,8 +7,16 @@ export async function DELETE(
   try {
     const { id } = await params
     const apiUrl = process.env.API_URL
+    const organizationId = process.env.ORG_ID
 
-    const response = await fetch(`${apiUrl}/bookmarks/${id}`, {
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Organization ID is not configured' },
+        { status: 400 }
+      )
+    }
+
+    const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks/${id}`, {
       method: 'DELETE',
     })
 
@@ -34,8 +42,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
     const apiUrl = process.env.API_URL
+    const organizationId = process.env.ORG_ID
 
-    const response = await fetch(`${apiUrl}/bookmarks/${id}`, {
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Organization ID is not configured' },
+        { status: 400 }
+      )
+    }
+
+    const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks/${id}`, {
       cache: 'no-store',
     })
 

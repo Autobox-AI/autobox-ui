@@ -12,6 +12,7 @@ export type BookmarkType = z.infer<typeof BookmarkTypeSchema>
 
 export const BookmarkSchema = z.object({
   id: UuidSchema,
+  organization_id: UuidSchema,
   type: BookmarkTypeSchema,
   item_id: UuidSchema,
   item_name: z.string(),

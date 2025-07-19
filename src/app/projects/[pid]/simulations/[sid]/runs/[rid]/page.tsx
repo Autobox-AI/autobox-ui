@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/breadcrumb'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -111,7 +110,7 @@ const TraceItem = memo(({ trace, index }: { trace: Trace; index: number }) => {
               <Badge
                 variant="outline"
                 className="font-semibold cursor-pointer hover:bg-accent"
-                title="Click to view worker details"
+                title="Click to view agent details"
               >
                 {trace.from}
               </Badge>
@@ -121,7 +120,7 @@ const TraceItem = memo(({ trace, index }: { trace: Trace; index: number }) => {
               <Badge
                 variant="outline"
                 className="font-semibold cursor-pointer hover:bg-accent"
-                title="Click to view worker details"
+                title="Click to view agent details"
               >
                 {trace.to}
               </Badge>
@@ -1011,15 +1010,15 @@ export default function RunTracesPage() {
     try {
       setAgentsLoading(true)
       setAgentsError(null)
-      const response = await fetch(`/api/runs/${params.rid}/workers`)
+      const response = await fetch(`/api/runs/${params.rid}/agents`)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch agents')
       }
       const data = await response.json()
-      const workers = data.workers || []
-      setAgents(workers)
-      setAgentCount(workers.length)
+      const agents = data.agents || []
+      setAgents(agents)
+      setAgentCount(agents.length)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
       setAgentsError(errorMessage)
@@ -1246,7 +1245,10 @@ export default function RunTracesPage() {
 
     // Filter metrics based on search query
     const filteredMetrics = metrics.metrics.filter((metric) => {
-      return metricsSearchQuery === '' || metric.name.toLowerCase().includes(metricsSearchQuery.toLowerCase())
+      return (
+        metricsSearchQuery === '' ||
+        metric.name.toLowerCase().includes(metricsSearchQuery.toLowerCase())
+      )
     })
 
     return (
@@ -1330,7 +1332,7 @@ export default function RunTracesPage() {
               )}
               Traces ({filteredTraces.length})
             </TabsTrigger>
-            <TabsTrigger value="workers">Agents ({agentCount})</TabsTrigger>
+            <TabsTrigger value="agents">Agents ({agentCount})</TabsTrigger>
             <TabsTrigger value="metrics">Metrics ({totalMetricsCount})</TabsTrigger>
           </TabsList>
 
@@ -1380,9 +1382,9 @@ export default function RunTracesPage() {
             <div className="flex-1 min-h-0 overflow-hidden">{tracesContent}</div>
           </TabsContent>
 
-          <TabsContent value="workers" className="mt-6 flex-1">
-            <AgentsTab 
-              runId={params.rid as string} 
+          <TabsContent value="agents" className="mt-6 flex-1">
+            <AgentsTab
+              runId={params.rid as string}
               agents={agents}
               loading={agentsLoading}
               error={agentsError}

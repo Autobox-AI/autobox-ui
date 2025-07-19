@@ -41,7 +41,7 @@ import { ArrowUpDown, ChevronRight, GitGraph, Play } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { use, useCallback, useEffect, useState } from 'react'
 
-interface _Worker {
+interface _Agent {
   id: string
   name: string
 }

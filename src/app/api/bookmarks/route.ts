@@ -6,6 +6,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
     const apiUrl = process.env.API_URL
+    const organizationId = process.env.ORG_ID
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Organization ID is not configured' },
+        { status: 400 }
+      )
+    }
 
     // Build query params for backend API
     const queryParams = new URLSearchParams()
@@ -13,7 +21,7 @@ export async function GET(request: NextRequest) {
       queryParams.append('type', type)
     }
 
-    const backendUrl = `${apiUrl}/bookmarks${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    const backendUrl = `${apiUrl}/organizations/${organizationId}/bookmarks${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
 
     const response = await fetch(backendUrl, {
       cache: 'no-store',
@@ -43,9 +51,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const createBookmarkData = CreateBookmarkSchema.parse(body)
     const apiUrl = process.env.API_URL
+    const organizationId = process.env.ORG_ID
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Organization ID is not configured' },
+        { status: 400 }
+      )
+    }
 
     // Forward the request to backend API
-    const response = await fetch(`${apiUrl}/bookmarks`, {
+    const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -21,7 +21,7 @@ interface Agent {
   agent_id: string
   name: string
   instruction?: string
-  type?: 'SYSTEM' | 'WORKER'
+  type?: 'SYSTEM' | 'AGENT'
 }
 
 interface AgentsTabProps {
@@ -33,7 +33,7 @@ interface AgentsTabProps {
 
 export default function AgentsTab({ runId, agents, loading, error }: AgentsTabProps) {
   const params = useParams()
-  const [typeFilter, setTypeFilter] = useState<'all' | 'SYSTEM' | 'WORKER'>('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'SYSTEM' | 'AGENT'>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
   const getAgentTypeFromName = (name: string) => {
@@ -51,7 +51,7 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
       return agent.type
     }
     const type = getAgentTypeFromName(agent.name)
-    return type === 'worker' ? 'WORKER' : 'SYSTEM'
+    return type === 'worker' ? 'AGENT' : 'SYSTEM'
   }
 
   const getAgentTypeColor = (type: string) => {
@@ -162,7 +162,7 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
         </div>
         <Select
           value={typeFilter}
-          onValueChange={(value: 'all' | 'SYSTEM' | 'WORKER') => setTypeFilter(value)}
+          onValueChange={(value: 'all' | 'SYSTEM' | 'AGENT') => setTypeFilter(value)}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by type" />
@@ -170,7 +170,7 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="SYSTEM">System</SelectItem>
-            <SelectItem value="WORKER">Worker</SelectItem>
+            <SelectItem value="AGENT">Agent</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -226,7 +226,7 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
                     <div className="flex gap-2 pt-2">
                       <Button asChild size="sm" variant="outline" className="flex-1">
                         <Link
-                          href={`/runs/${runId}/workers/${agent.id}`}
+                          href={`/runs/${runId}/agents/${agent.id}`}
                         >
                           <Settings className="w-4 h-4 mr-1" />
                           Manage
@@ -234,7 +234,7 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
                       </Button>
                       <Button asChild size="sm" variant="outline" className="flex-1">
                         <Link
-                          href={`/runs/${runId}/workers/${agent.id}?tab=traces`}
+                          href={`/runs/${runId}/agents/${agent.id}?tab=traces`}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" />
                           Traces

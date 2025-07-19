@@ -20,7 +20,7 @@ export default function Loading() {
               <TableHead>Progress</TableHead>
               <TableHead>Started At</TableHead>
               <TableHead>Finished At</TableHead>
-              <TableHead>Workers</TableHead>
+              <TableHead>Agents</TableHead>
               <TableHead>Summary</TableHead>
             </TableRow>
           </TableHeader>

@@ -19,11 +19,15 @@ import { Edit, MessageSquare, Save, User, X } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-interface Worker {
+interface Agent {
   id: string
   agent_id: string
   name: string
   instruction?: string
+  role?: string
+  description?: string
+  backstory?: string
+  type?: 'SYSTEM' | 'AGENT'
 }
 
 interface Trace {
@@ -34,59 +38,71 @@ interface Trace {
   created_at: string
 }
 
-export default function WorkerDetailPage() {
+export default function AgentDetailPage() {
   const params = useParams()
-  const { rid, workerId } = params
+  const { rid, agentId } = params
   const { toast } = useToast()
 
-  const [worker, setWorker] = useState<Worker | null>(null)
+  const [agent, setAgent] = useState<Agent | null>(null)
   const [traces, setTraces] = useState<Trace[]>([])
   const [loading, setLoading] = useState(true)
   const [tracesLoading, setTracesLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [editForm, setEditForm] = useState({ name: '', instruction: '' })
+  const [editForm, setEditForm] = useState({ 
+    name: '', 
+    instruction: '', 
+    role: '', 
+    description: '', 
+    backstory: '' 
+  })
 
   useEffect(() => {
-    fetchWorker()
-    fetchWorkerTraces()
-  }, [workerId])
+    fetchAgent()
+    fetchAgentTraces()
+  }, [agentId])
 
-  const fetchWorker = async () => {
+  const fetchAgent = async () => {
     try {
-      const response = await fetch(`/api/runs/${rid}/workers/${workerId}`)
+      const response = await fetch(`/api/runs/${rid}/agents/${agentId}`)
       if (response.ok) {
         const data = await response.json()
-        setWorker(data)
-        setEditForm({ name: data.name, instruction: data.instruction || '' })
+        setAgent(data)
+        setEditForm({ 
+          name: data.name, 
+          instruction: data.instruction || '',
+          role: data.role || '',
+          description: data.description || '',
+          backstory: data.backstory || ''
+        })
       }
     } catch (error) {
-      console.error('Error fetching worker:', error)
+      console.error('Error fetching agent:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchWorkerTraces = async () => {
+  const fetchAgentTraces = async () => {
     try {
-      const response = await fetch(`/api/runs/${rid}/workers/${workerId}/traces`)
+      const response = await fetch(`/api/runs/${rid}/agents/${agentId}/traces`)
       if (response.ok) {
         const data = await response.json()
         setTraces(data.traces || [])
       }
     } catch (error) {
-      console.error('Error fetching worker traces:', error)
+      console.error('Error fetching agent traces:', error)
     } finally {
       setTracesLoading(false)
     }
   }
 
   const handleSave = async () => {
-    if (!worker) return
+    if (!agent) return
 
     setSaving(true)
     try {
-      const response = await fetch(`/api/runs/${rid}/workers/${workerId}`, {
+      const response = await fetch(`/api/runs/${rid}/agents/${agentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -94,25 +110,28 @@ export default function WorkerDetailPage() {
         body: JSON.stringify({
           name: editForm.name,
           instruction: editForm.instruction,
+          role: editForm.role,
+          description: editForm.description,
+          backstory: editForm.backstory,
         }),
       })
 
       if (response.ok) {
-        const updatedWorker = await response.json()
-        setWorker(updatedWorker)
+        const updatedAgent = await response.json()
+        setAgent(updatedAgent)
         setEditing(false)
         toast({
-          title: 'Worker updated',
-          description: 'Worker settings have been saved successfully.',
+          title: 'Agent updated',
+          description: 'Agent settings have been saved successfully.',
         })
       } else {
-        throw new Error('Failed to update worker')
+        throw new Error('Failed to update agent')
       }
     } catch (error) {
-      console.error('Error updating worker:', error)
+      console.error('Error updating agent:', error)
       toast({
         title: 'Error',
-        description: 'Failed to update worker settings.',
+        description: 'Failed to update agent settings.',
         variant: 'destructive',
       })
     } finally {
@@ -121,24 +140,30 @@ export default function WorkerDetailPage() {
   }
 
   const handleCancel = () => {
-    if (worker) {
-      setEditForm({ name: worker.name, instruction: worker.instruction || '' })
+    if (agent) {
+      setEditForm({ 
+        name: agent.name, 
+        instruction: agent.instruction || '',
+        role: agent.role || '',
+        description: agent.description || '',
+        backstory: agent.backstory || ''
+      })
     }
     setEditing(false)
   }
 
-  const getWorkerTypeFromId = (workerId: string) => {
-    // This would need to be enhanced based on how worker types are determined
+  const getAgentTypeFromId = (agentId: string) => {
+    // This would need to be enhanced based on how agent types are determined
     // For now, we'll use a simple heuristic
-    const workerName = worker?.name.toLowerCase() || ''
-    if (workerName.includes('orchestrator')) return 'orchestrator'
-    if (workerName.includes('planner')) return 'planner'
-    if (workerName.includes('evaluator')) return 'evaluator'
-    if (workerName.includes('reporter')) return 'reporter'
-    return 'worker'
+    const agentName = agent?.name.toLowerCase() || ''
+    if (agentName.includes('orchestrator')) return 'orchestrator'
+    if (agentName.includes('planner')) return 'planner'
+    if (agentName.includes('evaluator')) return 'evaluator'
+    if (agentName.includes('reporter')) return 'reporter'
+    return 'agent'
   }
 
-  const getWorkerTypeColor = (type: string) => {
+  const getAgentTypeColor = (type: string) => {
     switch (type) {
       case 'orchestrator':
         return 'bg-purple-100 text-purple-800'
@@ -192,18 +217,18 @@ export default function WorkerDetailPage() {
     )
   }
 
-  if (!worker) {
+  if (!agent) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Worker Not Found</h1>
-          <p className="text-gray-600">The requested worker could not be found.</p>
+          <h1 className="text-2xl font-bold mb-2">Agent Not Found</h1>
+          <p className="text-gray-600">The requested agent could not be found.</p>
         </div>
       </div>
     )
   }
 
-  const workerType = getWorkerTypeFromId(worker.id)
+  const agentType = getAgentTypeFromId(agent.id)
 
   return (
     <div className="container mx-auto p-6">
@@ -218,7 +243,7 @@ export default function WorkerDetailPage() {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <span className="font-medium">{worker.name}</span>
+            <span className="font-medium">{agent.name}</span>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -231,12 +256,12 @@ export default function WorkerDetailPage() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <User className="w-5 h-5" />
-                    {editing ? 'Edit Agent' : worker.name}
+                    {editing ? 'Edit Agent' : agent.name}
                   </CardTitle>
                   {/* <CardDescription>Settings</CardDescription> */}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={getWorkerTypeColor(workerType)}>{workerType}</Badge>
+                  <Badge className={getAgentTypeColor(agentType)}>{agentType}</Badge>
                   {!editing && (
                     <Button onClick={() => setEditing(true)} size="sm" variant="outline">
                       <Edit className="w-4 h-4 mr-1" />
@@ -258,7 +283,62 @@ export default function WorkerDetailPage() {
                       className="mt-1"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{worker.name}</p>
+                    <p className="mt-1 text-sm text-gray-900">{agent.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  {editing ? (
+                    <Input
+                      id="role"
+                      value={editForm.role}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, role: e.target.value }))}
+                      placeholder="Enter agent role..."
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">
+                      {agent.role || 'No role set'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  {editing ? (
+                    <Textarea
+                      id="description"
+                      value={editForm.description}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({ ...prev, description: e.target.value }))
+                      }
+                      placeholder="Enter agent description..."
+                      className="mt-1 min-h-20"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
+                      {agent.description || 'No description set'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="backstory">Backstory</Label>
+                  {editing ? (
+                    <Textarea
+                      id="backstory"
+                      value={editForm.backstory}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({ ...prev, backstory: e.target.value }))
+                      }
+                      placeholder="Enter agent backstory..."
+                      className="mt-1 min-h-24"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
+                      {agent.backstory || 'No backstory set'}
+                    </p>
                   )}
                 </div>
 
@@ -276,7 +356,7 @@ export default function WorkerDetailPage() {
                     />
                   ) : (
                     <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
-                      {worker.instruction || 'No instructions set'}
+                      {agent.instruction || 'No instructions set'}
                     </p>
                   )}
                 </div>
@@ -320,7 +400,7 @@ export default function WorkerDetailPage() {
                   ))}
                 </div>
               ) : traces.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No traces found for this worker</p>
+                <p className="text-center text-gray-500 py-8">No traces found for this agent</p>
               ) : (
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {traces.map((trace, index) => (
@@ -358,16 +438,22 @@ export default function WorkerDetailPage() {
               <div className="space-y-3">
                 <div>
                   <Label className="text-xs text-gray-500">Agent ID</Label>
-                  <p className="text-sm font-mono">{worker.id}</p>
+                  <p className="text-sm font-mono">{agent.id}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-500">Base Agent ID</Label>
-                  <p className="text-sm font-mono">{worker.agent_id}</p>
+                  <p className="text-sm font-mono">{agent.agent_id}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-500">Type</Label>
-                  <p className="text-sm capitalize">{workerType}</p>
+                  <p className="text-sm capitalize">{agentType}</p>
                 </div>
+                {agent.role && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Role</Label>
+                    <p className="text-sm">{agent.role}</p>
+                  </div>
+                )}
                 <div>
                   <Label className="text-xs text-gray-500">Traces</Label>
                   <p className="text-sm">{traces.length} messages</p>

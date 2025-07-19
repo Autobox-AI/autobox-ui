@@ -6,6 +6,14 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const itemId = searchParams.get('item_id')
     const apiUrl = process.env.API_URL
+    const organizationId = process.env.ORG_ID
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Organization ID is not configured' },
+        { status: 400 }
+      )
+    }
 
     if (!type || !itemId) {
       return NextResponse.json({ error: 'type and item_id are required' }, { status: 400 })
@@ -16,7 +24,7 @@ export async function GET(request: NextRequest) {
     queryParams.append('type', type)
     queryParams.append('item_id', itemId)
 
-    const response = await fetch(`${apiUrl}/bookmarks/check?${queryParams.toString()}`, {
+    const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks/check?${queryParams.toString()}`, {
       cache: 'no-store',
     })
 
