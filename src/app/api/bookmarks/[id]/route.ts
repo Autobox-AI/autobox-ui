@@ -10,10 +10,7 @@ export async function DELETE(
     const organizationId = process.env.ORG_ID
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is not configured' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Organization ID is not configured' }, { status: 400 })
     }
 
     const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks/${id}`, {
@@ -45,10 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const organizationId = process.env.ORG_ID
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is not configured' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Organization ID is not configured' }, { status: 400 })
     }
 
     const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks/${id}`, {
