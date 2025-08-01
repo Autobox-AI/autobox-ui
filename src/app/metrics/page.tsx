@@ -1,8 +1,6 @@
 'use client'
 
-import { CounterMetric } from '@/components/metrics/CounterMetric'
-import { GaugeMetric } from '@/components/metrics/GaugeMetric'
-import { HistogramMetric } from '@/components/metrics/HistogramMetric'
+import { CounterMetric, GaugeMetric, HistogramMetric } from '@/components/LazyMetrics'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Metric } from '@/lib/services/metrics'
 import { useEffect, useState } from 'react'
@@ -182,12 +180,12 @@ export default function MetricsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="timestamp"
-                    tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                    tickFormatter={(value: any) => new Date(value).toLocaleTimeString()}
                   />
                   <YAxis />
                   <Tooltip
-                    labelFormatter={(value) => new Date(value).toLocaleTimeString()}
-                    formatter={(value) => [value, 'Value']}
+                    labelFormatter={(value: any) => new Date(value).toLocaleTimeString()}
+                    formatter={(value: any) => [value, 'Value']}
                   />
                   <Line
                     type="monotone"

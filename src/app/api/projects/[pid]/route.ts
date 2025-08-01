@@ -5,7 +5,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ pid:
     const apiUrl = process.env.API_URL
     const { pid } = await params
     const response = await fetch(`${apiUrl}/projects/${pid}`, {
-      cache: 'no-store',
+      next: { revalidate: 60 }, // Cache for 1 minute
     })
 
     if (!response.ok) {
@@ -22,7 +22,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ pid:
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+
+    // Add cache headers for client-side caching
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+      },
+    })
   } catch (error) {
     console.error('Error fetching project:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

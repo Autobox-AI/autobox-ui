@@ -51,7 +51,45 @@ const nextConfig = {
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
         chunks: 'all',
+        maxSize: 200000, // 200KB max chunk size
         cacheGroups: {
+          // Heavy chart libraries - load only when needed
+          charts: {
+            test: /[\\/]node_modules[\\/](recharts|d3-.*|victory)[\\/]/,
+            name: 'charts',
+            chunks: 'async', // Only load when imported
+            priority: 30,
+            enforce: true,
+          },
+          // Heavy table libraries
+          tables: {
+            test: /[\\/]node_modules[\\/]@tanstack[\\/]react-table[\\/]/,
+            name: 'tables',
+            chunks: 'async', // Only load when imported
+            priority: 30,
+            enforce: true,
+          },
+          // UI framework chunks
+          radix: {
+            test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
+            name: 'radix-ui',
+            chunks: 'all',
+            priority: 25,
+          },
+          lucide: {
+            test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+            name: 'lucide',
+            chunks: 'all',
+            priority: 25,
+          },
+          // Date libraries
+          dates: {
+            test: /[\\/]node_modules[\\/](date-fns)[\\/]/,
+            name: 'dates',
+            chunks: 'all',
+            priority: 20,
+          },
+          // Common vendor libraries
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
@@ -63,18 +101,6 @@ const nextConfig = {
             minChunks: 2,
             chunks: 'all',
             priority: 5,
-          },
-          radix: {
-            test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
-            name: 'radix-ui',
-            chunks: 'all',
-            priority: 20,
-          },
-          lucide: {
-            test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
-            name: 'lucide',
-            chunks: 'all',
-            priority: 20,
           },
         },
       }

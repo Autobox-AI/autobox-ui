@@ -1,7 +1,7 @@
 'use client'
 
 import AgentsTab from '@/components/AgentsTab'
-import { RunGaugeMetric } from '@/components/metrics/GaugeMetric'
+import { RunGaugeMetric } from '@/components/LazyMetrics'
 import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
@@ -35,11 +35,11 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   XAxis,
   YAxis,
-} from 'recharts'
+  RechartsTooltip,
+} from '@/components/LazyCharts'
 
 interface Trace {
   from: string
@@ -236,7 +236,7 @@ const DebugMetricTable = ({ data, groupKeys }: { data: any[]; groupKeys?: string
   )
 }
 
-// Simple chart component without lazy loading
+// Optimized chart component with lazy loading and performance improvements
 const MetricChart = memo(
   ({ metric, metricType }: { metric: MetricDefinition; metricType: string }) => {
     // Pivot data: each tag group is a separate line, X axis is union of all timestamps
@@ -244,41 +244,48 @@ const MetricChart = memo(
       if (!metric.data?.length) return { _chartData: [], mergedData: [], groupKeys: [] }
 
       if (metric.tag_definitions.length > 0) {
-        // Group by tagKey
+        // Group by tagKey - optimized with Map for better performance
         const groupedData: Record<string, any[]> = {}
-        const allTimestamps = new Set<string>()
+        const allTimestamps = new Map<string, number>() // Use Map for faster lookups
         metric.data.forEach((point) => {
           const tagKey = metric.tag_definitions.map((tag) => point.tags[tag.tag]).join('_')
           if (!groupedData[tagKey]) groupedData[tagKey] = []
+          const timeMs = new Date(point.time).getTime()
           groupedData[tagKey].push({
-            time: new Date(point.time).getTime(),
+            time: timeMs,
             value: point.value,
             name: tagKey,
-            timestamp: format(new Date(point.time), 'HH:mm:ss'),
+            timestamp: format(timeMs, 'HH:mm:ss'), // Use timeMs directly instead of parsing again
           })
-          allTimestamps.add(point.time)
+          allTimestamps.set(point.time, timeMs)
         })
         // Build mergedData: one row per timestamp, each group as a key
-        const timestamps = Array.from(allTimestamps).sort()
+        const timestamps = Array.from(allTimestamps.entries())
+          .sort(([, a], [, b]) => a - b)
+          .map(([timeStr]) => timeStr)
         const mergedData = timestamps.map((time) => {
+          const timeMs = allTimestamps.get(time)!
           const row: any = {
-            time: new Date(time).getTime(),
-            timestamp: format(new Date(time), 'HH:mm:ss'),
+            time: timeMs,
+            timestamp: format(timeMs, 'HH:mm:ss'),
           }
           Object.entries(groupedData).forEach(([tagKey, arr]) => {
-            const found = arr.find((d) => d.time === row.time)
+            const found = arr.find((d) => d.time === timeMs)
             row[tagKey] = found ? found.value : null
           })
           return row
         })
         return { _chartData: groupedData, mergedData, groupKeys: Object.keys(groupedData) }
       }
-      // No tags: single line
-      const mergedData = metric.data.map((point) => ({
-        time: new Date(point.time).getTime(),
-        value: point.value,
-        timestamp: format(new Date(point.time), 'HH:mm:ss'),
-      }))
+      // No tags: single line - optimize date parsing
+      const mergedData = metric.data.map((point) => {
+        const timeMs = new Date(point.time).getTime()
+        return {
+          time: timeMs,
+          value: point.value,
+          timestamp: format(timeMs, 'HH:mm:ss'),
+        }
+      })
       return { _chartData: null, mergedData, groupKeys: [] }
     }, [metric.data, metric.tag_definitions])
 
@@ -292,15 +299,37 @@ const MetricChart = memo(
       })
 
     const containerRef = useRef<HTMLDivElement>(null)
+    const [isVisible, setIsVisible] = useState(false)
 
+    // Intersection Observer for lazy loading
     useEffect(() => {
       if (!containerRef.current) return
-      const ro = new window.ResizeObserver(() => {
-        window.dispatchEvent(new Event('resize'))
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true)
+            observer.disconnect() // Only load once
+          }
+        },
+        { threshold: 0.1, rootMargin: '50px' }
+      )
+
+      observer.observe(containerRef.current)
+
+      // Resize observer for chart responsiveness
+      const ro = new ResizeObserver(() => {
+        if (isVisible) {
+          window.dispatchEvent(new Event('resize'))
+        }
       })
       ro.observe(containerRef.current)
-      return () => ro.disconnect()
-    }, [])
+
+      return () => {
+        observer.disconnect()
+        ro.disconnect()
+      }
+    }, [isVisible])
 
     if (!metric.data?.length || !mergedData.length) {
       return (
@@ -374,147 +403,156 @@ const MetricChart = memo(
         className="w-full border rounded-lg p-4 bg-card/50"
         style={{ height: 320 }}
       >
-        <ResponsiveContainer width={'100%'} height={300} key={chartKey}>
-          {metricType === 'gauge' ? (
-            <BarChart
-              data={mergedData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-              key={chartKey}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis
-                dataKey="timestamp"
-                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-                stroke="hsl(var(--foreground))"
-              />
-              <YAxis
-                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
-                stroke="hsl(var(--foreground))"
-                label={
-                  metric.unit
-                    ? {
-                        value: metric.unit,
-                        angle: -90,
-                        position: 'insideLeft',
-                        style: { fill: 'hsl(var(--foreground))' },
-                      }
-                    : undefined
-                }
-              />
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--popover))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px',
-                  color: 'hsl(var(--popover-foreground))',
-                }}
-                formatter={(value: any, name: string) => {
-                  if (groupKeys.length > 0) {
-                    // For tagged data, show the tag values in the name
-                    const tagValues = metric.tag_definitions
-                      .map(
-                        (tag) =>
-                          `${tag.tag}=${name.split('_')[metric.tag_definitions.indexOf(tag)] || 'N/A'}`
-                      )
-                      .join(', ')
-                    return [value, `${metric.name} (${tagValues})`]
-                  }
-                  return [value, metric.name]
-                }}
-                labelFormatter={(label: string) => `Time: ${label}`}
-              />
-              {/* Show all groups for bar chart with different colors */}
-              {groupKeys.length > 0 ? (
-                groupKeys.map((key, index) => (
-                  <Bar key={key} dataKey={key} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                ))
-              ) : (
-                <Bar dataKey="value" fill={CHART_COLORS[0]} />
-              )}
-            </BarChart>
-          ) : (
-            <LineChart
-              data={mergedData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-              key={chartKey}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis
-                dataKey="timestamp"
-                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-                stroke="hsl(var(--foreground))"
-              />
-              <YAxis
-                tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
-                stroke="hsl(var(--foreground))"
-                label={
-                  metric.unit
-                    ? {
-                        value: metric.unit,
-                        angle: -90,
-                        position: 'insideLeft',
-                        style: { fill: 'hsl(var(--foreground))' },
-                      }
-                    : undefined
-                }
-              />
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--popover))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px',
-                  color: 'hsl(var(--popover-foreground))',
-                }}
-                formatter={(value: any, name: string) => {
-                  if (groupKeys.length > 0) {
-                    // For tagged data, show the tag values in the name
-                    const tagValues = metric.tag_definitions
-                      .map(
-                        (tag) =>
-                          `${tag.tag}=${name.split('_')[metric.tag_definitions.indexOf(tag)] || 'N/A'}`
-                      )
-                      .join(', ')
-                    return [value, `${metric.name} (${tagValues})`]
-                  }
-                  return [value, metric.name]
-                }}
-                labelFormatter={(label: string) => `Time: ${label}`}
-              />
-              {groupKeys.length > 0 ? (
-                groupKeys.map((key, index) => (
-                  <Line
-                    key={key}
-                    type="monotone"
-                    dataKey={key}
-                    stroke={CHART_COLORS[index % CHART_COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: CHART_COLORS[index % CHART_COLORS.length] }}
-                    activeDot={{
-                      r: 6,
-                      stroke: CHART_COLORS[index % CHART_COLORS.length],
-                      strokeWidth: 2,
-                    }}
-                  />
-                ))
-              ) : (
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke={CHART_COLORS[0]}
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: CHART_COLORS[0] }}
-                  activeDot={{ r: 6, stroke: CHART_COLORS[0], strokeWidth: 2 }}
+        {!isVisible ? (
+          <div className="flex items-center justify-center h-[300px]">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Loading chart...</p>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width={'100%'} height={300} key={chartKey}>
+            {metricType === 'gauge' ? (
+              <BarChart
+                data={mergedData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                key={chartKey}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                <XAxis
+                  dataKey="timestamp"
+                  tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  stroke="hsl(var(--foreground))"
                 />
-              )}
-            </LineChart>
-          )}
-        </ResponsiveContainer>
+                <YAxis
+                  tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
+                  stroke="hsl(var(--foreground))"
+                  label={
+                    metric.unit
+                      ? {
+                          value: metric.unit,
+                          angle: -90,
+                          position: 'insideLeft',
+                          style: { fill: 'hsl(var(--foreground))' },
+                        }
+                      : undefined
+                  }
+                />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--popover-foreground))',
+                  }}
+                  formatter={(value: any, name: string) => {
+                    if (groupKeys.length > 0) {
+                      // For tagged data, show the tag values in the name
+                      const tagValues = metric.tag_definitions
+                        .map(
+                          (tag) =>
+                            `${tag.tag}=${name.split('_')[metric.tag_definitions.indexOf(tag)] || 'N/A'}`
+                        )
+                        .join(', ')
+                      return [value, `${metric.name} (${tagValues})`]
+                    }
+                    return [value, metric.name]
+                  }}
+                  labelFormatter={(label: string) => `Time: ${label}`}
+                />
+                {/* Show all groups for bar chart with different colors */}
+                {groupKeys.length > 0 ? (
+                  groupKeys.map((key, index) => (
+                    <Bar key={key} dataKey={key} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))
+                ) : (
+                  <Bar dataKey="value" fill={CHART_COLORS[0]} />
+                )}
+              </BarChart>
+            ) : (
+              <LineChart
+                data={mergedData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                key={chartKey}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                <XAxis
+                  dataKey="timestamp"
+                  tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  stroke="hsl(var(--foreground))"
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
+                  stroke="hsl(var(--foreground))"
+                  label={
+                    metric.unit
+                      ? {
+                          value: metric.unit,
+                          angle: -90,
+                          position: 'insideLeft',
+                          style: { fill: 'hsl(var(--foreground))' },
+                        }
+                      : undefined
+                  }
+                />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--popover-foreground))',
+                  }}
+                  formatter={(value: any, name: string) => {
+                    if (groupKeys.length > 0) {
+                      // For tagged data, show the tag values in the name
+                      const tagValues = metric.tag_definitions
+                        .map(
+                          (tag) =>
+                            `${tag.tag}=${name.split('_')[metric.tag_definitions.indexOf(tag)] || 'N/A'}`
+                        )
+                        .join(', ')
+                      return [value, `${metric.name} (${tagValues})`]
+                    }
+                    return [value, metric.name]
+                  }}
+                  labelFormatter={(label: string) => `Time: ${label}`}
+                />
+                {groupKeys.length > 0 ? (
+                  groupKeys.map((key, index) => (
+                    <Line
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                      strokeWidth={2}
+                      dot={{ r: 2, fill: CHART_COLORS[index % CHART_COLORS.length] }}
+                      activeDot={{
+                        r: 6,
+                        stroke: CHART_COLORS[index % CHART_COLORS.length],
+                        strokeWidth: 2,
+                      }}
+                    />
+                  ))
+                ) : (
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={CHART_COLORS[0]}
+                    strokeWidth={2}
+                    dot={{ r: 2, fill: CHART_COLORS[0] }}
+                    activeDot={{ r: 6, stroke: CHART_COLORS[0], strokeWidth: 2 }}
+                  />
+                )}
+              </LineChart>
+            )}
+          </ResponsiveContainer>
+        )}
         <DebugMetricTable data={mergedData} groupKeys={groupKeys} />
       </div>
     )
@@ -989,7 +1027,12 @@ export default function RunTracesPage() {
         return
       }
 
-      const response = await fetch(`/api/runs/${params.rid}/metrics`)
+      const response = await fetch(`/api/runs/${params.rid}/metrics`, {
+        // Add performance headers for better caching
+        headers: {
+          'Cache-Control': 'max-age=60', // Cache for 1 minute
+        },
+      })
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch metrics')
@@ -1279,10 +1322,20 @@ export default function RunTracesPage() {
           )}
         </div>
 
-        {/* Metrics Grid */}
+        {/* Metrics Grid - Batch render for better performance */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredMetrics.map((metric, index) => (
-            <MetricCard key={`${metric.name}-${index}`} metric={metric} />
+            <div
+              key={`${metric.name}-${index}`}
+              style={
+                {
+                  // Stagger chart rendering to reduce initial load impact
+                  '--chart-delay': `${Math.min(index * 50, 500)}ms`,
+                } as React.CSSProperties
+              }
+            >
+              <MetricCard metric={metric} />
+            </div>
           ))}
         </div>
       </div>

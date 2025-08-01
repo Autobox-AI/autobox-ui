@@ -217,12 +217,12 @@ export default function AgentDetailPage() {
     )
   }
 
-  if (!worker) {
+  if (!agent) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Worker Not Found</h1>
-          <p className="text-gray-600">The requested worker could not be found.</p>
+          <h1 className="text-2xl font-bold mb-2">Agent Not Found</h1>
+          <p className="text-gray-600">The requested agent could not be found.</p>
         </div>
       </div>
     )

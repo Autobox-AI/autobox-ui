@@ -65,7 +65,7 @@ interface SimulationRunsResponse {
 
 async function getProject(projectId: string) {
   const response = await fetch(`http://localhost:8888/api/projects/${projectId}`, {
-    cache: 'no-store',
+    next: { revalidate: 60 }, // Cache for 1 minute
   })
 
   if (!response.ok) {
@@ -77,7 +77,7 @@ async function getProject(projectId: string) {
 
 async function getSimulation(projectId: string, simulationId: string) {
   const response = await fetch(`/api/simulations/${simulationId}`, {
-    cache: 'no-store',
+    next: { revalidate: 60 }, // Cache for 1 minute
   })
 
   if (!response.ok) {
@@ -89,8 +89,7 @@ async function getSimulation(projectId: string, simulationId: string) {
 
 async function getSimulationRuns(simulationId: string): Promise<SimulationRunsResponse> {
   const response = await fetch(`/api/simulations/${simulationId}/runs`, {
-    next: { revalidate: 10 },
-    cache: 'no-store',
+    next: { revalidate: 10 }, // Cache for 10 seconds
   })
 
   if (!response.ok) {
@@ -117,6 +116,8 @@ export default function SimulationRunsPage({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [isCreatingRun, setIsCreatingRun] = useState(false)
+  const [isLoadingCritical, setIsLoadingCritical] = useState(true)
+  const [isLoadingRuns, setIsLoadingRuns] = useState(true)
 
   // Callback function to update a specific run in the runs array
   const handleRunUpdate = useCallback((updatedRun: Run) => {
@@ -137,17 +138,30 @@ export default function SimulationRunsPage({
   })
 
   useEffect(() => {
-    const fetchData = async () => {
-      const [projectData, simulationData, runsData] = await Promise.all([
-        getProject(pid),
-        getSimulation(pid, sid),
-        getSimulationRuns(sid),
-      ])
-      setProject(projectData)
-      setSimulation(simulationData)
-      setRuns(runsData.runs)
+    const fetchAllDataParallel = async () => {
+      try {
+        // Load ALL data in parallel for maximum performance
+        const [projectData, simulationData, runsData] = await Promise.all([
+          getProject(pid),
+          getSimulation(pid, sid),
+          getSimulationRuns(sid),
+        ])
+
+        // Update state with all data at once
+        setProject(projectData)
+        setSimulation(simulationData)
+        setRuns(runsData.runs)
+
+        // Mark both loading states as complete
+        setIsLoadingCritical(false)
+        setIsLoadingRuns(false)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        setIsLoadingCritical(false)
+        setIsLoadingRuns(false)
+      }
     }
-    fetchData()
+    fetchAllDataParallel()
   }, [pid, sid])
 
   const handleSort = (field: SortField) => {
@@ -217,22 +231,28 @@ export default function SimulationRunsPage({
     }
   }
 
-  if (!project || !simulation) {
+  // Show loading skeleton while waiting for critical data
+  if (isLoadingCritical || !project || !simulation) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative">
-            <div className="w-12 h-12 border-4 border-zinc-700 border-t-blue-500 rounded-full animate-spin"></div>
-            <div
-              className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin"
-              style={{ animationDuration: '1.5s' }}
-            ></div>
+      <div className="flex flex-col min-h-screen w-full">
+        <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800">
+          <div className="animate-pulse">
+            <div className="h-4 bg-zinc-700 rounded w-2/3"></div>
           </div>
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-zinc-300 mb-2">Loading Simulation</h2>
-            <p className="text-sm text-zinc-500">
-              Please wait while we fetch the simulation data...
-            </p>
+        </div>
+        <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-6">
+          <div className="mb-6 flex justify-between items-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-zinc-700 rounded w-64 mb-2"></div>
+              <div className="h-4 bg-zinc-600 rounded w-32"></div>
+            </div>
+            <div className="animate-pulse">
+              <div className="h-10 bg-zinc-700 rounded w-20"></div>
+            </div>
+          </div>
+          <div className="animate-pulse">
+            <div className="h-8 bg-zinc-700 rounded w-40 mb-4"></div>
+            <div className="h-64 bg-zinc-800 rounded"></div>
           </div>
         </div>
       </div>
@@ -374,7 +394,31 @@ export default function SimulationRunsPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAndSortedRuns.length > 0 ? (
+                {isLoadingRuns ? (
+                  // Show skeleton rows while loading
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <div className="animate-pulse h-6 bg-zinc-700 rounded w-20"></div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="animate-pulse h-6 bg-zinc-700 rounded w-24"></div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="animate-pulse h-6 bg-zinc-700 rounded w-32"></div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="animate-pulse h-6 bg-zinc-700 rounded w-32"></div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="animate-pulse h-6 bg-zinc-700 rounded w-48"></div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="animate-pulse h-6 bg-zinc-700 rounded w-16"></div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredAndSortedRuns.length > 0 ? (
                   filteredAndSortedRuns.map((run) => (
                     <TableRow
                       key={run.id}

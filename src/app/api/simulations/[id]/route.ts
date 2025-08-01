@@ -8,6 +8,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       headers: {
         'Content-Type': 'application/json',
       },
+      next: { revalidate: 60 }, // Cache for 1 minute
     })
 
     if (!response.ok) {
@@ -15,7 +16,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+
+    // Add cache headers for client-side caching
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+      },
+    })
   } catch (_error) {
     return NextResponse.json({ error: 'Failed to fetch simulation' }, { status: 500 })
   }

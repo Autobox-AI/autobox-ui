@@ -232,7 +232,7 @@ export function RunGaugeMetric({ metric }: RunGaugeMetricProps) {
                   dataKey="value"
                   stroke={gaugeColor}
                   strokeWidth={2}
-                  dot={{ r: 4, fill: gaugeColor }}
+                  dot={{ r: 2, fill: gaugeColor }}
                   activeDot={{
                     r: 6,
                     stroke: gaugeColor,

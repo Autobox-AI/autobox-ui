@@ -26,6 +26,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (etag) responseHeaders['ETag'] = etag
     if (lastModified) responseHeaders['Last-Modified'] = lastModified
 
+    // Add additional client-side cache headers
+    responseHeaders['Cache-Control'] =
+      responseHeaders['Cache-Control'] || 'public, max-age=10, stale-while-revalidate=30'
+
     return NextResponse.json(data, { headers: responseHeaders })
   } catch (_error) {
     return NextResponse.json({ error: 'Failed to fetch simulation runs' }, { status: 500 })

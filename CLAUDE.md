@@ -5,20 +5,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Commands
 
 ### Development
-- `npm run dev` - Start development server on port 8888
-- `npm run build` - Build production application
-- `npm start` - Start production server on port 8888
-- `npm run lint` - Run ESLint for code quality checks
+- `yarn dev` - Start development server on port 8888
+- `yarn build` - Build production application
+- `yarn start` - Start production server on port 8888
+- `yarn lint` - Run ESLint for code quality checks
 
 ### Analysis & Performance
-- `npm run analyze` - Build with bundle analyzer enabled
-- `npm run build:analyze` - Alias for analyze command
-- `npm run perf:audit` - Run complete performance audit (build + start + lighthouse)
-- `npm run perf:test` - Run performance tests using scripts/performance-test.js
-- `npm run lighthouse` - Run Lighthouse analysis on running server
+- `yarn analyze` - Build with bundle analyzer enabled
+- `yarn build:analyze` - Alias for analyze command
+- `yarn perf:audit` - Run complete performance audit (build + start + lighthouse)
+- `yarn perf:test` - Run performance tests using scripts/performance-test.js
+- `yarn lighthouse` - Run Lighthouse analysis on running server
 
 ### Development Tools
-- `npm run code:prompt` - Run code merger tool (ts-node ./bin/codeMerger.ts)
+- `yarn code:prompt` - Run code merger tool (ts-node ./bin/codeMerger.ts)
 
 ## Architecture Overview
 
@@ -91,7 +91,7 @@ The project uses shadcn/ui, a component library built on top of Radix UI primiti
 
 ### Development Notes
 
-- Uses Yarn 4.5.3 as package manager
+- Uses Yarn as package manager (modern Yarn with PnP support)
 - Environment variables: `API_URL` and `ORG_ID` for backend configuration
 - Development server runs on port 8888 (both dev and production)
 - PWA capabilities with service worker registration

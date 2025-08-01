@@ -17,7 +17,7 @@ const BookmarkContext = createContext<BookmarkContextType | undefined>(undefined
 
 export function BookmarkProvider({ children }: { children: React.ReactNode }) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // Start as false to avoid blocking initial render
   const [error, setError] = useState<string | null>(null)
 
   const fetchBookmarks = useCallback(async () => {
@@ -107,7 +107,12 @@ export function BookmarkProvider({ children }: { children: React.ReactNode }) {
   )
 
   useEffect(() => {
-    fetchBookmarks()
+    // Use setTimeout to defer bookmark loading until after initial render
+    const timer = setTimeout(() => {
+      fetchBookmarks()
+    }, 100) // Load bookmarks 100ms after component mount
+
+    return () => clearTimeout(timer)
   }, [fetchBookmarks])
 
   return (

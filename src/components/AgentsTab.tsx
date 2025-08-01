@@ -225,17 +225,13 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
 
                     <div className="flex gap-2 pt-2">
                       <Button asChild size="sm" variant="outline" className="flex-1">
-                        <Link
-                          href={`/runs/${runId}/agents/${agent.id}`}
-                        >
+                        <Link href={`/runs/${runId}/agents/${agent.id}`}>
                           <Settings className="w-4 h-4 mr-1" />
                           Manage
                         </Link>
                       </Button>
                       <Button asChild size="sm" variant="outline" className="flex-1">
-                        <Link
-                          href={`/runs/${runId}/agents/${agent.id}?tab=traces`}
-                        >
+                        <Link href={`/runs/${runId}/agents/${agent.id}?tab=traces`}>
                           <MessageSquare className="w-4 h-4 mr-1" />
                           Traces
                         </Link>
