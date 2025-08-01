@@ -49,12 +49,12 @@ export default function AgentDetailPage() {
   const [tracesLoading, setTracesLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [editForm, setEditForm] = useState({ 
-    name: '', 
-    instruction: '', 
-    role: '', 
-    description: '', 
-    backstory: '' 
+  const [editForm, setEditForm] = useState({
+    name: '',
+    instruction: '',
+    role: '',
+    description: '',
+    backstory: '',
   })
 
   useEffect(() => {
@@ -68,12 +68,12 @@ export default function AgentDetailPage() {
       if (response.ok) {
         const data = await response.json()
         setAgent(data)
-        setEditForm({ 
-          name: data.name, 
+        setEditForm({
+          name: data.name,
           instruction: data.instruction || '',
           role: data.role || '',
           description: data.description || '',
-          backstory: data.backstory || ''
+          backstory: data.backstory || '',
         })
       }
     } catch (error) {
@@ -141,12 +141,12 @@ export default function AgentDetailPage() {
 
   const handleCancel = () => {
     if (agent) {
-      setEditForm({ 
-        name: agent.name, 
+      setEditForm({
+        name: agent.name,
         instruction: agent.instruction || '',
         role: agent.role || '',
         description: agent.description || '',
-        backstory: agent.backstory || ''
+        backstory: agent.backstory || '',
       })
     }
     setEditing(false)
@@ -298,9 +298,7 @@ export default function AgentDetailPage() {
                       className="mt-1"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">
-                      {agent.role || 'No role set'}
-                    </p>
+                    <p className="mt-1 text-sm text-gray-900">{agent.role || 'No role set'}</p>
                   )}
                 </div>
 

@@ -9,10 +9,7 @@ export async function GET(request: NextRequest) {
     const organizationId = process.env.ORG_ID
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is not configured' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Organization ID is not configured' }, { status: 400 })
     }
 
     // Build query params for backend API
@@ -54,10 +51,7 @@ export async function POST(request: NextRequest) {
     const organizationId = process.env.ORG_ID
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is not configured' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Organization ID is not configured' }, { status: 400 })
     }
 
     // Forward the request to backend API

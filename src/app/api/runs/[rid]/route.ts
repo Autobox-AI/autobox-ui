@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request, { params }: { params: Promise<{ rid: string }> }) {
   try {
+    const apiUrl = process.env.API_URL
     const { rid } = await params
-    const response = await fetch(`http://localhost:8080/runs/${rid}`, {
+    const response = await fetch(`${apiUrl}/runs/${rid}`, {
       headers: {
         'Content-Type': 'application/json',
       },

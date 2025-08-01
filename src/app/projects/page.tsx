@@ -17,16 +17,16 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Project } from '@/schemas'
 import { Plus } from 'lucide-react'
-import { headers } from 'next/headers'
+// import { headers } from 'next/headers'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
 async function fetchProjects(
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 ): Promise<Project[]> {
-  const headersList = await headers()
-  const host = headersList.get('host')
-  const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
+  // const headersList = await headers()
+  const organizationId = process.env.ORG_ID
+  const apiUrl = process.env.API_URL
 
   const queryParams = new URLSearchParams()
   const resolvedParams = await searchParams
@@ -39,15 +39,18 @@ async function fetchProjects(
   }
 
   try {
-    const response = await fetch(`${protocol}://${host}/api/projects?${queryParams.toString()}`, {
-      next: {
-        revalidate: 30,
-        tags: ['projects'],
-      },
-      headers: {
-        Accept: 'application/json',
-      },
-    })
+    const response = await fetch(
+      `${apiUrl}/organizations/${organizationId}/projects?${queryParams.toString()}`,
+      {
+        next: {
+          revalidate: 30,
+          tags: ['projects'],
+        },
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    )
 
     if (!response.ok) {
       throw new Error('Failed to fetch projects')

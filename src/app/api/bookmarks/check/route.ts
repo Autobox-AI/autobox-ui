@@ -9,10 +9,7 @@ export async function GET(request: NextRequest) {
     const organizationId = process.env.ORG_ID
 
     if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Organization ID is not configured' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Organization ID is not configured' }, { status: 400 })
     }
 
     if (!type || !itemId) {
@@ -24,9 +21,12 @@ export async function GET(request: NextRequest) {
     queryParams.append('type', type)
     queryParams.append('item_id', itemId)
 
-    const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks/check?${queryParams.toString()}`, {
-      cache: 'no-store',
-    })
+    const response = await fetch(
+      `${apiUrl}/organizations/${organizationId}/bookmarks/check?${queryParams.toString()}`,
+      {
+        cache: 'no-store',
+      }
+    )
 
     if (!response.ok) {
       if (response.status === 400) {

@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Project, Simulation } from '@/schemas'
+import { BOOKMARK_TYPES, Project, Simulation } from '@/schemas'
 import { SIMULATION_STATUSES } from '@/schemas/simulation'
 import {
   Calendar,
@@ -22,13 +22,14 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
-import { Button } from './ui/button'
 import { BookmarkButton } from './BookmarkButton'
-import { BOOKMARK_TYPES } from '@/schemas'
+import { Button } from './ui/button'
 import { TooltipProvider } from './ui/tooltip'
 
 type SimulationStatus = 'running' | 'completed' | 'failed' | 'pending'
 type ViewMode = 'grid' | 'table'
+
+const apiUrl = process.env.API_URL
 
 const _getStatusColor = (status: SimulationStatus) => {
   switch (status) {
@@ -110,9 +111,7 @@ const Simulations = ({
     const eventSources = simulations
       .filter((sim) => sim.status === SIMULATION_STATUSES.IN_PROGRESS)
       .map((simulation) => {
-        const eventSource = new EventSource(
-          `http://localhost:8080/simulations/${simulation.id}?streaming=true`
-        )
+        const eventSource = new EventSource(`${apiUrl}/simulations/${simulation.id}?streaming=true`)
 
         eventSource.onmessage = (event) => {
           const updatedSimulation = JSON.parse(event.data) as Simulation

@@ -34,8 +34,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useRunPolling } from '@/hooks/useRunPolling'
 import { usePrefetch } from '@/hooks/usePrefetch'
+import { useRunPolling } from '@/hooks/useRunPolling'
 import { format } from 'date-fns'
 import { ArrowUpDown, ChevronRight, GitGraph, Play } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -76,7 +76,7 @@ async function getProject(projectId: string) {
 }
 
 async function getSimulation(projectId: string, simulationId: string) {
-  const response = await fetch(`http://localhost:8888/api/simulations/${simulationId}`, {
+  const response = await fetch(`/api/simulations/${simulationId}`, {
     cache: 'no-store',
   })
 

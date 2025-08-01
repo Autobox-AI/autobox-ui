@@ -23,8 +23,9 @@ interface TimeSeriesData {
 
 async function fetchMetrics(): Promise<Metric[]> {
   try {
+    const apiUrl = process.env.API_URL
     const response = await fetch(
-      'http://localhost:8080/metrics/simulations/83c006c4-ecf1-404d-afe3-7eb0ff152c49/runs/e8aab6d4-11a2-4cc2-badd-022fdaf8b04c'
+      `${apiUrl}/metrics/simulations/83c006c4-ecf1-404d-afe3-7eb0ff152c49/runs/e8aab6d4-11a2-4cc2-badd-022fdaf8b04c`
     )
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)

@@ -78,7 +78,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar:state')?.value === 'true'
 
-  // Fetch the default organization
   const defaultOrganization = await fetchDefaultOrganization()
   const organizations = defaultOrganization ? [defaultOrganization] : []
 

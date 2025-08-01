@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const apiUrl = process.env.API_URL
     const { id } = await params
-    const response = await fetch(`http://localhost:8080/simulations/${id}/runs`, {
+    const response = await fetch(`${apiUrl}/simulations/${id}/runs`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -33,10 +34,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const apiUrl = process.env.API_URL
     const { id } = await params
     const body = await request.json()
 
-    const response = await fetch(`http://localhost:8080/simulations/${id}/runs`, {
+    const response = await fetch(`${apiUrl}/simulations/${id}/runs`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

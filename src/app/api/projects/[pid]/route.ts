@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request, { params }: { params: Promise<{ pid: string }> }) {
   try {
+    const apiUrl = process.env.API_URL
     const { pid } = await params
-    const response = await fetch(`http://localhost:8080/projects/${pid}`, {
+    const response = await fetch(`${apiUrl}/projects/${pid}`, {
       cache: 'no-store',
     })
 

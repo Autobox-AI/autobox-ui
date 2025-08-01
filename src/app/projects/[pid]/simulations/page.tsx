@@ -18,7 +18,8 @@ import { Project, Simulation } from '@/schemas'
 
 async function fetchProject(projectId: string): Promise<Project> {
   try {
-    const response = await fetch(`http://localhost:8080/projects/${projectId}`, {
+    const apiUrl = process.env.API_URL
+    const response = await fetch(`${apiUrl}/projects/${projectId}`, {
       cache: 'no-store',
     })
 
@@ -51,7 +52,8 @@ async function fetchProject(projectId: string): Promise<Project> {
 
 async function fetchSimulations(projectId: string): Promise<Simulation[]> {
   try {
-    const response = await fetch(`http://localhost:8080/projects/${projectId}/simulations`, {
+    const apiUrl = process.env.API_URL
+    const response = await fetch(`${apiUrl}/projects/${projectId}/simulations`, {
       cache: 'no-store',
     })
 
