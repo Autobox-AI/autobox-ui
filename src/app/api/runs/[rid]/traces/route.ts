@@ -13,11 +13,17 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
     const apiUrl = process.env.API_URL || 'http://localhost:8000'
     const backendUrl = `${apiUrl}/runs/${rid}/traces${stream ? '?stream=true' : ''}`
 
+    console.log('Traces API - Backend URL:', backendUrl)
+    console.log('Traces API - Stream:', stream)
+
     if (stream) {
       // Handle streaming response
       const response = await fetch(backendUrl, {
         cache: 'no-store',
         signal: AbortSignal.timeout(30000), // 30 second timeout
+        headers: {
+          'Accept': 'text/event-stream',
+        },
       })
 
       if (!response.ok) {
@@ -38,7 +44,8 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
+          'Connection': 'keep-alive',
+          'X-Accel-Buffering': 'no', // Disable Nginx buffering
         },
       })
     } else {
