@@ -153,6 +153,20 @@ const AppSidebar = ({ organizations }: AppSidebarProps) => {
 
       <SidebarContent>
         <SidebarMenu>
+          {/* Quick Start */}
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Start New Simulation">
+              <Link href="/simulations/new" className="flex items-center gap-3 px-2">
+                <div className="min-w-[24px] flex items-center justify-center">
+                  <Zap className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
+                  New Simulation
+                </span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
           {/* Dashboard */}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Dashboard">
@@ -418,20 +432,6 @@ const AppSidebar = ({ organizations }: AppSidebarProps) => {
                 </div>
                 <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
                   Metrics Explorer
-                </span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          {/* Quick Start */}
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Start New Simulation">
-              <Link href="/simulations/new" className="flex items-center gap-3 px-2">
-                <div className="min-w-[24px] flex items-center justify-center">
-                  <Zap className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-medium text-white transition-opacity group-data-[state=collapsed]:opacity-0">
-                  Start New Simulation
                 </span>
               </Link>
             </SidebarMenuButton>

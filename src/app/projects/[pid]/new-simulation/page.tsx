@@ -1,9 +1,9 @@
 'use client'
-import { MoodSlider } from '@/components/MoodSlider'
-import ToolsTable from '@/components/ToolsTable'
+import { AgentFormCard } from '@/components/forms/AgentFormCard'
+import { SimulationFormField } from '@/components/forms/SimulationFormField'
+import { SimulationFormSection } from '@/components/forms/SimulationFormSection'
 import {
   Breadcrumb,
-  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
@@ -11,395 +11,154 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
-import { CalendarIcon } from '@radix-ui/react-icons'
-import { format } from 'date-fns'
+import {
+  simulationFormSchema,
+  transformFormToApiPayload,
+  type SimulationFormData,
+} from '@/schemas/simulationForm'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AlertCircle, CheckCircle2, Loader2, Plus, Upload } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState } from 'react'
-
-const initialMoodSpectrums = [
-  { labelLeft: 'Calm', labelRight: 'Anxious', defaultValue: 50 },
-  { labelLeft: 'Optimistic', labelRight: 'Pessimistic', defaultValue: 60 },
-  { labelLeft: 'Trusting', labelRight: 'Suspicious', defaultValue: 40 },
-  { labelLeft: 'Friendly', labelRight: 'Hostile', defaultValue: 70 },
-  { labelLeft: 'Energetic', labelRight: 'Tired', defaultValue: 55 },
-  { labelLeft: 'Curious', labelRight: 'Apathetic', defaultValue: 65 },
-  { labelLeft: 'Logical', labelRight: 'Emotional', defaultValue: 75 },
-  { labelLeft: 'Confident', labelRight: 'Insecure', defaultValue: 80 },
-  { labelLeft: 'Aggressive', labelRight: 'Peaceful', defaultValue: 45 },
-  { labelLeft: 'Organized', labelRight: 'Chaotic', defaultValue: 60 },
-  { labelLeft: 'Strategic', labelRight: 'Impulsive', defaultValue: 50 },
-  { labelLeft: 'Ambitious', labelRight: 'Content', defaultValue: 70 },
-  { labelLeft: 'Altruistic', labelRight: 'Selfish', defaultValue: 30 },
-]
-
-// First, define interfaces for the metric structure
-interface Metric {
-  name: string
-  description: string
-  type: string
-  unit: string
-}
-
-interface FormData {
-  simulationName: string
-  maxSteps: number
-  timeout: number
-  task: string
-  orchestratorName: string
-  instruction: string
-  metrics: Record<string, Metric>
-  metricsTemplateId: string
-  agents: {
-    name: string
-    role: string
-    backstory: string
-    tools: string[]
-  }[]
-  simulationType: string
-  scheduleDate: Date | null
-  mood: number[]
-}
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
 
 const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
   const router = useRouter()
+  const { toast } = useToast()
   const unwrappedParams = React.use(params)
-  const [_selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [selectedDate, setSelectedDate] = useState<Date>()
   const searchParams = useSearchParams()
-  const projectName = searchParams.get('projectName') ?? 'Unknown'
-  const [moodSpectrums, setMoodSpectrums] = useState(initialMoodSpectrums)
-  const [moodValues, setMoodValues] = useState(moodSpectrums.map((mood) => mood.defaultValue))
-  const [newMoodLeft, setNewMoodLeft] = useState('')
-  const [newMoodRight, setNewMoodRight] = useState('')
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isGenerativeMetricsEnabled, setIsGenerativeMetricsEnabled] = useState(true)
-  const [isGenerativeAlertsEnabled, setIsGenerativeAlertsEnabled] = useState(true)
-  const [isHumanInTheLoopEnabled, setIsHumanInTheLoopEnabled] = useState(true)
-  const [expandedAgentsTools, setExpandedAgentsTools] = useState<boolean[]>([true])
-  const [expandedAgentsMood, setExpandedAgentsMood] = useState<boolean[]>([true])
-  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
+  const projectName = searchParams.get('projectName') ?? 'Unknown Project'
 
-  const toggleExpandAgentsTools = (index: number) => {
-    const newExpandedAgentsTools = [...expandedAgentsTools]
-    newExpandedAgentsTools[index] = !newExpandedAgentsTools[index]
-    setExpandedAgentsTools(newExpandedAgentsTools)
-  }
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState('general')
 
-  const toggleExpandAgentsMood = (index: number) => {
-    const newExpandedAgentsMood = [...expandedAgentsMood]
-    newExpandedAgentsMood[index] = !newExpandedAgentsMood[index]
-    setExpandedAgentsMood(newExpandedAgentsMood)
-  }
-
-  const toggleHumanInTheLoop = () => {
-    setIsHumanInTheLoopEnabled(!isHumanInTheLoopEnabled)
-  }
-
-  const toggleGenerativeMetrics = () => {
-    setIsGenerativeMetricsEnabled(!isGenerativeMetricsEnabled)
-  }
-
-  const toggleGenerativeAlerts = () => {
-    setIsGenerativeAlertsEnabled(!isGenerativeAlertsEnabled)
-  }
-
-  const handleMoodChange = (index: number, value: number) => {
-    const newMoodValues = [...moodValues]
-    newMoodValues[index] = value
-    setMoodValues(newMoodValues)
-  }
-
-  const handleAddMood = () => {
-    if (newMoodLeft && newMoodRight) {
-      const newMood = { labelLeft: newMoodLeft, labelRight: newMoodRight, defaultValue: 50 }
-      setMoodSpectrums([...moodSpectrums, newMood])
-      setMoodValues([...moodValues, 50]) // Default value for new mood
-      setNewMoodLeft('')
-      setNewMoodRight('')
-      setIsDialogOpen(false)
-    }
-  }
-
-  const handleBackToProject = () => {
-    router.push(`/projects/${unwrappedParams.pid}`)
-  }
-
-  const [formData, setFormData] = useState<FormData>({
-    simulationName: '',
-    maxSteps: 150,
-    timeout: 600,
-    task: '',
-    orchestratorName: '',
-    instruction: '',
-    metrics: {},
-    metricsTemplateId: '',
-    agents: [],
-    simulationType: 'default',
-    scheduleDate: null,
-    mood: [50],
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<SimulationFormData>({
+    resolver: zodResolver(simulationFormSchema),
+    defaultValues: {
+      simulationName: '',
+      maxSteps: 150,
+      timeout: 600,
+      task: '',
+      instruction: '',
+      metricsTemplateId: '',
+      agents: [{ name: '', role: '', backstory: '' }],
+    },
   })
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'agents',
+  })
 
-  const _handleToolChange = (agentIndex: number, tool: string, selected: boolean) => {
-    const agents = [...formData.agents]
-    if (selected) {
-      agents[agentIndex].tools = [...agents[agentIndex].tools, tool]
-    } else {
-      agents[agentIndex].tools = agents[agentIndex].tools.filter((t) => t !== tool)
-    }
-    setFormData({ ...formData, agents })
-  }
-
-  const handleAgentChange = (
-    index: number,
-    field: 'name' | 'role' | 'backstory',
-    value: string
-  ) => {
-    const agents = [...formData.agents]
-    agents[index][field] = value
-    setFormData({ ...formData, agents })
-  }
-
-  const addAgent = () =>
-    setFormData({
-      ...formData,
-      agents: [...formData.agents, { name: '', role: '', backstory: '', tools: [] }],
-    })
-
-  const removeAgent = (index: number) =>
-    setFormData({ ...formData, agents: formData.agents.filter((_, i) => i !== index) })
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setSelectedFile(file)
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      try {
-        const jsonData = JSON.parse(event.target?.result as string)
-
-        // Update the form data based on the JSON data
-        setFormData({
-          simulationName: jsonData.name || '',
-          maxSteps: jsonData.max_steps || 150,
-          timeout: jsonData.timeout_seconds || 600,
-          task: jsonData.task || '',
-          orchestratorName: jsonData.orchestrator?.name || '',
-          instruction: jsonData.description || '',
-          metrics: jsonData.metrics || {},
-          metricsTemplateId: jsonData.metrics?.template_id || '',
-          agents:
-            jsonData.agents?.map((agent: any) => ({
-              name: agent.name || '',
-              role: agent.role || '',
-              backstory: agent.backstory || '',
-              tools: [], // Initialize empty tools array as it's not in the JSON
-            })) || [],
-          simulationType: 'default',
-          scheduleDate: null,
-          mood: [50],
-        })
-
-        // Set additional state variables
-        setIsHumanInTheLoopEnabled(true) // Default to true as it's not in the JSON
-        setIsGenerativeMetricsEnabled(!!jsonData.metrics) // Enable if metrics are present
-        setIsGenerativeAlertsEnabled(true) // Default to true as it's not in the JSON
-
-        // If there are agents, initialize their expanded states
-        if (jsonData.agents?.length) {
-          setExpandedAgentsTools(new Array(jsonData.agents.length).fill(true))
-          setExpandedAgentsMood(new Array(jsonData.agents.length).fill(true))
-        }
-      } catch (error) {
-        console.error('Error parsing JSON:', error)
-        alert('Invalid file format')
-      }
-    }
-    reader.readAsText(file)
-  }
-
-  const handleSubmit = async () => {
     try {
-      const filteredData = {
-        name: formData.simulationName, // "name" field
-        max_steps: formData.maxSteps, // "max_steps" field
-        timeout: formData.timeout, // "timeout" field
-        task: formData.task, // "task" field
-        orchestrator: {
-          name: formData.orchestratorName, // "orchestrator.name" field
-          instruction: formData.instruction, // "orchestrator.instruction" field
-          mailbox: { max_size: 400 }, // Hardcoded mailbox value
-          llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model value
-        },
-        agents: formData.agents.map((agent) => ({
-          name: agent.name, // "agent.name" field
-          role: agent.role, // "agent.role" field
-          backstory: agent.backstory, // "agent.backstory" field
-          llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model value
-          mailbox: { max_size: 100 }, // Hardcoded mailbox value for each agent
-        })),
-        evaluator: {
-          name: 'EVALUATOR', // Hardcoded evaluator name
-          mailbox: { max_size: 400 }, // Hardcoded mailbox value for evaluator
-          llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model for evaluator
-        },
-      }
-      const response = await fetch(`/api/simulations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filteredData),
-      })
-      if (!response.ok) throw new Error('Failed to create simulation')
+      const text = await file.text()
+      const jsonData = JSON.parse(text)
 
-      setIsConfirmationOpen(false)
-      router.push(`/projects/${unwrappedParams.pid}/simulations`)
-      router.refresh()
-    } catch (err) {
-      console.error(err)
-      alert('Failed to create simulation')
-    }
-  }
+      // Populate form with uploaded data
+      setValue('simulationName', jsonData.name || '')
+      setValue('maxSteps', jsonData.max_steps || 150)
+      setValue('timeout', jsonData.timeout_seconds || 600)
+      setValue('task', jsonData.task || '')
+      setValue('instruction', jsonData.description || '')
+      setValue('metricsTemplateId', jsonData.metrics?.template_id || '')
 
-  const handleCreateSimulation = async () => {
-    try {
-      console.log('Creating simulation with data:', formData)
-
-      const response = await fetch(`/api/projects/${unwrappedParams.pid}/simulations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.simulationName,
-          max_steps: formData.maxSteps,
-          timeout_seconds: formData.timeout,
-          description: formData.instruction,
-          task: formData.task,
-          metrics: {
-            template_id: formData.metricsTemplateId,
-          },
-          evaluator: {
-            name: 'EVALUATOR',
-            mailbox: {
-              max_size: 400,
-            },
-            llm: {
-              model: 'gpt-4.5-preview',
-            },
-          },
-          reporter: {
-            name: 'REPORTER',
-            mailbox: {
-              max_size: 400,
-            },
-            llm: {
-              model: 'gpt-4.5-preview',
-            },
-          },
-          planner: {
-            name: 'PLANNER',
-            mailbox: {
-              max_size: 400,
-            },
-            llm: {
-              model: 'o3-mini',
-            },
-          },
-          orchestrator: {
-            name: 'ORCHESTRATOR',
-            mailbox: {
-              max_size: 400,
-            },
-            llm: {
-              model: 'gpt-4.5-preview',
-            },
-          },
-          agents: formData.agents.map((agent) => ({
-            name: agent.name,
-            description: agent.role,
-            role: agent.role,
-            backstory: agent.backstory,
-            llm: {
-              model: 'gpt-4.5-preview',
-            },
-            mailbox: {
-              max_size: 100,
-            },
-          })),
-        }),
-      })
-
-      const responseData = await response.json()
-
-      if (!response.ok) {
-        console.error('Failed to create simulation:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: responseData,
-        })
-        throw new Error(
-          responseData.details
-            ? `Failed to create simulation: ${responseData.error}\nDetails: ${JSON.stringify(responseData.details, null, 2)}`
-            : responseData.error || 'Failed to create simulation'
+      if (jsonData.agents?.length) {
+        setValue(
+          'agents',
+          jsonData.agents.map((agent: any) => ({
+            name: agent.name || '',
+            role: agent.role || '',
+            backstory: agent.backstory || '',
+          }))
         )
       }
 
-      console.log('Simulation created successfully:', responseData)
-
-      // Redirect to simulations page after successful creation
-      router.push(`/projects/${unwrappedParams.pid}/simulations`)
+      toast({
+        title: 'Configuration loaded',
+        description: 'Successfully imported simulation configuration',
+      })
     } catch (error) {
-      console.error('Error creating simulation:', error)
-      // Show error to user
-      alert(error instanceof Error ? error.message : 'Failed to create simulation')
+      console.error('Error parsing file:', error)
+      toast({
+        title: 'Error',
+        description: 'Invalid configuration file format',
+        variant: 'destructive',
+      })
     }
   }
 
-  const handleMetricChange = (metricKey: string, field: keyof Metric, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      metrics: {
-        ...prev.metrics,
-        [metricKey]: {
-          ...prev.metrics[metricKey],
-          [field]: value,
-        },
-      },
-    }))
+  const onSubmit = async (data: SimulationFormData) => {
+    setIsSubmitting(true)
+    try {
+      const payload = transformFormToApiPayload(data, unwrappedParams.pid)
+
+      const response = await fetch(`/api/projects/${unwrappedParams.pid}/simulations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create simulation')
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Simulation created successfully',
+        duration: 3000,
+      })
+
+      router.push(`/projects/${unwrappedParams.pid}/simulations`)
+    } catch (error) {
+      console.error('Error creating simulation:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create simulation',
+        variant: 'destructive',
+        duration: 5000,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Progress indicator based on filled fields
+  const formProgress = () => {
+    const values = watch()
+    const requiredFields = [
+      values.simulationName,
+      values.task,
+      values.instruction,
+      values.agents?.length > 0 && values.agents.every((a) => a.name && a.role && a.backstory),
+    ]
+    const filledFields = requiredFields.filter(Boolean).length
+    return (filledFields / requiredFields.length) * 100
   }
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-col min-h-screen w-full">
-        <div className="sticky top-0 z-10 w-full bg-background px-6 py-4 border-b border-zinc-800">
+    <div className="flex flex-col min-h-screen">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="px-6 py-4">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -407,21 +166,7 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="flex items-center gap-1">
-                    <BreadcrumbEllipsis className="h-4 w-4" />
-                    <span className="sr-only">Toggle menu</span>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem>Documentation</DropdownMenuItem>
-                    <DropdownMenuItem>Examples</DropdownMenuItem>
-                    <DropdownMenuItem>Usage</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink onClick={handleBackToProject} className="cursor-pointer">
+                <BreadcrumbLink href={`/projects/${unwrappedParams.pid}`}>
                   {projectName}
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -433,434 +178,250 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
           </Breadcrumb>
         </div>
 
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6">Create New Simulation</h1>
-
-            {/* File Upload */}
-            <div className="mb-4">
-              <Label>Upload Configuration File</Label>
-              <Input type="file" onChange={handleFileUpload} className="w-800 mt-2" />
-            </div>
-
-            {/* General Settings */}
-            <h2 className="text-2xl font-semibold mb-4">General Settings</h2>
-            <div className="mb-4">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Label>Max Steps</Label>
-                </TooltipTrigger>
-                <TooltipContent>Set the maximum steps for the simulation.</TooltipContent>
-              </Tooltip>
-              <Input
-                type="number"
-                className="w-24 mt-2"
-                name="maxSteps"
-                value={formData.maxSteps}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="mb-4">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Label>Timeout (seconds)</Label>
-                </TooltipTrigger>
-                <TooltipContent>Set the timeout duration in seconds.</TooltipContent>
-              </Tooltip>
-              <Input
-                type="number"
-                className="w-24 mt-2"
-                name="timeout"
-                value={formData.timeout}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="mb-4 mt-3">
-              <Label className="mr-2">Schedule</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-[240px] justify-start text-left font-normal',
-                      !selectedDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <Separator className="my-8" />
-
-            {/* Simulation Section */}
-            <h2 className="text-2xl font-semibold mb-4">Simulation</h2>
-            <div className="mb-4">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Label>Simulation Name</Label>
-                </TooltipTrigger>
-                <TooltipContent>Enter a unique name for your simulation.</TooltipContent>
-              </Tooltip>
-              <Input
-                className="w-1/2 mt-2"
-                name="simulationName"
-                value={formData.simulationName}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="mb-4">
-              <Label>Type</Label>
-              <RadioGroup
-                className="mt-2"
-                defaultValue={formData.simulationType}
-                onValueChange={(type) => setFormData({ ...formData, simulationType: type })}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="default" id="r1" />
-                  <Label htmlFor="r1">Default</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="advanced" id="r2" />
-                  <Label htmlFor="r2">Advanced</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <div className="flex items-center space-x-4 mb-4">
-              <Switch
-                id="hitl"
-                checked={isHumanInTheLoopEnabled}
-                onCheckedChange={toggleHumanInTheLoop}
-              />
-              <Label htmlFor="hitl">Enable Human-in-the-loop </Label>
-            </div>
-
-            <Separator className="my-8" />
-
-            {/* Observability */}
-            <h2 className="text-2xl font-semibold mb-4">Observability</h2>
-            {/* Predefined Metrics Section */}
-            <h2 className="text-xl font-semibold mb-4">Metrics</h2>
-            <div className="flex items-center space-x-4 mb-4">
-              <Switch
-                id="generative-metrics"
-                checked={isGenerativeMetricsEnabled}
-                onCheckedChange={toggleGenerativeMetrics}
-              />
-              <Label htmlFor="generative-metrics">Enable Generative Metrics</Label>
-            </div>
-
-            {isGenerativeMetricsEnabled && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-500">
-                  Generative Metrics are enabled. The system will automatically generate metrics
-                  based on the simulation&apos;s settings.
-                </p>
-              </div>
-            )}
-
-            <div className="mb-4">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Label>Metrics Template ID</Label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Enter the UUID of the metrics template to use for this simulation.
-                </TooltipContent>
-              </Tooltip>
-              <Input
-                className="w-1/2 mt-2"
-                name="metricsTemplateId"
-                value={formData.metricsTemplateId}
-                onChange={handleInputChange}
-                placeholder="Enter metrics template UUID"
-              />
-            </div>
-
-            <h2 className="text-xl font-semibold mb-4">Alerts</h2>
-            <div className="flex items-center space-x-4 mb-4">
-              <Switch
-                id="generative-alerts"
-                checked={isGenerativeAlertsEnabled}
-                onCheckedChange={toggleGenerativeAlerts}
-              />
-              <Label htmlFor="generative-metrics">Enable Generative Alerts</Label>
-            </div>
-
-            {isGenerativeAlertsEnabled && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-500">
-                  Generative Alerts are enabled. The system will automatically generate alerts based
-                  on the simulation&apos;s settings.
-                </p>
-              </div>
-            )}
-
-            <Separator className="my-8" />
-
-            {/* Orchestrator */}
-            <h2 className="text-2xl font-semibold mb-4">Orchestrator</h2>
-            <div className="mb-4">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Label>Orchestrator Name</Label>
-                </TooltipTrigger>
-                <TooltipContent>Enter the name of the orchestrator.</TooltipContent>
-              </Tooltip>
-              <Input
-                className="w-1/2 mt-2"
-                name="orchestratorName"
-                value={formData.orchestratorName}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="mb-4">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Label>Orchestrator Instruction</Label>
-                </TooltipTrigger>
-                <TooltipContent>Enter instructions for the orchestrator.</TooltipContent>
-              </Tooltip>
-              <Textarea
-                className="mt-2 w-full"
-                name="instruction"
-                value={formData.instruction}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <Separator className="my-8" />
-
-            {/* Agents */}
-            <h2 className="text-2xl font-semibold mb-4">Agents</h2>
-            {formData.agents.length > 0 &&
-              formData.agents.map((agent, index) => (
-                <div key={index} className="mb-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <Input
-                      className="w-1/2 mt-2"
-                      placeholder="Agent Name"
-                      value={agent.name}
-                      onChange={(e) => handleAgentChange(index, 'name', e.target.value)}
-                    />
-                    <Button variant="destructive" onClick={() => removeAgent(index)}>
-                      Remove
-                    </Button>
-                  </div>
-                  <Textarea
-                    className="w-full mt-2"
-                    placeholder="Agent Role"
-                    rows={1}
-                    value={agent.role}
-                    onChange={(e) => handleAgentChange(index, 'role', e.target.value)}
-                  />
-                  <Textarea
-                    className="w-full mt-2"
-                    placeholder="Agent Backstory"
-                    value={agent.backstory}
-                    rows={4}
-                    onChange={(e) => handleAgentChange(index, 'backstory', e.target.value)}
-                  />
-                  <div
-                    className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
-                    onClick={() => toggleExpandAgentsTools(index)}
-                  >
-                    Tools for {agent.name} {expandedAgentsTools[index] ? '▲' : '▼'}
-                  </div>
-
-                  {expandedAgentsTools[index] && (
-                    <div className="mt-2">
-                      <ToolsTable />
-                    </div>
-                  )}
-                  <div
-                    className="cursor-pointer mt-4 mb-2 text-lg font-semibold"
-                    onClick={() => toggleExpandAgentsMood(index)}
-                  >
-                    Mood for {agent.name} {expandedAgentsMood[index] ? '▲' : '▼'}
-                  </div>
-                  {expandedAgentsMood[index] && (
-                    <div className="container mx-auto p-8">
-                      {moodSpectrums.map((mood, index) => (
-                        <MoodSlider
-                          key={index}
-                          labelLeft={mood.labelLeft}
-                          labelRight={mood.labelRight}
-                          defaultValue={moodValues[index]}
-                          onChange={(value: number) => handleMoodChange(index, value)}
-                        />
-                      ))}
-                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            onClick={() => setIsDialogOpen(true)}
-                            className="mt-5 ml-6"
-                          >
-                            + Add New Mood
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add New Mood Spectrum</DialogTitle>
-                          </DialogHeader>
-                          <div className="flex items-center space-x-4 mt-4">
-                            <Input
-                              placeholder="Left Mood Label"
-                              value={newMoodLeft}
-                              onChange={(e) => setNewMoodLeft(e.target.value)}
-                            />
-                            <Input
-                              placeholder="Right Mood Label"
-                              value={newMoodRight}
-                              onChange={(e) => setNewMoodRight(e.target.value)}
-                            />
-                          </div>
-                          <DialogFooter>
-                            <Button onClick={handleAddMood} variant="default">
-                              Add Mood
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  )}
-                </div>
-              ))}
-            <Button onClick={addAgent} variant="secondary" className="mt-2">
-              + Add Agent
-            </Button>
-
-            {/* Buttons at the bottom */}
-            <div className="flex justify-end space-x-4 mt-8">
-              <Button onClick={handleBackToProject} variant="secondary">
-                Cancel
-              </Button>
-              <Button onClick={handleCreateSimulation} variant="default">
-                Create
-              </Button>
-            </div>
-            <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>
-              <DialogContent className="max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Confirm Simulation Details</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 p-4 rounded-lg text-white">
-                    <div className="col-span-2">
-                      <h3 className="font-semibold text-lg">Simulation Details</h3>
-                      <Separator className="my-2 border-gray-600" />
-                    </div>
-
-                    <div>
-                      <Label className="font-semibold text-gray-400">Simulation Name:</Label>
-                      <p className="text-gray-200">{formData.simulationName}</p>
-                    </div>
-
-                    <div>
-                      <Label className="font-semibold text-gray-400">Max Steps:</Label>
-                      <p className="text-gray-200">{formData.maxSteps}</p>
-                    </div>
-
-                    <div>
-                      <Label className="font-semibold text-gray-400">Timeout:</Label>
-                      <p className="text-gray-200">{formData.timeout} seconds</p>
-                    </div>
-
-                    <div>
-                      <Label className="font-semibold text-gray-400">Task:</Label>
-                      <p className="text-gray-200">{formData.task}</p>
-                    </div>
-
-                    <div>
-                      <Label className="font-semibold text-gray-400">Orchestrator Name:</Label>
-                      <p className="text-gray-200">{formData.orchestratorName}</p>
-                    </div>
-                  </div>
-
-                  <Separator className="my-4" />
-                  <h3 className="font-semibold text-lg">Metrics</h3>
-
-                  <div className="max-h-[50vh] overflow-y-auto space-y-4">
-                    {formData.metrics ? (
-                      Object.keys(formData.metrics).map((metricKey, index) => (
-                        <div key={index} className="border border-gray-300 rounded-lg p-2">
-                          <details>
-                            <summary className="cursor-pointer text-sm font-medium">
-                              {formData.metrics[metricKey].name}
-                            </summary>
-                            <div className="space-y-2 mt-2">
-                              <div>
-                                <Label>Metric Name</Label>
-                                <Input
-                                  value={formData.metrics[metricKey].name}
-                                  onChange={(e) =>
-                                    handleMetricChange(metricKey, 'name', e.target.value)
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Label>Description</Label>
-                                <Textarea
-                                  value={formData.metrics[metricKey].description}
-                                  onChange={(e) =>
-                                    handleMetricChange(metricKey, 'description', e.target.value)
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Label>Type</Label>
-                                <Input
-                                  value={formData.metrics[metricKey].type}
-                                  onChange={(e) =>
-                                    handleMetricChange(metricKey, 'type', e.target.value)
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Label>Unit</Label>
-                                <Input
-                                  value={formData.metrics[metricKey].unit}
-                                  onChange={(e) =>
-                                    handleMetricChange(metricKey, 'unit', e.target.value)
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </details>
-                        </div>
-                      ))
-                    ) : (
-                      <p>No metrics available</p>
-                    )}
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button onClick={() => setIsConfirmationOpen(false)} variant="secondary">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSubmit} variant="default">
-                    Confirm & Run
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+        {/* Progress bar */}
+        <div className="h-1 bg-muted">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${formProgress()}%` }}
+          />
         </div>
       </div>
-    </TooltipProvider>
+
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">Create New Simulation</h1>
+            <p className="text-muted-foreground mt-2">
+              Configure and launch a new AI agent simulation for {projectName}
+            </p>
+          </div>
+
+          {/* File Upload Card */}
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="config-upload" className="text-base">
+                    Import Configuration
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Upload a JSON configuration file to pre-fill the form
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" className="relative">
+                  <input
+                    id="config-upload"
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Config
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="general">General Settings</TabsTrigger>
+                <TabsTrigger value="agents">Agents</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="space-y-6">
+                <SimulationFormSection
+                  title="Basic Information"
+                  description="Define the core parameters of your simulation"
+                >
+                  <SimulationFormField
+                    label="Simulation Name"
+                    required
+                    error={errors.simulationName?.message}
+                  >
+                    <Input
+                      {...register('simulationName')}
+                      placeholder="e.g., Climate Policy Negotiation"
+                      className={cn(errors.simulationName && 'border-destructive')}
+                    />
+                  </SimulationFormField>
+
+                  <SimulationFormField
+                    label="Task Description"
+                    required
+                    error={errors.task?.message}
+                    description="What should the agents accomplish in this simulation?"
+                  >
+                    <Textarea
+                      {...register('task')}
+                      placeholder="e.g., Negotiate a comprehensive climate policy that balances economic growth with environmental protection"
+                      rows={3}
+                      className={cn(errors.task && 'border-destructive')}
+                    />
+                  </SimulationFormField>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <SimulationFormField
+                      label="Maximum Steps"
+                      error={errors.maxSteps?.message}
+                      description="Maximum iterations before simulation ends"
+                    >
+                      <Controller
+                        name="maxSteps"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            className={cn(errors.maxSteps && 'border-destructive')}
+                          />
+                        )}
+                      />
+                    </SimulationFormField>
+
+                    <SimulationFormField
+                      label="Timeout (seconds)"
+                      error={errors.timeout?.message}
+                      description="Maximum runtime before timeout"
+                    >
+                      <Controller
+                        name="timeout"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            className={cn(errors.timeout && 'border-destructive')}
+                          />
+                        )}
+                      />
+                    </SimulationFormField>
+                  </div>
+                </SimulationFormSection>
+                <SimulationFormSection
+                  title="Orchestrator Configuration"
+                  description="Define how the simulation should be managed and coordinated"
+                >
+                  <SimulationFormField
+                    label="Orchestrator Instructions"
+                    required
+                    error={errors.instruction?.message}
+                    description="Provide detailed instructions for how the orchestrator should manage the simulation"
+                  >
+                    <Textarea
+                      {...register('instruction')}
+                      placeholder="e.g., Facilitate a structured negotiation between agents, ensuring all perspectives are heard. Guide the discussion towards consensus while managing conflicts constructively."
+                      rows={5}
+                      className={cn(errors.instruction && 'border-destructive')}
+                    />
+                  </SimulationFormField>
+                </SimulationFormSection>
+              </TabsContent>
+
+              <TabsContent value="agents" className="space-y-6">
+                <SimulationFormSection
+                  title="Agent Configuration"
+                  description="Define the agents that will participate in the simulation"
+                  icon={<Plus className="h-5 w-5" />}
+                >
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                      <AgentFormCard
+                        key={field.id}
+                        index={index}
+                        register={register}
+                        errors={errors}
+                        onRemove={() => remove(index)}
+                        canRemove={fields.length > 1}
+                      />
+                    ))}
+
+                    {fields.length < 10 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => append({ name: '', role: '', backstory: '' })}
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Agent
+                      </Button>
+                    )}
+                  </div>
+                </SimulationFormSection>
+              </TabsContent>
+
+              <TabsContent value="advanced" className="space-y-6">
+                <SimulationFormSection
+                  title="Metrics Configuration"
+                  description="Configure how simulation performance will be measured"
+                >
+                  <SimulationFormField
+                    label="Metrics Template ID"
+                    error={errors.metricsTemplateId?.message}
+                    description="Optional: Use a predefined metrics template (UUID format)"
+                  >
+                    <Input
+                      {...register('metricsTemplateId')}
+                      placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000"
+                    />
+                  </SimulationFormField>
+                </SimulationFormSection>
+
+                <Card className="p-6 bg-muted/50">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Advanced Features Coming Soon</p>
+                      <p className="text-sm text-muted-foreground">
+                        Additional configuration options like custom LLM models, tools integration,
+                        and scheduling will be available in future updates.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between pt-6 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/projects/${unwrappedParams.pid}`)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+
+              <div className="flex items-center gap-2">
+                {formProgress() === 100 && (
+                  <div className="flex items-center gap-1 text-sm text-green-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Ready to create
+                  </div>
+                )}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Simulation'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   )
 }
 

@@ -133,6 +133,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@hookform/resolvers@npm:^3.9.1":
+  version: 3.10.0
+  resolution: "@hookform/resolvers@npm:3.10.0"
+  peerDependencies:
+    react-hook-form: ^7.0.0
+  checksum: 10c0/7ee44533b4cdc28c4fa2a94894c735411e5a1f830f4a617c580533321a9b901df0cc8c1e2fad81ad8d55154ebc5cb844cf9c116a3148ffae2bc48758c33cbb8e
+  languageName: node
+  linkType: hard
+
 "@humanwhocodes/config-array@npm:^0.13.0":
   version: 0.13.0
   resolution: "@humanwhocodes/config-array@npm:0.13.0"
@@ -2618,6 +2627,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "autobox-frontend@workspace:."
   dependencies:
+    "@hookform/resolvers": "npm:^3.9.1"
     "@radix-ui/react-alert-dialog": "npm:^1.1.2"
     "@radix-ui/react-checkbox": "npm:^1.1.2"
     "@radix-ui/react-dialog": "npm:^1.1.2"
@@ -2664,6 +2674,7 @@ __metadata:
     react: "npm:^18.3.1"
     react-day-picker: "npm:8.10.1"
     react-dom: "npm:^18.3.1"
+    react-hook-form: "npm:^7.62.0"
     recharts: "npm:^2.15.3"
     tailwind-merge: "npm:^3.3.0"
     tailwindcss: "npm:^3.4.13"
@@ -6490,6 +6501,15 @@ __metadata:
   peerDependencies:
     react: ^18.3.1
   checksum: 10c0/a752496c1941f958f2e8ac56239172296fcddce1365ce45222d04a1947e0cc5547df3e8447f855a81d6d39f008d7c32eab43db3712077f09e3f67c4874973e85
+  languageName: node
+  linkType: hard
+
+"react-hook-form@npm:^7.62.0":
+  version: 7.62.0
+  resolution: "react-hook-form@npm:7.62.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17 || ^18 || ^19
+  checksum: 10c0/451a25a2ddf07be14f690d2ad3f2f970e0b933fd059ef141c6da9e19d0566d739e9d5cc9c482e3533f3fd01d97e658b896a01ce45a1259ad7b0d4638ba0112c6
   languageName: node
   linkType: hard
 
