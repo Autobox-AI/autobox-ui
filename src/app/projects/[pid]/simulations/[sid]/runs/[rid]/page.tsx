@@ -903,6 +903,8 @@ export default function RunTracesPage() {
         const data = await response.json()
         const { traces: newTraces, done } = data
 
+        console.log(`Polling counter=${counter}: received ${newTraces.length} traces, done=${done}`)
+
         // Add new traces to the set (avoiding duplicates)
         newTraces.forEach((trace: Trace) => {
           const traceKey = `${trace.from}-${trace.to}-${trace.created_at}`
@@ -914,6 +916,11 @@ export default function RunTracesPage() {
             })
           }
         })
+
+        // Set loading to false after first traces are received
+        if (newTraces.length > 0) {
+          setTracesLoading(false)
+        }
 
         // If done or counter reaches 1, stop polling
         if (done || counter <= 1) {
@@ -1181,6 +1188,8 @@ export default function RunTracesPage() {
             if (runData.status === 'in progress') {
               setIsStreaming(true)
               setTracesLoading(true)
+              // Clear collected traces when starting fresh
+              collectedTracesRef.current.clear()
 
               // Start polling
               let counter = 10
@@ -1199,7 +1208,7 @@ export default function RunTracesPage() {
                   clearInterval(pollingIntervalRef.current!)
                   pollingIntervalRef.current = null
                 }
-              }, 2000) // Poll every 2 seconds
+              }, 1000) // Poll every 1 second for smoother streaming
             } else {
               // For completed runs, just fetch all traces
               fetchInitialTraces()

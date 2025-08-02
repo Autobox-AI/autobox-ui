@@ -9,12 +9,23 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
 
     const { searchParams } = new URL(request.url)
     const stream = searchParams.get('stream')
+    const counter = searchParams.get('counter')
 
     const apiUrl = process.env.API_URL || 'http://localhost:8000'
-    const backendUrl = `${apiUrl}/runs/${rid}/traces${stream ? '?stream=true' : ''}`
+    let backendUrl = `${apiUrl}/runs/${rid}/traces`
 
-    console.log('Traces API - Backend URL:', backendUrl)
-    console.log('Traces API - Stream:', stream)
+    // Build query parameters
+    const queryParams = []
+    if (stream) queryParams.push('stream=true')
+    if (counter) queryParams.push(`counter=${counter}`)
+
+    if (queryParams.length > 0) {
+      backendUrl += '?' + queryParams.join('&')
+    }
+
+    // console.log('Traces API - Backend URL:', backendUrl)
+    // console.log('Traces API - Stream:', stream)
+    // console.log('Traces API - Counter:', counter)
 
     if (stream) {
       // Handle streaming response
