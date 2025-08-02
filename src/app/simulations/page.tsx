@@ -10,7 +10,7 @@ import {
 import { Simulation } from '@/schemas'
 
 async function fetchAllSimulations(organizationId: string): Promise<{
-  simulations: (Simulation & { project_name: string })[]
+  simulations: (Simulation & { project_name: string; project_id: string })[]
 }> {
   try {
     const apiUrl = process.env.API_URL
