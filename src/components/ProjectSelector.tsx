@@ -3,13 +3,7 @@ import { Project } from '@/schemas/project'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 
 export function ProjectSelector() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -38,7 +32,7 @@ export function ProjectSelector() {
   }
 
   const handleSelectProject = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId)
+    const project = projects.find((p) => p.id === projectId)
     if (project) {
       const projectName = encodeURIComponent(project.name)
       router.push(`/projects/${project.id}/new-simulation?projectName=${projectName}`)
@@ -74,13 +68,11 @@ export function ProjectSelector() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
       <div className="w-full max-w-md bg-zinc-900 p-8 rounded-lg shadow-lg border border-zinc-800">
         <h1 className="text-2xl font-bold mb-6 text-white">Select Project for New Simulation</h1>
-        
+
         {projects.length === 0 ? (
           <div className="text-center">
             <p className="text-zinc-300 mb-4">No projects found. Create a project first.</p>
-            <Button onClick={() => router.push('/projects/new')}>
-              Create New Project
-            </Button>
+            <Button onClick={() => router.push('/projects/new')}>Create New Project</Button>
           </div>
         ) : (
           <div className="space-y-6">
@@ -92,8 +84,8 @@ export function ProjectSelector() {
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
                   {projects.map((project) => (
-                    <SelectItem 
-                      key={project.id} 
+                    <SelectItem
+                      key={project.id}
                       value={project.id}
                       className="text-white hover:bg-zinc-800 focus:bg-zinc-800"
                     >
@@ -101,8 +93,8 @@ export function ProjectSelector() {
                         <span className="font-medium">{project.name}</span>
                         {project.description && (
                           <span className="text-xs text-zinc-400 mt-0.5">
-                            {project.description.length > 50 
-                              ? `${project.description.substring(0, 50)}...` 
+                            {project.description.length > 50
+                              ? `${project.description.substring(0, 50)}...`
                               : project.description}
                           </span>
                         )}
@@ -116,7 +108,7 @@ export function ProjectSelector() {
             {selectedProjectId && (
               <div className="bg-zinc-800/50 p-4 rounded-lg">
                 {(() => {
-                  const selectedProject = projects.find(p => p.id === selectedProjectId)
+                  const selectedProject = projects.find((p) => p.id === selectedProjectId)
                   return selectedProject ? (
                     <>
                       <h3 className="text-sm font-semibold text-zinc-300 mb-2">Project Details</h3>
@@ -126,14 +118,17 @@ export function ProjectSelector() {
                         </p>
                         {selectedProject.description && (
                           <p className="text-zinc-400">
-                            <span className="text-zinc-500">Description:</span> {selectedProject.description}
+                            <span className="text-zinc-500">Description:</span>{' '}
+                            {selectedProject.description}
                           </p>
                         )}
                         <p className="text-zinc-400">
-                          <span className="text-zinc-500">Confidence:</span> {selectedProject.confidence_level}
+                          <span className="text-zinc-500">Confidence:</span>{' '}
+                          {selectedProject.confidence_level}
                         </p>
                         <p className="text-zinc-400">
-                          <span className="text-zinc-500">Simulations:</span> {selectedProject.simulations?.length || 0}
+                          <span className="text-zinc-500">Simulations:</span>{' '}
+                          {selectedProject.simulations?.length || 0}
                         </p>
                       </div>
                     </>
@@ -143,16 +138,10 @@ export function ProjectSelector() {
             )}
 
             <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => router.push('/')}
-              >
+              <Button variant="outline" onClick={() => router.push('/')}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleProceed}
-                disabled={!selectedProjectId}
-              >
+              <Button onClick={handleProceed} disabled={!selectedProjectId}>
                 Continue
               </Button>
             </div>
