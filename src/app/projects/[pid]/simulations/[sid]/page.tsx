@@ -64,7 +64,7 @@ interface SimulationRunsResponse {
 }
 
 async function getProject(projectId: string) {
-  const response = await fetch(`http://localhost:8888/api/projects/${projectId}`, {
+  const response = await fetch(`/api/projects/${projectId}`, {
     next: { revalidate: 60 }, // Cache for 1 minute
   })
 
@@ -89,7 +89,7 @@ async function getSimulation(projectId: string, simulationId: string) {
 
 async function getSimulationRuns(simulationId: string): Promise<SimulationRunsResponse> {
   const response = await fetch(`/api/simulations/${simulationId}/runs`, {
-    next: { revalidate: 10 }, // Cache for 10 seconds
+    next: { revalidate: 60 }, // Cache for 10 seconds
   })
 
   if (!response.ok) {

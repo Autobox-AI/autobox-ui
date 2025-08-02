@@ -277,7 +277,7 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
           llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model for evaluator
         },
       }
-      const response = await fetch(`http://localhost:8000/simulations`, {
+      const response = await fetch(`/api/simulations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(filteredData),

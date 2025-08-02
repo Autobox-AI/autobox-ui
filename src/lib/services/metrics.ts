@@ -29,11 +29,11 @@ export interface Metric {
 
 export async function fetchMetrics(): Promise<Metric[]> {
   try {
-    console.log('Fetching metrics from http://localhost:8000/metrics')
-    const response = await fetch('http://localhost:8000/metrics', {
+    console.log('Fetching metrics from /api/metrics')
+    const response = await fetch('/api/metrics', {
       headers: {
         Accept: 'text/plain',
-        Origin: 'http://localhost:8888',
+        Origin: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8888',
       },
       credentials: 'include',
     })
