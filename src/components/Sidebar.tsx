@@ -91,7 +91,7 @@ const AppSidebar = ({ organizations }: AppSidebarProps) => {
 
   // TODO: Mock logged in user
   const user = {
-    username: 'margostino',
+    username: 'borges',
     isLoggedIn: true,
   }
 

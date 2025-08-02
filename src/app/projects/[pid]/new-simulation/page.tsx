@@ -266,11 +266,6 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
           llm: { model: 'gpt-4o-2024-08-06' }, // Hardcoded LLM model value
           mailbox: { max_size: 100 }, // Hardcoded mailbox value for each agent
         })),
-        metrics_path: '/Users/martin.dagostino/workspace/margostino/autobox/metrics',
-        logging: {
-          log_path: '/Users/martin.dagostino/workspace/margostino/autobox/logs',
-          verbose: true, // Hardcoded verbose logging option
-        },
         evaluator: {
           name: 'EVALUATOR', // Hardcoded evaluator name
           mailbox: { max_size: 400 }, // Hardcoded mailbox value for evaluator
@@ -310,10 +305,6 @@ const NewSimulation = ({ params }: { params: Promise<{ pid: string }> }) => {
           task: formData.task,
           metrics: {
             template_id: formData.metricsTemplateId,
-          },
-          logging: {
-            log_path: '/Users/martin.dagostino/workspace/margostino/autobox/logs',
-            verbose: true,
           },
           evaluator: {
             name: 'EVALUATOR',
