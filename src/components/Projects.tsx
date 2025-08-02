@@ -145,43 +145,29 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
   }
 
   return (
-    <div className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col">
-      <div className="p-6 flex-1">
-        <div className="flex justify-between items-start">
+    <div className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 flex flex-col min-h-[280px]">
+      {/* Header Section with Actions */}
+      <div className="p-6 pb-3">
+        <div className="flex justify-between items-start gap-3">
           <div className="cursor-pointer flex-1 min-w-0" onClick={onClick}>
-            <div className="flex items-center gap-2 mb-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <h2 className="text-xl font-semibold text-white group-hover:text-blue-400 transition-colors truncate pr-2">
-                    {project.name}
-                  </h2>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[300px]">
-                  <div className="space-y-1">
-                    <p className="font-semibold">{project.name}</p>
-                    <p className="text-sm text-zinc-400">
-                      {project.description || 'No description provided'}
-                    </p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-              <div className="flex items-center gap-1 shrink-0">
-                {getConfidenceIcon(project.confidence_level || 'LOW')}
-                <span
-                  className={`text-xs font-medium ${getConfidenceColor(project.confidence_level || 'LOW')}`}
-                >
-                  {project.confidence_level || 'LOW'}
-                </span>
-              </div>
+            {/* Project Name - Full display with wrap */}
+            <h2 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors leading-tight mb-2 break-words">
+              {project.name}
+            </h2>
+            
+            {/* Confidence Badge */}
+            <div className="flex items-center gap-1.5 mb-3">
+              {getConfidenceIcon(project.confidence_level || 'LOW')}
+              <span
+                className={`text-xs font-medium ${getConfidenceColor(project.confidence_level || 'LOW')}`}
+              >
+                {project.confidence_level || 'LOW'}
+              </span>
             </div>
-            <p
-              className="text-sm text-zinc-400 mt-1 line-clamp-2"
-              title={project.description || 'No description provided'}
-            >
-              {project.description || 'No description provided'}
-            </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1 shrink-0">
             <BookmarkButton
               type={BOOKMARK_TYPES.PROJECT}
               itemId={project.id}
@@ -189,11 +175,12 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
               itemDescription={project.description}
               size="sm"
               variant="ghost"
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
             />
             <DropdownMenu open={isDropdownOpen} onOpenChange={handleDropdownOpenChange}>
               <DropdownMenuTrigger asChild>
-                <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0">
-                  <MoreVertical className="h-5 w-5 text-zinc-400" />
+                <button className="p-2 hover:bg-zinc-800 rounded-full shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreVertical className="h-4 w-4 text-zinc-400" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -237,66 +224,62 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
             </DropdownMenu>
           </div>
         </div>
+        
+        {/* Description - Full display */}
+        <p className="text-sm text-zinc-400 leading-relaxed cursor-pointer" onClick={onClick}>
+          {project.description || 'No description provided'}
+        </p>
       </div>
 
-      {/* Project Stats and Footer */}
-      <div className="mt-auto">
-        {/* Project Stats */}
-        <div className="px-6 pb-4 flex items-center justify-between text-sm text-zinc-400">
-          <div className="flex items-center gap-1">
+      {/* Spacer to push stats to bottom */}
+      <div className="flex-1" />
+
+      {/* Stats Section */}
+      <div className="px-6 py-3 bg-zinc-800/30">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-3">
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="flex items-center gap-1 cursor-pointer">
-                  <GitGraph className="h-4 w-4" />
-                  <span>{project.simulations?.length || 0}</span>
+                <span className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-300 cursor-help">
+                  <GitGraph className="h-3.5 w-3.5" />
+                  <span className="font-medium">{project.simulations?.length || 0}</span>
                 </span>
               </TooltipTrigger>
               <TooltipContent side="top">Total simulations</TooltipContent>
             </Tooltip>
-          </div>
-          <div className="flex items-center gap-1">
+            
+            <span className="text-zinc-600">•</span>
+            
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="flex items-center gap-1 cursor-pointer">
-                  <Calendar className="h-4 w-4" />
+                <span className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-300 cursor-help">
+                  <Calendar className="h-3.5 w-3.5" />
                   <span>{formatDate(project.updated_at || project.created_at)}</span>
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="top">Last update</TooltipContent>
+              <TooltipContent side="top">Last updated</TooltipContent>
             </Tooltip>
           </div>
-        </div>
-
-        {/* Project Footer */}
-        <div className="px-6 py-4 bg-zinc-900 border-t border-zinc-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
-                }`}
-              />
-              <span className="text-sm text-zinc-400 capitalize">{project.status || 'active'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <BookmarkButton
-                type={BOOKMARK_TYPES.PROJECT}
-                itemId={project.id}
-                itemName={project.name}
-                itemDescription={project.description}
-                size="sm"
-                variant="ghost"
-              />
-              <button
-                onClick={onClick}
-                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                View Simulations →
-              </button>
-            </div>
+          
+          <div className="flex items-center gap-1.5">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                project.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'
+              }`}
+            />
+            <span className="text-xs text-zinc-400 capitalize">{project.status || 'active'}</span>
           </div>
         </div>
       </div>
+
+      {/* Footer with CTA */}
+      <button
+        onClick={onClick}
+        className="w-full px-6 py-3 bg-zinc-800/50 hover:bg-zinc-800 border-t border-zinc-800 text-sm font-medium text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center gap-2 group/cta"
+      >
+        View Simulations
+        <span className="inline-block transition-transform group-hover/cta:translate-x-0.5">→</span>
+      </button>
     </div>
   )
 })
@@ -308,7 +291,7 @@ const NewProjectCard = React.memo(() => {
 
   return (
     <div
-      className="group relative bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-700 overflow-hidden hover:border-zinc-600 transition-all duration-200 h-[280px] flex flex-col cursor-pointer"
+      className="group relative bg-zinc-900 rounded-lg border-2 border-dashed border-zinc-700 overflow-hidden hover:border-zinc-600 transition-all duration-200 min-h-[280px] flex flex-col cursor-pointer"
       onClick={() => router.push('/projects/new')}
     >
       <div className="flex-1 flex flex-col items-center justify-center p-6">
