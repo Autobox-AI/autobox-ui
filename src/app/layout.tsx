@@ -10,6 +10,7 @@ import { BookmarkProvider } from '@/contexts/BookmarkContext'
 import { cn } from '@/lib/utils'
 import { Organization } from '@/schemas/organization'
 import { cookies } from 'next/headers'
+import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 
 // Optimize font loading with display swap and preload
 const inter = Inter({
@@ -128,6 +129,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
         <Toaster />
         <ServiceWorkerRegistration />
+        <GoogleAnalytics />
       </body>
     </html>
   )
