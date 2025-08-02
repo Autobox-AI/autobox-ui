@@ -23,7 +23,15 @@ export function MockDataBanner() {
           />
         </svg>
         <strong>Mock Mode:</strong> This environment is using mock data. AI agents are not connected
-        to any LLM services.
+        to any LLM services.{' '}
+        <a
+          href="https://margostino.com/posts/the-next-layer-of-intelligence-part-1"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:no-underline"
+        >
+          Read More
+        </a>
       </span>
     </div>
   )
