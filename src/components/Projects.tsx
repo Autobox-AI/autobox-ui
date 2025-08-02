@@ -154,7 +154,7 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
             <h2 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors leading-tight mb-2 break-words">
               {project.name}
             </h2>
-            
+
             {/* Confidence Badge */}
             <div className="flex items-center gap-1.5 mb-3">
               {getConfidenceIcon(project.confidence_level || 'LOW')}
@@ -165,7 +165,7 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
               </span>
             </div>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex items-center gap-1 shrink-0">
             <BookmarkButton
@@ -224,7 +224,7 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
             </DropdownMenu>
           </div>
         </div>
-        
+
         {/* Description - Full display */}
         <p className="text-sm text-zinc-400 leading-relaxed cursor-pointer" onClick={onClick}>
           {project.description || 'No description provided'}
@@ -247,9 +247,9 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
               </TooltipTrigger>
               <TooltipContent side="top">Total simulations</TooltipContent>
             </Tooltip>
-            
+
             <span className="text-zinc-600">•</span>
-            
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-300 cursor-help">
@@ -260,7 +260,7 @@ const ProjectCard = React.memo(({ project, onClick, onDelete }: ProjectCardProps
               <TooltipContent side="top">Last updated</TooltipContent>
             </Tooltip>
           </div>
-          
+
           <div className="flex items-center gap-1.5">
             <div
               className={`w-2 h-2 rounded-full ${
