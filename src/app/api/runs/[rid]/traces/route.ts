@@ -22,7 +22,7 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
         cache: 'no-store',
         signal: AbortSignal.timeout(30000), // 30 second timeout
         headers: {
-          'Accept': 'text/event-stream',
+          Accept: 'text/event-stream',
         },
       })
 
@@ -44,7 +44,7 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+          Connection: 'keep-alive',
           'X-Accel-Buffering': 'no', // Disable Nginx buffering
         },
       })

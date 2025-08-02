@@ -75,6 +75,18 @@ interface MetricsResponse {
   metrics: MetricDefinition[]
 }
 
+interface Run {
+  id: string
+  simulation_id: string
+  status: string
+  progress: number
+  started_at: string
+  finished_at?: string
+  updated_at: string
+  summary?: string
+  observation?: string
+}
+
 // Pre-computed colors array to avoid recreation
 const CHART_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 
@@ -715,6 +727,8 @@ MetricsSkeleton.displayName = 'MetricsSkeleton'
 
 export default function RunTracesPage() {
   const params = useParams()
+  const [run, setRun] = useState<Run | null>(null)
+  const [runLoading, setRunLoading] = useState(true)
   const [traces, setTraces] = useState<Trace[]>([])
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null)
   const { getPrefetchedData } = usePrefetch()
@@ -740,6 +754,10 @@ export default function RunTracesPage() {
   const fetchMetricsRef = useRef<(() => Promise<void>) | null>(null)
   const fetchTracesRef = useRef<(() => Promise<void>) | null>(null)
   const tracesScrollRef = useRef<HTMLDivElement>(null)
+  const [pollingCounter, setPollingCounter] = useState(10)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const collectedTracesRef = useRef<Set<string>>(new Set())
+  const isMocksEnabled = process.env.NEXT_PUBLIC_MOCKS_ENABLED === 'true'
 
   // Update ref when retryCount changes
   useEffect(() => {
@@ -853,6 +871,72 @@ export default function RunTracesPage() {
       return dateB - dateA // DESC order
     })
   }, [])
+
+  // Fetch run details
+  const fetchRunDetails = useCallback(async () => {
+    if (!params.rid) return null
+
+    try {
+      const response = await fetch(`/api/runs/${params.rid}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch run details')
+      }
+      const data = await response.json()
+      return data as Run
+    } catch (error) {
+      console.error('Error fetching run details:', error)
+      return null
+    }
+  }, [params.rid])
+
+  // Polling function for mocks
+  const pollTraces = useCallback(
+    async (counter: number) => {
+      if (!params.rid) return
+
+      try {
+        const response = await fetch(`/api/runs/${params.rid}/traces?counter=${counter}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch traces')
+        }
+
+        const data = await response.json()
+        const { traces: newTraces, done } = data
+
+        // Add new traces to the set (avoiding duplicates)
+        newTraces.forEach((trace: Trace) => {
+          const traceKey = `${trace.from}-${trace.to}-${trace.created_at}`
+          if (!collectedTracesRef.current.has(traceKey)) {
+            collectedTracesRef.current.add(traceKey)
+            setTraces((prev) => {
+              const combined = [...prev, normalizeTrace(trace)]
+              return sortTracesByDate(combined)
+            })
+          }
+        })
+
+        // If done or counter reaches 1, stop polling
+        if (done || counter <= 1) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+            pollingIntervalRef.current = null
+          }
+          setIsStreaming(false)
+          setTracesLoading(false)
+        }
+      } catch (error) {
+        console.error('Error polling traces:', error)
+        setTracesError('Failed to poll traces')
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+          pollingIntervalRef.current = null
+        }
+        setIsStreaming(false)
+        setTracesLoading(false)
+      }
+    },
+    [params.rid, normalizeTrace, sortTracesByDate]
+  )
 
   // Streaming traces setup with progressive loading
   const setupTracesStreaming = useCallback(() => {
@@ -1080,38 +1164,102 @@ export default function RunTracesPage() {
   // Setup hybrid loading on mount - load initial data immediately, then stream updates
   useEffect(() => {
     if (params.rid) {
-      // Load initial traces immediately for fast display
-      fetchInitialTraces()
-
       // Load metrics and agents in parallel
       fetchMetrics()
       fetchAgents()
 
-      // Set up streaming for real-time updates
-      const eventSource = setupTracesStreaming()
+      // If mocks are enabled, use polling for "in progress" runs
+      if (isMocksEnabled) {
+        const setupPolling = async () => {
+          // First fetch run details
+          const runData = await fetchRunDetails()
+          if (runData) {
+            setRun(runData)
+            setRunLoading(false)
 
-      // Set up a fallback timer in case streaming doesn't work
-      const fallbackTimer = setTimeout(() => {
-        setTracesLoading((prevLoading) => {
-          if (prevLoading) {
-            console.log('Streaming timeout, falling back to regular fetch')
-            if (eventSource) {
-              eventSource.close()
+            // If run is "in progress", use polling
+            if (runData.status === 'in progress') {
+              setIsStreaming(true)
+              setTracesLoading(true)
+
+              // Start polling
+              let counter = 10
+              setPollingCounter(counter)
+
+              // Initial poll
+              await pollTraces(counter)
+
+              // Set up interval for subsequent polls
+              pollingIntervalRef.current = setInterval(async () => {
+                counter -= 1
+                setPollingCounter(counter)
+                await pollTraces(counter)
+
+                if (counter <= 1) {
+                  clearInterval(pollingIntervalRef.current!)
+                  pollingIntervalRef.current = null
+                }
+              }, 2000) // Poll every 2 seconds
+            } else {
+              // For completed runs, just fetch all traces
+              fetchInitialTraces()
             }
-            fetchTraces()
+          } else {
+            setRunLoading(false)
+            fetchInitialTraces()
           }
-          return prevLoading
-        })
-      }, 5000) // 5 second timeout
+        }
 
+        setupPolling()
+      } else {
+        // Original streaming behavior
+        fetchInitialTraces()
+        const eventSource = setupTracesStreaming()
+
+        // Set up a fallback timer in case streaming doesn't work
+        const fallbackTimer = setTimeout(() => {
+          setTracesLoading((prevLoading) => {
+            if (prevLoading) {
+              console.log('Streaming timeout, falling back to regular fetch')
+              if (eventSource) {
+                eventSource.close()
+              }
+              fetchTraces()
+            }
+            return prevLoading
+          })
+        }, 5000) // 5 second timeout
+
+        return () => {
+          clearTimeout(fallbackTimer)
+          if (eventSource) {
+            eventSource.close()
+          }
+        }
+      }
+
+      // Cleanup
       return () => {
-        clearTimeout(fallbackTimer)
-        if (eventSource) {
-          eventSource.close()
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+          pollingIntervalRef.current = null
+        }
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close()
         }
       }
     }
-  }, [params.rid, fetchInitialTraces, setupTracesStreaming, fetchMetrics, fetchTraces, fetchAgents])
+  }, [
+    params.rid,
+    fetchInitialTraces,
+    setupTracesStreaming,
+    fetchMetrics,
+    fetchTraces,
+    fetchAgents,
+    fetchRunDetails,
+    pollTraces,
+    isMocksEnabled,
+  ])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1190,13 +1338,12 @@ export default function RunTracesPage() {
     }
 
     return (
-      <div className="relative flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0 h-full">
         {/* Main scrollable content */}
         <div
           ref={tracesScrollRef}
-          className="flex-1 min-h-0 overflow-y-auto pr-4"
+          className="absolute inset-0 overflow-y-auto pr-4"
           onScroll={handleTracesScroll}
-          style={{ height: '100%' }}
         >
           {filteredTraces.map((trace, index) => {
             return (
@@ -1432,7 +1579,7 @@ export default function RunTracesPage() {
                 )}
               </div>
             )}
-            <div className="flex-1 min-h-0 overflow-hidden">{tracesContent}</div>
+            <div className="flex-1 min-h-0">{tracesContent}</div>
           </TabsContent>
 
           <TabsContent value="agents" className="mt-6 flex-1">
@@ -1454,14 +1601,19 @@ export default function RunTracesPage() {
         </Tabs>
       </div>
       {/* --- FIX: Add scroll arrows as fixed elements on the right side of the screen --- */}
-      {activeTab === 'traces' && traces.length > 0 && (
+      {activeTab === 'traces' && filteredTraces.length > 0 && (
         <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={scrollToTop}
-                  className="w-12 h-12 bg-background/90 border border-border rounded-full shadow-xl hover:bg-accent flex items-center justify-center group transition-all duration-200"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    scrollToTop()
+                  }}
+                  className="w-12 h-12 bg-background/90 border border-border rounded-full shadow-xl hover:bg-accent flex items-center justify-center group transition-all duration-200 cursor-pointer"
                 >
                   <svg
                     className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors"
@@ -1487,8 +1639,13 @@ export default function RunTracesPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={scrollToBottom}
-                  className="w-12 h-12 bg-background/90 border border-border rounded-full shadow-xl hover:bg-accent flex items-center justify-center group transition-all duration-200"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    scrollToBottom()
+                  }}
+                  className="w-12 h-12 bg-background/90 border border-border rounded-full shadow-xl hover:bg-accent flex items-center justify-center group transition-all duration-200 cursor-pointer"
                 >
                   <svg
                     className="w-6 h-6 text-muted-foreground group-hover:text-foreground transition-colors"

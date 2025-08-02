@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google'
 import '../styles/globals.css'
 
+import { MockDataBanner } from '@/components/MockDataBanner'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import AppSidebar from '@/components/Sidebar'
 import { SidebarProvider } from '@/components/ui/sidebar'
@@ -114,6 +115,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           inter.className
         )}
       >
+        <MockDataBanner />
         <div className="flex h-screen">
           <BookmarkProvider>
             <SidebarProvider defaultOpen={defaultOpen}>
