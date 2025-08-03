@@ -10,10 +10,8 @@ export default function Loading() {
           ></div>
         </div>
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-zinc-300 mb-2">Loading Simulation</h2>
-          <p className="text-sm text-zinc-500">
-            Please wait while we fetch the simulation details...
-          </p>
+          <h2 className="text-xl font-semibold text-zinc-300 mb-2">Loading Simulations</h2>
+          <p className="text-sm text-zinc-500">Please wait while we fetch the simulations...</p>
         </div>
       </div>
     </div>
