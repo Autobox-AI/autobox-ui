@@ -1,4 +1,5 @@
-import { Inter } from 'next/font/google'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 import '../styles/globals.css'
 
 import { MockDataBanner } from '@/components/MockDataBanner'
@@ -11,15 +12,6 @@ import { cn } from '@/lib/utils'
 import { Organization } from '@/schemas/organization'
 import { cookies } from 'next/headers'
 import { GoogleAnalytics } from '@/components/GoogleAnalytics'
-
-// Optimize font loading with display swap and preload
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  preload: true,
-  fallback: ['system-ui', 'arial'],
-  adjustFontFallback: true,
-})
 
 export const metadata = {
   title: 'Autobox - The playground for your mind',
@@ -113,7 +105,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body
         className={cn(
           'min-h-screen bg-background text-foreground font-sans antialiased',
-          inter.className
+          GeistSans.variable,
+          GeistMono.variable
         )}
       >
         <MockDataBanner />

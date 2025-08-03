@@ -2667,6 +2667,7 @@ __metadata:
     eslint-plugin-promise: "npm:^7.2.1"
     eslint-plugin-react: "npm:^7.37.5"
     eslint-plugin-standard: "npm:^5.0.0"
+    geist: "npm:^1.4.2"
     lucide-react: "npm:^0.511.0"
     next: "npm:^15.3.2"
     postcss: "npm:^8.4.47"
@@ -4553,6 +4554,15 @@ __metadata:
   version: 1.2.3
   resolution: "functions-have-names@npm:1.2.3"
   checksum: 10c0/33e77fd29bddc2d9bb78ab3eb854c165909201f88c75faa8272e35899e2d35a8a642a15e7420ef945e1f64a9670d6aa3ec744106b2aa42be68ca5114025954ca
+  languageName: node
+  linkType: hard
+
+"geist@npm:^1.4.2":
+  version: 1.4.2
+  resolution: "geist@npm:1.4.2"
+  peerDependencies:
+    next: ">=13.2.0"
+  checksum: 10c0/597fc5052fcf7f9ab37334cf1333e67d9e02b176bde5314d328e7fe318dd0a18a322885d999c45cc39bdd2d0b85884ac3ebf8442dabfb4cc8bde256d433696be
   languageName: node
   linkType: hard
 
