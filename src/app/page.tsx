@@ -109,7 +109,8 @@ export default function Home() {
                   <OptimizedImage
                     src={item.image}
                     alt={item.title}
-                    fill
+                    width={192}
+                    height={192}
                     priority={index === 0}
                     loading={index === 0 ? 'eager' : 'lazy'}
                     className="object-contain rounded-md"
