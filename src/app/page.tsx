@@ -50,7 +50,7 @@ export default function Home() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-background p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
       <div className="text-center mb-6">
         <h1 className="text-4xl font-bold text-foreground mb-4">Autobox</h1>
         <p className="text-lg text-muted-foreground">The playground for your mind</p>
