@@ -274,7 +274,9 @@ export default function AgentDetailPage() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name" className="text-white font-bold">
+                    Name
+                  </Label>
                   {editing ? (
                     <Input
                       id="name"
@@ -283,12 +285,14 @@ export default function AgentDetailPage() {
                       className="mt-1"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{agent.name}</p>
+                    <p className="mt-1 text-sm text-gray-200">{agent.name}</p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role" className="text-white font-bold">
+                    Role
+                  </Label>
                   {editing ? (
                     <Input
                       id="role"
@@ -298,12 +302,14 @@ export default function AgentDetailPage() {
                       className="mt-1"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900">{agent.role || 'No role set'}</p>
+                    <p className="mt-1 text-sm text-gray-200">{agent.role || 'No role set'}</p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-white font-bold">
+                    Description
+                  </Label>
                   {editing ? (
                     <Textarea
                       id="description"
@@ -315,14 +321,16 @@ export default function AgentDetailPage() {
                       className="mt-1 min-h-20"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
+                    <p className="mt-1 text-sm text-gray-200 whitespace-pre-wrap">
                       {agent.description || 'No description set'}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="backstory">Backstory</Label>
+                  <Label htmlFor="backstory" className="text-white font-bold">
+                    Backstory
+                  </Label>
                   {editing ? (
                     <Textarea
                       id="backstory"
@@ -334,14 +342,16 @@ export default function AgentDetailPage() {
                       className="mt-1 min-h-24"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
+                    <p className="mt-1 text-sm text-gray-200 whitespace-pre-wrap">
                       {agent.backstory || 'No backstory set'}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="instruction">Instructions</Label>
+                  <Label htmlFor="instruction" className="text-white font-bold">
+                    Instructions
+                  </Label>
                   {editing ? (
                     <Textarea
                       id="instruction"
@@ -353,7 +363,7 @@ export default function AgentDetailPage() {
                       className="mt-1 min-h-32"
                     />
                   ) : (
-                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
+                    <p className="mt-1 text-sm text-gray-200 whitespace-pre-wrap">
                       {agent.instruction || 'No instructions set'}
                     </p>
                   )}
