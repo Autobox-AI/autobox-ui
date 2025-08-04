@@ -32,6 +32,11 @@ export function ProjectSelector() {
   }
 
   const handleSelectProject = (projectId: string) => {
+    if (projectId === 'create-new') {
+      router.push('/projects/new')
+      return
+    }
+
     const project = projects.find((p) => p.id === projectId)
     if (project) {
       const projectName = encodeURIComponent(project.name)
@@ -69,84 +74,86 @@ export function ProjectSelector() {
       <div className="w-full max-w-md bg-zinc-900 p-8 rounded-lg shadow-lg border border-zinc-800">
         <h1 className="text-2xl font-bold mb-6 text-white">Select Project for New Simulation</h1>
 
-        {projects.length === 0 ? (
-          <div className="text-center">
-            <p className="text-zinc-300 mb-4">No projects found. Create a project first.</p>
-            <Button onClick={() => router.push('/projects/new')}>Create New Project</Button>
+        <div className="space-y-6">
+          <div>
+            <label className="block text-zinc-300 mb-2">Select a project</label>
+            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue placeholder="Choose a project or create new..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem
+                  value="create-new"
+                  className="text-blue-400 hover:bg-zinc-800 focus:bg-zinc-800 border-b border-zinc-700"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">+</span>
+                    <span className="font-medium">Create New Project</span>
+                  </div>
+                </SelectItem>
+                {projects.map((project) => (
+                  <SelectItem
+                    key={project.id}
+                    value={project.id}
+                    className="text-white hover:bg-zinc-800 focus:bg-zinc-800"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{project.name}</span>
+                      {project.description && (
+                        <span className="text-xs text-zinc-400 mt-0.5">
+                          {project.description.length > 50
+                            ? `${project.description.substring(0, 50)}...`
+                            : project.description}
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-zinc-300 mb-2">Select a project</label>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue placeholder="Choose a project..." />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {projects.map((project) => (
-                    <SelectItem
-                      key={project.id}
-                      value={project.id}
-                      className="text-white hover:bg-zinc-800 focus:bg-zinc-800"
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium">{project.name}</span>
-                        {project.description && (
-                          <span className="text-xs text-zinc-400 mt-0.5">
-                            {project.description.length > 50
-                              ? `${project.description.substring(0, 50)}...`
-                              : project.description}
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            {selectedProjectId && (
-              <div className="bg-zinc-800/50 p-4 rounded-lg">
-                {(() => {
-                  const selectedProject = projects.find((p) => p.id === selectedProjectId)
-                  return selectedProject ? (
-                    <>
-                      <h3 className="text-sm font-semibold text-zinc-300 mb-2">Project Details</h3>
-                      <div className="space-y-1 text-sm">
+          {selectedProjectId && selectedProjectId !== 'create-new' && (
+            <div className="bg-zinc-800/50 p-4 rounded-lg">
+              {(() => {
+                const selectedProject = projects.find((p) => p.id === selectedProjectId)
+                return selectedProject ? (
+                  <>
+                    <h3 className="text-sm font-semibold text-zinc-300 mb-2">Project Details</h3>
+                    <div className="space-y-1 text-sm">
+                      <p className="text-zinc-400">
+                        <span className="text-zinc-500">Name:</span> {selectedProject.name}
+                      </p>
+                      {selectedProject.description && (
                         <p className="text-zinc-400">
-                          <span className="text-zinc-500">Name:</span> {selectedProject.name}
+                          <span className="text-zinc-500">Description:</span>{' '}
+                          {selectedProject.description}
                         </p>
-                        {selectedProject.description && (
-                          <p className="text-zinc-400">
-                            <span className="text-zinc-500">Description:</span>{' '}
-                            {selectedProject.description}
-                          </p>
-                        )}
-                        <p className="text-zinc-400">
-                          <span className="text-zinc-500">Confidence:</span>{' '}
-                          {selectedProject.confidence_level}
-                        </p>
-                        <p className="text-zinc-400">
-                          <span className="text-zinc-500">Simulations:</span>{' '}
-                          {selectedProject.simulations?.length || 0}
-                        </p>
-                      </div>
-                    </>
-                  ) : null
-                })()}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => router.push('/')}>
-                Cancel
-              </Button>
-              <Button onClick={handleProceed} disabled={!selectedProjectId}>
-                Continue
-              </Button>
+                      )}
+                      <p className="text-zinc-400">
+                        <span className="text-zinc-500">Confidence:</span>{' '}
+                        {selectedProject.confidence_level}
+                      </p>
+                      <p className="text-zinc-400">
+                        <span className="text-zinc-500">Simulations:</span>{' '}
+                        {selectedProject.simulations?.length || 0}
+                      </p>
+                    </div>
+                  </>
+                ) : null
+              })()}
             </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => router.push('/')}>
+              Cancel
+            </Button>
+            <Button onClick={handleProceed} disabled={!selectedProjectId}>
+              Continue
+            </Button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
