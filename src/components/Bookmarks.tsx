@@ -73,8 +73,8 @@ function BookmarkCard({ bookmark, onNavigate }: BookmarkCardProps) {
             itemId={bookmark.item_id}
             itemName={bookmark.item_name}
             itemDescription={bookmark.item_description}
-            projectId={bookmark.project_id}
-            projectName={bookmark.project_name}
+            projectId={bookmark.project_id ?? undefined}
+            projectName={bookmark.project_name ?? undefined}
             size="sm"
             variant="ghost"
           />
