@@ -315,7 +315,7 @@ const Projects = ({ projects: initialProjects }: { projects: Project[] }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  const projectsPerPage = 8
+  const projectsPerPage = 7
   const [projects, setProjects] = useState(initialProjects)
 
   // Get initial values from URL

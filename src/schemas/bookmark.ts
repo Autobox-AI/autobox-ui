@@ -17,8 +17,8 @@ export const BookmarkSchema = z.object({
   item_id: UuidSchema,
   item_name: z.string(),
   item_description: z.string().nullable(),
-  project_id: UuidSchema.optional(), // For simulations, reference to parent project
-  project_name: z.string().optional(), // For simulations, parent project name
+  project_id: UuidSchema.nullish(), // For simulations, reference to parent project
+  project_name: z.string().nullish(), // For simulations, parent project name
   created_at: z.string(),
   updated_at: z.string().nullable(),
 })
