@@ -156,6 +156,7 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
   // Hook to calculate and update the elapsed time for in-progress simulations
   useEffect(() => {
     if (localSimulation?.status !== 'in progress') return
+    if (!localSimulation.started_at) return
 
     // Calculate the initial elapsed time
     const startedAt = new Date(localSimulation.started_at).getTime()
@@ -481,10 +482,12 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
       {/* Simulation details */}
       {localSimulation && (
         <div className="mb-4">
-          <p>
-            <PlayIcon className="inline-block mr-2" />
-            <strong>Started at:</strong> {formatDateTime(localSimulation.started_at)}
-          </p>
+          {localSimulation.started_at && (
+            <p>
+              <PlayIcon className="inline-block mr-2" />
+              <strong>Started at:</strong> {formatDateTime(localSimulation.started_at)}
+            </p>
+          )}
           {simulation.finished_at && (
             <p>
               <StopIcon className="inline-block mr-2" />
@@ -505,7 +508,8 @@ const SimulationDetails = ({ simulation, projectId, projectName }: Props) => {
             </p>
           ) : (
             // Show static elapsed time if simulation has finished or been aborted
-            (localSimulation.finished_at || localSimulation.aborted_at) && (
+            (localSimulation.finished_at || localSimulation.aborted_at) &&
+            localSimulation.started_at && (
               <p>
                 <TimerIcon className="inline-block mr-2" />
                 <strong>Elapsed time:</strong>

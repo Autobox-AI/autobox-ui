@@ -188,7 +188,9 @@ export default function SimulationRunsPage({
           comparison = a.progress - b.progress
           break
         case 'started_at':
-          comparison = new Date(a.started_at).getTime() - new Date(b.started_at).getTime()
+          comparison =
+            (a.started_at ? new Date(a.started_at).getTime() : 0) -
+            (b.started_at ? new Date(b.started_at).getTime() : 0)
           break
         case 'finished_at':
           comparison =
@@ -479,7 +481,9 @@ export default function SimulationRunsPage({
                           <span>{Math.round(run.progress)}%</span>
                         </div>
                       </TableCell>
-                      <TableCell>{format(new Date(run.started_at), 'PPp')}</TableCell>
+                      <TableCell>
+                        {run.started_at ? format(new Date(run.started_at), 'PPp') : '-'}
+                      </TableCell>
                       <TableCell>
                         {run.finished_at ? format(new Date(run.finished_at), 'PPp') : '-'}
                       </TableCell>

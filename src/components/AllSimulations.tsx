@@ -290,7 +290,12 @@ const AllSimulations = ({
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            <span>Updated {formatDate(simulation.started_at)}</span>
+                            <span>
+                              Updated{' '}
+                              {simulation.started_at
+                                ? formatDate(simulation.started_at)
+                                : 'Not started'}
+                            </span>
                           </div>
                         </div>
 
@@ -418,7 +423,7 @@ const AllSimulations = ({
                             {simulation.agents?.length || 0} agents
                           </td>
                           <td className="px-4 py-3 text-zinc-400">
-                            {formatDate(simulation.started_at)}
+                            {simulation.started_at ? formatDate(simulation.started_at) : '-'}
                           </td>
                           <td className="px-4 py-3">
                             {simulation.status === SIMULATION_STATUSES.IN_PROGRESS && (
