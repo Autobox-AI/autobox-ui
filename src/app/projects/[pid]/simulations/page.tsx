@@ -20,7 +20,7 @@ async function fetchProject(projectId: string): Promise<Project> {
   try {
     const apiUrl = process.env.API_URL
     const response = await fetch(`${apiUrl}/projects/${projectId}`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {
@@ -54,7 +54,7 @@ async function fetchSimulations(projectId: string): Promise<Simulation[]> {
   try {
     const apiUrl = process.env.API_URL
     const response = await fetch(`${apiUrl}/projects/${projectId}/simulations`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

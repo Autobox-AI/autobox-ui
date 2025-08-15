@@ -8,7 +8,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ pid:
     console.log('Fetching simulations from:', `${apiUrl}/projects/${projectId}/simulations`)
 
     const response = await fetch(`${apiUrl}/projects/${projectId}/simulations`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

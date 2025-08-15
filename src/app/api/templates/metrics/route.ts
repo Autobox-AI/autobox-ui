@@ -6,7 +6,7 @@ export async function GET() {
     console.log('Fetching metric templates from:', `${apiUrl}/templates/metrics`)
 
     const response = await fetch(`${apiUrl}/templates/metrics`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

@@ -4,7 +4,7 @@ export async function GET() {
   try {
     const apiUrl = process.env.API_URL
     const response = await fetch(`${apiUrl}/organizations`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

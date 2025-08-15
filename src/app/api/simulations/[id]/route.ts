@@ -8,7 +8,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       headers: {
         'Content-Type': 'application/json',
       },
-      next: { revalidate: 60 }, // Cache for 1 minute
+      // next: { revalidate: 60 }, // Cache for 1 minute
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

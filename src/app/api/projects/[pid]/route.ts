@@ -5,7 +5,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ pid:
     const apiUrl = process.env.API_URL
     const { pid } = await params
     const response = await fetch(`${apiUrl}/projects/${pid}`, {
-      next: { revalidate: 60 }, // Cache for 1 minute
+      // next: { revalidate: 60 }, // Cache for 1 minute
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

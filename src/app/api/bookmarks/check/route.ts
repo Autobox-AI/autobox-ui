@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(
       `${apiUrl}/organizations/${organizationId}/bookmarks/check?${queryParams.toString()}`,
       {
-        cache: 'no-store',
+        cache: 'force-cache',
       }
     )
 

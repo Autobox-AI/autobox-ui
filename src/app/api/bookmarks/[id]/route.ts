@@ -46,7 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const response = await fetch(`${apiUrl}/organizations/${organizationId}/bookmarks/${id}`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

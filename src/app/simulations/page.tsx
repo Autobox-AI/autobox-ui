@@ -15,7 +15,7 @@ async function fetchAllSimulations(organizationId: string): Promise<{
   try {
     const apiUrl = process.env.API_URL
     const response = await fetch(`${apiUrl}/organizations/${organizationId}/simulations`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

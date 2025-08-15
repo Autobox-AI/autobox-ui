@@ -30,7 +30,7 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
     if (stream) {
       // Handle streaming response
       const response = await fetch(backendUrl, {
-        cache: 'no-store',
+        cache: 'force-cache',
         signal: AbortSignal.timeout(30000), // 30 second timeout
         headers: {
           Accept: 'text/event-stream',
@@ -62,7 +62,7 @@ export async function GET(request: Request, context: { params: Promise<{ rid: st
     } else {
       // Handle regular JSON response
       const response = await fetch(backendUrl, {
-        cache: 'no-store',
+        cache: 'force-cache',
       })
 
       if (!response.ok) {

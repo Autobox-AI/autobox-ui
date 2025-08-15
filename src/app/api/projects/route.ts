@@ -5,7 +5,7 @@ export async function GET() {
     const apiUrl = process.env.API_URL
     const organizationId = process.env.ORG_ID
     const response = await fetch(`${apiUrl}/organizations/${organizationId}/projects`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {

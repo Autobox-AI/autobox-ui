@@ -16,9 +16,11 @@ import {
   MoreVertical,
   Pause,
   Play,
+  PlayCircle,
   Plus,
   Search,
   Thermometer,
+  Users,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -180,8 +182,11 @@ const Simulations = ({
     )
   }
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
+  const formatDate = (date: string | null | undefined) => {
+    if (!date) return 'Not available'
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate.getTime())) return 'Not available'
+    return parsedDate.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -294,14 +299,27 @@ const Simulations = ({
                       {/* Simulation Stats and Footer */}
                       <div className="mt-auto">
                         {/* Simulation Stats */}
-                        <div className="px-6 pb-4 flex items-center gap-4 text-sm text-zinc-400">
-                          <div className="flex items-center gap-1">
-                            <GitGraph className="h-4 w-4" />
-                            <span>{simulation.agents?.length || 0} agents</span>
+                        <div className="px-6 pb-4 flex items-center justify-between text-sm text-zinc-400">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <PlayCircle className="h-4 w-4" />
+                              <span>{simulation.runs || 0} runs</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              <span>{simulation.agents?.length || 0} agents</span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            <span>Updated {formatDate(simulation.started_at)}</span>
+                            <span>
+                              Updated{' '}
+                              {formatDate(
+                                simulation.started_at ||
+                                  simulation.updated_at ||
+                                  simulation.created_at
+                              )}
+                            </span>
                           </div>
                         </div>
 
@@ -364,7 +382,7 @@ const Simulations = ({
                   ))
                 ) : (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-zinc-400">
-                    <GitGraph className="h-12 w-12 mb-4" />
+                    <PlayCircle className="h-12 w-12 mb-4" />
                     <h3 className="text-xl font-medium mb-2">
                       {searchQuery ? 'No simulations found' : 'No simulations yet'}
                     </h3>
@@ -387,6 +405,9 @@ const Simulations = ({
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">
                         Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">
+                        Runs
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">
                         Agents
@@ -417,11 +438,16 @@ const Simulations = ({
                           <td className="px-4 py-3">
                             <span className="capitalize text-zinc-400">{simulation.status}</span>
                           </td>
+                          <td className="px-4 py-3 text-zinc-400">{simulation.runs || 0}</td>
                           <td className="px-4 py-3 text-zinc-400">
-                            {simulation.agents?.length || 0} agents
+                            {simulation.agents?.length || 0}
                           </td>
                           <td className="px-4 py-3 text-zinc-400">
-                            {formatDate(simulation.started_at)}
+                            {formatDate(
+                              simulation.started_at ||
+                                simulation.updated_at ||
+                                simulation.created_at
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             {simulation.status === SIMULATION_STATUSES.IN_PROGRESS && (

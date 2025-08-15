@@ -42,10 +42,11 @@ async function fetchProjects(
     const response = await fetch(
       `${apiUrl}/organizations/${organizationId}/projects?${queryParams.toString()}`,
       {
-        next: {
-          revalidate: 30,
-          tags: ['projects'],
-        },
+        // next: {
+        //   revalidate: 30,
+        //   tags: ['projects'],
+        // },
+        cache: 'force-cache',
         headers: {
           Accept: 'application/json',
         },

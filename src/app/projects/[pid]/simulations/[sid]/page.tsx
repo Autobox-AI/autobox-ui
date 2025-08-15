@@ -65,7 +65,8 @@ interface SimulationRunsResponse {
 
 async function getProject(projectId: string) {
   const response = await fetch(`/api/projects/${projectId}`, {
-    next: { revalidate: 60 }, // Cache for 1 minute
+    // next: { revalidate: 60 }, // Cache for 1 minute
+    cache: 'force-cache',
   })
 
   if (!response.ok) {
@@ -77,7 +78,8 @@ async function getProject(projectId: string) {
 
 async function getSimulation(projectId: string, simulationId: string) {
   const response = await fetch(`/api/simulations/${simulationId}`, {
-    next: { revalidate: 60 }, // Cache for 1 minute
+    // next: { revalidate: 60 }, // Cache for 1 minute
+    cache: 'force-cache',
   })
 
   if (!response.ok) {
@@ -89,7 +91,8 @@ async function getSimulation(projectId: string, simulationId: string) {
 
 async function getSimulationRuns(simulationId: string): Promise<SimulationRunsResponse> {
   const response = await fetch(`/api/simulations/${simulationId}/runs`, {
-    next: { revalidate: 60 }, // Cache for 10 seconds
+    // next: { revalidate: 60 }, // Cache for 10 seconds
+    cache: 'force-cache',
   })
 
   if (!response.ok) {

@@ -1,7 +1,8 @@
-import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { GeistSans } from 'geist/font/sans'
 import '../styles/globals.css'
 
+import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 import { MockDataBanner } from '@/components/MockDataBanner'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import AppSidebar from '@/components/Sidebar'
@@ -11,7 +12,6 @@ import { BookmarkProvider } from '@/contexts/BookmarkContext'
 import { cn } from '@/lib/utils'
 import { Organization } from '@/schemas/organization'
 import { cookies } from 'next/headers'
-import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 
 export const metadata = {
   title: 'Autobox - The playground for your mind',
@@ -48,7 +48,7 @@ async function fetchDefaultOrganization(): Promise<Organization | null> {
     }
 
     const response = await fetch(`${apiUrl}/organizations/${organizationId}`, {
-      cache: 'no-store',
+      cache: 'force-cache',
     })
 
     if (!response.ok) {
