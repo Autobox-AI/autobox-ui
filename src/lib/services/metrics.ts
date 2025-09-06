@@ -3,7 +3,7 @@ export interface MetricLabel {
   simulation_name: string
   agent_name: string
   app: string
-  [key: string]: string // For any additional labels
+  [key: string]: string
 }
 
 export interface MetricValue {
@@ -21,7 +21,6 @@ export interface Metric {
   help: string
   type: 'gauge' | 'counter' | 'histogram'
   values: MetricValue[]
-  // Additional fields for histogram
   buckets?: HistogramBucket[]
   sum?: number
   count?: number
@@ -74,7 +73,7 @@ function parsePrometheusMetrics(metricsText: string): Metric[] {
       currentMetric = {
         name,
         help,
-        type: 'gauge', // Will be updated when we find TYPE
+        type: 'gauge',
         values: [],
       }
       metrics.set(name, currentMetric)

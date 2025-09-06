@@ -58,16 +58,12 @@ const OptimizedImage = memo(
       onError?.()
     }, [fallbackSrc, currentSrc, onError])
 
-    // Generate blur data URL if not provided
     const getBlurDataURL = useCallback(() => {
       if (blurDataURL) return blurDataURL
 
-      // Only generate blur data URL in browser environment
       if (typeof window === 'undefined' || typeof document === 'undefined') {
         return undefined
       }
-
-      // Generate a simple blur data URL for the image
       const canvas = document.createElement('canvas')
       canvas.width = 40
       canvas.height = 40
@@ -96,7 +92,6 @@ const OptimizedImage = memo(
 
     return (
       <div className={cn('relative', className)}>
-        {/* Loading skeleton */}
         {isLoading && (
           <div
             className="absolute inset-0 bg-gray-800 animate-pulse rounded"

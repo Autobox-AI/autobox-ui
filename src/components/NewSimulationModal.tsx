@@ -58,7 +58,6 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
         if (typeof result === 'string') {
           const configData = JSON.parse(result)
           setNewSimulationConfig(configData)
-          // Pre-fill the form inputs with the parsed config data, including agents
           setFormData({
             simulationName: configData.name || '',
             maxSteps: configData.max_steps || 150,
@@ -66,7 +65,7 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
             task: configData.task || '',
             orchestratorName: configData.orchestrator?.name || '',
             instruction: configData.orchestrator?.instruction || '',
-            agents: configData.agents || [], // Pre-fill agents if available
+            agents: configData.agents || [],
           })
         } else {
           alert('Invalid file format')
@@ -80,12 +79,10 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
     }
   }
 
-  // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  // Handle agent input changes
   const handleAgentChange = (
     index: number,
     field: keyof (typeof formData.agents)[0],
@@ -96,7 +93,6 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
     setFormData({ ...formData, agents: newAgents })
   }
 
-  // Add new agent
   const addAgent = () => {
     setFormData({
       ...formData,
@@ -104,24 +100,21 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
     })
   }
 
-  // Remove agent
   const removeAgent = (index: number) => {
     const newAgents = formData.agents.filter((_, i) => i !== index)
     setFormData({ ...formData, agents: newAgents })
   }
 
-  // Handle running the simulation
   const handleRunSimulation = async () => {
     setIsLoading(true)
 
-    // Mock the simulation process
     const _newSimulation2 = {
-      id: Math.random().toString(36).substr(2, 9), // Generate random ID
+      id: Math.random().toString(36).substr(2, 9),
       name: formData.simulationName || 'New Simulation',
       startedAt: new Date().toISOString().split('T')[0],
       finishedAt: '',
-      progress: 0, // Start with 0% progress
-      status: 'loading', // Initial status is 'loading'
+      progress: 0,
+      status: 'loading',
     }
 
     try {
@@ -138,21 +131,19 @@ const NewSimulationModal = ({ onClose, addSimulation }: NewSimulationModalProps)
 
       const newSimulation = await response.json()
 
-      // Call addSimulation to update the main screen with the new simulation
       addSimulation(newSimulation)
 
       setIsLoading(false)
-      onClose() // Close the modal and return to the main screen
+      onClose()
     } catch (err) {
       setIsLoading(false)
       console.error(err)
       alert('Failed to create simulation')
     }
 
-    // Close modal after triggering the simulation
     setTimeout(() => {
       setIsLoading(false)
-      onClose() // Close the modal and return to the main screen
+      onClose()
     }, 500)
   }
 

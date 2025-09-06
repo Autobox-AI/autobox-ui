@@ -42,7 +42,6 @@ export function usePerformanceMonitor(
   const startTime = useRef<number>()
   const lastMetrics = useRef<PerformanceMetrics | null>(null)
 
-  // Get memory usage if available
   const getMemoryUsage = useCallback((): PerformanceMetrics['memoryUsage'] => {
     if (!trackMemory || !('memory' in performance)) return undefined
 
@@ -54,7 +53,6 @@ export function usePerformanceMonitor(
     }
   }, [trackMemory])
 
-  // Get network information if available
   const getNetworkInfo = useCallback((): PerformanceMetrics['networkInfo'] => {
     if (!trackNetwork || !('connection' in navigator)) return undefined
 
@@ -66,20 +64,17 @@ export function usePerformanceMonitor(
     }
   }, [trackNetwork])
 
-  // Get resource timing
   const getResourceTiming = useCallback((): PerformanceEntry[] => {
     if (!trackResources) return []
 
-    return performance.getEntriesByType('resource').slice(-10) // Last 10 resources
+    return performance.getEntriesByType('resource').slice(-10)
   }, [trackResources])
 
-  // Get navigation timing
   const getNavigationTiming = useCallback((): PerformanceNavigationTiming | null => {
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
     return navigation || null
   }, [])
 
-  // Calculate and log metrics
   const calculateMetrics = useCallback((): PerformanceMetrics => {
     const now = performance.now()
     const renderTime = startTime.current ? now - startTime.current : 0
@@ -133,7 +128,6 @@ export function usePerformanceMonitor(
     getNavigationTiming,
   ])
 
-  // Monitor render performance
   useEffect(() => {
     if (!enabled) return
 
@@ -147,14 +141,12 @@ export function usePerformanceMonitor(
     startTime.current = now
   })
 
-  // Monitor long tasks
   useEffect(() => {
     if (!enabled) return
 
     const observer = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry) => {
         if (entry.duration > 50) {
-          // Tasks longer than 50ms
           console.warn(`⚠️ Long task detected in ${componentName}:`, {
             duration: entry.duration,
             startTime: entry.startTime,
@@ -169,14 +161,12 @@ export function usePerformanceMonitor(
     return () => observer.disconnect()
   }, [enabled, componentName])
 
-  // Monitor layout shifts
   useEffect(() => {
     if (!enabled) return
 
     const observer = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry: any) => {
         if (entry.value > 0.1) {
-          // Layout shifts greater than 0.1
           console.warn(`⚠️ Layout shift detected in ${componentName}:`, {
             value: entry.value,
             sources: entry.sources,
@@ -190,7 +180,6 @@ export function usePerformanceMonitor(
     return () => observer.disconnect()
   }, [enabled, componentName])
 
-  // Monitor first input delay
   useEffect(() => {
     if (!enabled) return
 
@@ -209,7 +198,6 @@ export function usePerformanceMonitor(
     return () => observer.disconnect()
   }, [enabled, componentName])
 
-  // Return utility functions
   return {
     getMetrics: () => lastMetrics.current,
     calculateMetrics,

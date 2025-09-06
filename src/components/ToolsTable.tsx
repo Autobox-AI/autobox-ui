@@ -72,7 +72,6 @@ const toolStatuses: { [key: string]: 'red' | 'yellow' | 'green' } = {
   'Knowledge Base': 'green',
 }
 
-// Descriptions for each tool
 const toolDescriptions: { [key: string]: string } = {
   'Internet Browser': 'A tool to browse the internet',
   'Google Maps': 'A mapping service for directions and locations',
@@ -103,7 +102,6 @@ const toolDescriptions: { [key: string]: string } = {
   'Knowledge Base': 'A repository for storing and accessing knowledge',
 }
 
-// Creative observations based on the status, explaining why the tool is in a particular state
 const toolObservations: { [key: string]: string } = {
   'Internet Browser': 'Ready to use: The browser is functioning perfectly.',
   'Google Maps': 'Minor delays: Some mapping features may be temporarily unavailable.',
@@ -300,7 +298,6 @@ const tools = [
   },
 ]
 
-// Function to render the color circle based on status
 const renderStatusCircle = (status: 'red' | 'yellow' | 'green') => {
   const colorMap = {
     red: 'bg-red-500',
@@ -310,7 +307,6 @@ const renderStatusCircle = (status: 'red' | 'yellow' | 'green') => {
   return <span className={`inline-block w-4 h-4 rounded-full ${colorMap[status]}`} />
 }
 
-// Define table columns
 const columns: ColumnDef<(typeof tools)[0]>[] = [
   {
     id: 'select',
@@ -343,7 +339,6 @@ const columns: ColumnDef<(typeof tools)[0]>[] = [
     header: ({ column }) => (
       <div className="flex items-center space-x-2 px-2">
         {' '}
-        {/* Adjusted to px-1 for less right spacing */}
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
@@ -354,13 +349,13 @@ const columns: ColumnDef<(typeof tools)[0]>[] = [
         </Button>
       </div>
     ),
-    cell: ({ row }) => <div className="text-left px-2">{row.original.tool}</div>, // Ensure text-left and reduce padding
+    cell: ({ row }) => <div className="text-left px-2">{row.original.tool}</div>,
     enableSorting: true,
   },
   {
     accessorKey: 'description',
-    header: () => <div className="text-left px-2">Description</div>, // Consistent alignment
-    cell: ({ row }) => <div className="text-left px-2">{row.original.description}</div>, // Consistent alignment
+    header: () => <div className="text-left px-2">Description</div>,
+    cell: ({ row }) => <div className="text-left px-2">{row.original.description}</div>,
     enableSorting: false,
   },
   {
@@ -368,7 +363,6 @@ const columns: ColumnDef<(typeof tools)[0]>[] = [
     header: ({ column }) => (
       <div className="flex items-center space-x-2 px-2">
         {' '}
-        {/* Adjusted to px-1 for less right spacing */}
         <Button
           variant="ghost"
           className="p-0"
@@ -381,15 +375,15 @@ const columns: ColumnDef<(typeof tools)[0]>[] = [
     ),
     cell: ({ row }) => (
       <div className="text-left px-2">{renderStatusCircle(row.original.status)}</div>
-    ), // Ensure text-left and reduce padding
+    ),
     enableSorting: true,
     sortingFn: (rowA, rowB) =>
       statusOrder[rowA.original.status] - statusOrder[rowB.original.status],
   },
   {
     accessorKey: 'observation',
-    header: () => <div className="text-left px-2">Observation</div>, // Consistent alignment
-    cell: ({ row }) => <div className="text-left px-2">{row.original.observation}</div>, // Consistent alignment
+    header: () => <div className="text-left px-2">Observation</div>,
+    cell: ({ row }) => <div className="text-left px-2">{row.original.observation}</div>,
     enableSorting: false,
   },
   {

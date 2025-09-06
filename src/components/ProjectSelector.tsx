@@ -50,14 +50,6 @@ export function ProjectSelector() {
     }
   }
 
-  // if (loading) {
-  //   return (
-  //     <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
-  //       <div className="text-white">Loading projects...</div>
-  //     </div>
-  //   )
-  // }
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">

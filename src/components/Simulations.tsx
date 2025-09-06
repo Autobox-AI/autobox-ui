@@ -107,9 +107,7 @@ const Simulations = ({
   const [statusFilter, setStatusFilter] = useState<SimulationStatus | 'all'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
 
-  // Add effect to handle streaming updates for in-progress simulations
   useEffect(() => {
-    // Create event sources for all in-progress simulations
     const eventSources = simulations
       .filter((sim) => sim.status === SIMULATION_STATUSES.IN_PROGRESS)
       .map((simulation) => {
@@ -140,11 +138,10 @@ const Simulations = ({
         return eventSource
       })
 
-    // Cleanup function to close all EventSource instances
     return () => {
       eventSources.forEach((es) => es.close())
     }
-  }, [simulations]) // Add simulations as a dependency to re-run when they change
+  }, [simulations])
 
   const handleSearch = useCallback(
     async (query: string) => {
@@ -152,12 +149,10 @@ const Simulations = ({
 
       let filtered = [...initialSimulations]
 
-      // Apply status filter if not 'all'
       if (statusFilter !== 'all') {
         filtered = filtered.filter((simulation) => simulation.status === statusFilter)
       }
 
-      // Apply search query if exists
       if (query.trim()) {
         filtered = filtered.filter(
           (simulation) =>
@@ -171,7 +166,6 @@ const Simulations = ({
     [initialSimulations, statusFilter]
   )
 
-  // Add useEffect to refilter when status changes
   useEffect(() => {
     handleSearch(searchQuery)
   }, [statusFilter, handleSearch, searchQuery])
@@ -271,7 +265,6 @@ const Simulations = ({
                       key={simulation.id}
                       className="group relative bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden hover:border-zinc-700 transition-all duration-200 h-[280px] flex flex-col"
                     >
-                      {/* Simulation Header */}
                       <div className="p-6 flex-1">
                         <div className="flex justify-between items-start">
                           <div

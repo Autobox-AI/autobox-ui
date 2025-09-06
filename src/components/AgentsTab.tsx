@@ -46,7 +46,6 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
   }
 
   const getAgentCategory = (agent: Agent) => {
-    // Use explicit type if available, otherwise infer from name
     if (agent.type) {
       return agent.type
     }
@@ -126,7 +125,6 @@ export default function AgentsTab({ runId, agents, loading, error }: AgentsTabPr
     )
   }
 
-  // Filter agents based on type and search query
   const filteredAgents = agents.filter((agent) => {
     const matchesType = typeFilter === 'all' || getAgentCategory(agent) === typeFilter
     const matchesSearch =

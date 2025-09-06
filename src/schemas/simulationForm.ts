@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 export const simulationFormSchema = z.object({
-  // General Settings
   simulationName: z
     .string()
     .min(1, 'Simulation name is required')
@@ -16,16 +15,13 @@ export const simulationFormSchema = z.object({
     .min(1, 'Task description is required')
     .max(500, 'Task description must be less than 500 characters'),
 
-  // Orchestrator
   instruction: z
     .string()
     .min(1, 'Orchestrator instructions are required')
     .max(1000, 'Instructions must be less than 1000 characters'),
 
-  // Metrics (optional)
   metricsTemplateId: z.string().uuid('Must be a valid UUID').optional().or(z.literal('')),
 
-  // Agents
   agents: z
     .array(
       z.object({
@@ -51,7 +47,6 @@ export const simulationFormSchema = z.object({
 
 export type SimulationFormData = z.infer<typeof simulationFormSchema>
 
-// API payload transformation
 export const transformFormToApiPayload = (data: SimulationFormData, projectId: string) => ({
   name: data.simulationName,
   max_steps: data.maxSteps,

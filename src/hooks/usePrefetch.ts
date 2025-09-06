@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef } from 'react'
 
 interface PrefetchConfig {
   enabled?: boolean
-  delay?: number // Delay before prefetching (ms)
+  delay?: number
   priority?: 'high' | 'low'
 }
 
@@ -32,12 +32,10 @@ export function usePrefetch(config: PrefetchConfig = {}) {
 
       const cacheKey = `run-${runId}`
 
-      // Check if already cached or being fetched
       if (prefetchCache[cacheKey]?.data || prefetchPromises.has(cacheKey)) {
         return
       }
 
-      // Mark as loading
       prefetchCache[cacheKey] = {
         data: null,
         timestamp: Date.now(),
@@ -47,14 +45,13 @@ export function usePrefetch(config: PrefetchConfig = {}) {
       try {
         const promise = fetch(`/api/runs/${runId}`, {
           headers: {
-            'Cache-Control': 'max-age=60', // 1 minute cache
+            'Cache-Control': 'max-age=60',
           },
         }).then((response) => response.json())
 
         prefetchPromises.set(cacheKey, promise)
         const data = await promise
 
-        // Update cache
         prefetchCache[cacheKey] = {
           data,
           timestamp: Date.now(),
@@ -76,12 +73,10 @@ export function usePrefetch(config: PrefetchConfig = {}) {
 
       const cacheKey = `traces-${runId}`
 
-      // Check if already cached or being fetched
       if (prefetchCache[cacheKey]?.data || prefetchPromises.has(cacheKey)) {
         return
       }
 
-      // Mark as loading
       prefetchCache[cacheKey] = {
         data: null,
         timestamp: Date.now(),
@@ -91,14 +86,13 @@ export function usePrefetch(config: PrefetchConfig = {}) {
       try {
         const promise = fetch(`/api/runs/${runId}/traces`, {
           headers: {
-            'Cache-Control': 'max-age=30', // 30 seconds cache for traces
+            'Cache-Control': 'max-age=30',
           },
         }).then((response) => response.json())
 
         prefetchPromises.set(cacheKey, promise)
         const data = await promise
 
-        // Update cache
         prefetchCache[cacheKey] = {
           data,
           timestamp: Date.now(),
@@ -120,12 +114,10 @@ export function usePrefetch(config: PrefetchConfig = {}) {
 
       const cacheKey = `metrics-${runId}`
 
-      // Check if already cached or being fetched
       if (prefetchCache[cacheKey]?.data || prefetchPromises.has(cacheKey)) {
         return
       }
 
-      // Mark as loading
       prefetchCache[cacheKey] = {
         data: null,
         timestamp: Date.now(),
@@ -135,14 +127,13 @@ export function usePrefetch(config: PrefetchConfig = {}) {
       try {
         const promise = fetch(`/api/runs/${runId}/metrics`, {
           headers: {
-            'Cache-Control': 'max-age=60', // 1 minute cache for metrics
+            'Cache-Control': 'max-age=60',
           },
         }).then((response) => response.json())
 
         prefetchPromises.set(cacheKey, promise)
         const data = await promise
 
-        // Update cache
         prefetchCache[cacheKey] = {
           data,
           timestamp: Date.now(),
@@ -158,7 +149,6 @@ export function usePrefetch(config: PrefetchConfig = {}) {
     [enabled]
   )
 
-  // Prefetch all data for a run
   const prefetchRun = useCallback(
     (runId: string) => {
       if (!enabled) return
@@ -168,7 +158,6 @@ export function usePrefetch(config: PrefetchConfig = {}) {
       }
 
       timeoutRef.current = setTimeout(() => {
-        // Prefetch in parallel for completed runs
         prefetchRunDetails(runId)
         prefetchRunTraces(runId)
         prefetchRunMetrics(runId)
@@ -177,7 +166,6 @@ export function usePrefetch(config: PrefetchConfig = {}) {
     [enabled, delay, prefetchRunDetails, prefetchRunTraces, prefetchRunMetrics]
   )
 
-  // Cancel prefetch
   const cancelPrefetch = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -185,20 +173,17 @@ export function usePrefetch(config: PrefetchConfig = {}) {
     }
   }, [])
 
-  // Get prefetched data
   const getPrefetchedData = useCallback((type: 'run' | 'traces' | 'metrics', runId: string) => {
     const cacheKey = `${type === 'run' ? 'run' : type}-${runId}`
     const cached = prefetchCache[cacheKey]
 
     if (!cached || Date.now() - cached.timestamp > 300000) {
-      // 5 minute expiry
       return null
     }
 
     return cached.data
   }, [])
 
-  // Check if data is prefetched
   const isPrefetched = useCallback((type: 'run' | 'traces' | 'metrics', runId: string) => {
     const cacheKey = `${type === 'run' ? 'run' : type}-${runId}`
     const cached = prefetchCache[cacheKey]
@@ -206,7 +191,6 @@ export function usePrefetch(config: PrefetchConfig = {}) {
     return cached?.data && Date.now() - cached.timestamp < 300000
   }, [])
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -226,13 +210,11 @@ export function usePrefetch(config: PrefetchConfig = {}) {
   }
 }
 
-// Clean up old cache entries periodically
 setInterval(() => {
   const now = Date.now()
   Object.keys(prefetchCache).forEach((key) => {
     if (now - prefetchCache[key].timestamp > 300000) {
-      // 5 minutes
       delete prefetchCache[key]
     }
   })
-}, 60000) // Clean up every minute
+}, 60000)

@@ -27,11 +27,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
-    // If mocks are enabled, return mock response
     if (process.env.NEXT_PUBLIC_MOCKS_ENABLED === 'true') {
       const randomQuote = agentQuotes[Math.floor(Math.random() * agentQuotes.length)]
 
-      // Add a small delay to simulate processing
       await new Promise((resolve) => setTimeout(resolve, 500))
 
       let responseMessage = ''
@@ -47,7 +45,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Otherwise, forward to the actual backend API
     const apiUrl = process.env.API_URL
     const response = await fetch(`${apiUrl}/chat`, {
       method: 'POST',
@@ -72,7 +69,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Handle preflight requests
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, { status: 200 })
 }

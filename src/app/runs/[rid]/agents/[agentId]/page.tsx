@@ -153,8 +153,6 @@ export default function AgentDetailPage() {
   }
 
   const getAgentTypeFromId = (agentId: string) => {
-    // This would need to be enhanced based on how agent types are determined
-    // For now, we'll use a simple heuristic
     const agentName = agent?.name.toLowerCase() || ''
     if (agentName.includes('orchestrator')) return 'orchestrator'
     if (agentName.includes('planner')) return 'planner'
