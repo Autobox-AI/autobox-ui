@@ -104,3 +104,47 @@ The project uses shadcn/ui, a component library built on top of Radix UI primiti
 3. **Loading States**: Dedicated loading pages and components
 4. **Real-time Updates**: Polling-based updates for simulation runs
 5. **Performance Monitoring**: Built-in timing and performance measurement
+
+## Code Style Guidelines
+
+### Comments and Documentation
+
+1. **Avoid Redundant Comments**: 
+   - Don't add comments that simply restate what the code does
+   - Remove obvious comments like `// Import React` or `// Define interface`
+   - Don't comment closing braces like `} // end if`
+
+2. **Write Self-Documenting Code**:
+   - Use descriptive variable and function names that explain their purpose
+   - Prefer clear, readable code over comments
+   - Extract complex logic into well-named functions
+
+3. **When Comments Are Valuable**:
+   - Explain WHY something is done, not WHAT is being done
+   - Document complex business logic or algorithms
+   - Add warnings about non-obvious behavior or gotchas
+   - Include references to external documentation or requirements
+
+4. **Examples**:
+   ```typescript
+   // ❌ Bad: Redundant comment
+   // Increment counter by 1
+   counter++;
+   
+   // ❌ Bad: Obvious comment
+   // Check if user is logged in
+   if (user.isLoggedIn) {
+   
+   // ✅ Good: Explains why
+   // We need to delay by 100ms to avoid race condition with animation
+   setTimeout(() => updateUI(), 100);
+   
+   // ✅ Good: Documents business logic
+   // Price threshold based on Q4 2024 market analysis
+   const PREMIUM_THRESHOLD = 150;
+   ```
+
+5. **Function Documentation**:
+   - Only add JSDoc comments for complex functions with non-obvious behavior
+   - Avoid documenting simple getters, setters, or straightforward functions
+   - Focus on documenting edge cases, side effects, and complex return values
